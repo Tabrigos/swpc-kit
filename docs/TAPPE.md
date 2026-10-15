@@ -103,6 +103,13 @@ richieste condizionali (ETag), classificazione degli errori di `SPEC.md`,
 `max_age`, timeout e user agent configurabili. Test con un trasporto finto,
 senza rete.
 
+**Prima di scegliere la dipendenza**: a ottobre 2026 httpx risultava fermo
+alla 0.28.1 (dicembre 2024), con una 1.0 in sviluppo con cambi incompatibili, e
+Pydantic manteneva un fork, `httpx2`. È un'informazione presa da issue di terzi,
+non da una fonte primaria: verifica lo stato su PyPI e sui repo, scrivi la
+scelta in `docs/FONTI.md` e tieni il client separabile dal trasporto, in modo
+che cambiare libreria tocchi un modulo solo.
+
 ## T8 — Rifinitura
 
 - [ ] Fatta
