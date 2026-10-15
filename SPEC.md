@@ -36,9 +36,9 @@ Tre strati, ognuno usabile da solo:
 from swpc_kit.parse import parse_planetary_k_index
 from swpc_kit.client import Client
 
-kp = parse_planetary_k_index(raw_bytes)          # senza rete
+kp = parse_planetary_k_index(raw_bytes)  # senza rete
 with Client() as c:
-    kp = c.planetary_k_index()                   # con rete
+    kp = c.planetary_k_index()  # con rete
     oval = c.ovation_aurora()
     oval.to_geojson(threshold=10)
 ```
