@@ -84,6 +84,17 @@ sopra. Quando una tappa verifica o smentisce qualcosa, aggiorna questo file.
   `ALTXMF`/`SUMXM5`, `A20F`/`A30F` = `WATA20`/`WATA30`, `SGIW` = `WARSUD`.
   `MSIS` e `BHIS`: significato sconosciuto. Nella tabella ufficiale `ATLK04`
   compare scritto così (probabile refuso per `ALTK04`).
+- **Indizi dai messaggi del 2022** (esempi copiati nel sorgente di `swpclib`,
+  fonte non ufficiale, quindi ancora **ipotesi**): `A20F` → `WATA20`,
+  `K05W` → `WARK05`, `K05A` → `ALTK05`. Il testo va a capo con `\r\n` e
+  inizia con `Space Weather Message Code: …`, `Serial Number: …`,
+  `Issue Time: 2022 Sep 27 1957 UTC`; poi righe come `ALERT: …`,
+  `WARNING: …` (o `EXTENDED WARNING: …` con `Extension to Serial Number:`),
+  `WATCH: …`, `Threshold Reached:`, `Synoptic Period:`, `Valid From:`,
+  `Valid Until:` / `Now Valid Until:`, `Warning Condition:`,
+  `Active Warning: Yes`, `NOAA Scale: G1 - Minor`, `Potential Impacts:`. Nel
+  JSON grezzo la barra compariva come `\/`, che il parser JSON decodifica in
+  `/`. Da confermare sulla fixture di T1.
 
 ## Bollettini testuali
 
@@ -106,7 +117,9 @@ sopra. Quando una tappa verifica o smentisce qualcosa, aggiorna questo file.
   longitudine è il ciclo esterno (da 0, passo 1), la latitudine l'interno (da
   -90 a 90, passo 1). Valori interi osservati 0–26. **Ipotesi**: longitudine
   0–359 (quindi 360×181 punti), valore = probabilità di aurora in percento.
-  Da verificare sul file intero e sul campo `Data Format`.
+  Da verificare sul file intero e sul campo `Data Format`. La forma 360×181
+  coincide con la copia del 2024 dentro `nws-aurora` (vedi "Librerie
+  esistenti").
 - **D-RAP** (`/text/drap_global_frequencies.txt`): commenti `#` con
   `Product Valid At`, `Estimated Recovery Time`, `X-RAY Message`,
   `Proton Message`; poi una griglia di frequenze (MHz, un decimale): righe di
@@ -150,8 +163,37 @@ messaggi e dei bollettini, ed export delle griglie. Frammenti:
 - `sunpy`: solo le previsioni del ciclo solare (macchie, F10.7).
 - `swvo` (GFZ, Apache-2.0): da SWPC solo Kp e F10.7.
 - `spaceweather` (pyspaceweather): indici da Celestrak, GFZ, OMNI; non SWPC.
-- `swpclib` (MIT, ultima release 4.3.7 dell'aprile 2024, asincrona con
-  aiohttp): copertura non documentata. **Da misurare in T0** leggendo il
-  pacchetto da PyPI.
-- `nws-aurora`: copertura sconosciuta, da guardare in T0.
 - `solar-mcp`, `spaceweather-mcp`: server MCP, non librerie.
+
+### `swpclib` e `nws-aurora` (misurate in T0, 2026-10-15)
+
+Lette dai sorgenti su PyPI. Nessuna delle due copre una parte rilevante di
+`SPEC.md`: si va avanti.
+
+- **`swpclib` 4.3.7** (MIT, 2024-04-18, dipende da `aiohttp`, `pillow`,
+  `click`; il README dice "Features: TODO"). Una classe `Runner` asincrona
+  che scarica e restituisce **dizionari** senza tipi: F10.7
+  (`/json/f107_cm_flux.json`), K di Boulder, A di Fredericksburg previsto,
+  macchie solari osservate, Kp 1 minuto, `solar_probabilities.json`,
+  `alerts.json`, e animazioni GIF (SUVI, OVATION, LASCO, D-RAP) montate con
+  Pillow. Gli errori sono **ingoiati**: `print(repr(e))` e un valore `None`.
+  Le date dei messaggi restano senza fuso (`datetime.now()` confrontato con
+  orari UTC). Non tocca Kp 3 ore, Dst, scale, RTSW, GOES, bollettini,
+  griglie, né i formati nuovi del 2026. Un solo test.
+- **`nws-aurora` 0.0.6** (MIT, 2024-09-18, dipende da `requests`, `bs4`,
+  `geojson`, `pytz`, `click`). Solo aurora: elenco delle immagini OVATION
+  (raschiando l'indice HTML della cartella), griglia OVATION come
+  `FeatureCollection` di **punti** con longitudine 0–359 così com'è, e
+  `aurora-nowcast-hemi-power.txt` letto saltando 16 righe fisse. Nessun tipo,
+  nessuna gestione degli errori.
+- **Nome**: `swpc-kit` (e `swpc_kit`, `swpckit`) libero su PyPI il
+  2026-10-15 (risposta 404 dell'API JSON). PyPI può comunque rifiutare un
+  nome alla prima pubblicazione: si ricontrolla prima di pubblicare.
+
+Due cose utili lette nei loro sorgenti, da fonti **non ufficiali**:
+
+- `swpclib` contiene tre esempi di `alerts.json` del 2022-09-27, citati in
+  "Avvisi" sotto.
+- `nws-aurora` contiene una griglia OVATION del 2024-09-18 già convertita:
+  65 160 punti, longitudine 0–359 (360 valori), latitudine -90…90 (181
+  valori). Conferma indiretta dell'ipotesi della griglia 360×181.

@@ -10,7 +10,7 @@ diversi); T7 dopo le altre; T8 per ultima.
 
 ## T0 — Impianto e ricognizione
 
-- [ ] Fatta
+- [x] Fatta
 
 - `pyproject.toml` con `uv` e `hatchling`, Python ≥ 3.12, layout `src/swpc_kit/`,
   extra vuoti `client` e `geo`, configurazione di ruff, mypy (strict, su `src`
