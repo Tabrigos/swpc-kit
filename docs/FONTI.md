@@ -51,6 +51,9 @@ con `\n`. Il server dà `Last-Modified`, `ETag` e `Cache-Control: max-age=60`.
   `"estimated"` (3) o `"predicted"` (17); `noaa_scale` è `null` o una
   stringa come `"G1"`, `"G3"`. Attenzione: qui la chiave è `kp`, nel Kp 3 ore
   è `Kp`.
+  Le voci `estimated` possono stare **nel futuro**: registrando alle 17:57 UTC
+  c'erano già quelle delle 18:00 e delle 21:00. Per questo il `data_time` della
+  previsione è l'ultima voce `observed`.
 - **Formato precedente** (fino a circa il 2026-03-31, SCN 26-21),
   **verificato** sugli esempi ufficiali del 2022 (`kp-3h/2022-09-22-sample.json`,
   `kp-forecast/2022-09-22-sample.json`): array di array, prima riga con i nomi
@@ -85,7 +88,9 @@ con `\n`. Il server dà `Last-Modified`, `ETag` e `Cache-Control: max-age=60`.
   `null` (`"Scale": "0"`, `"MinorProb": "20"`). **Ipotesi** dal confronto
   delle date: `-1` sono le scale osservate nelle 24 ore precedenti, `0` quelle
   attuali, `1`–`3` la previsione per oggi e i due giorni seguenti (con le
-  probabilità e senza `Scale` per R e S).
+  probabilità e senza `Scale` per R e S). `DateStamp`/`TimeStamp` sono letti come UTC:
+  nella fixture la voce `0` dice `17:54:00` ed è stata registrata alle 17:57
+  UTC (indizio, non documentazione).
 
 ## Vento solare (RTSW)
 
