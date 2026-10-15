@@ -50,7 +50,7 @@ Richiede l'ambiente cloud con `services.swpc.noaa.gov` fra i domini consentiti.
 
 ## T2 — Indici
 
-- [ ] Fatta
+- [x] Fatta
 
 Parser e modelli per Kp 3 ore e previsione, Kp 1 minuto, F10.7 (30 giorni),
 Dst, scale NOAA. Formati vecchi e nuovi. `data_time` su ogni modello.

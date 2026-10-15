@@ -4,8 +4,9 @@ Typed Python readers for the public data products of NOAA's Space Weather
 Prediction Center: indices, solar wind, GOES, alerts, text bulletins, and the
 OVATION and D-RAP grids, with GeoJSON and GeoTIFF export.
 
-**Status: in development, not released.** Nothing is parsed yet; see
-`SPEC.md` for what the library will do and `docs/TAPPE.md` for the plan.
+**Status: in development, not released.** The index parsers (Kp, Dst,
+F10.7, NOAA scales) are in; the rest is in progress. See `SPEC.md` for what
+the library will do and `docs/TAPPE.md` for the plan.
 
 ## Design
 
