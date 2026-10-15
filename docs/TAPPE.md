@@ -28,7 +28,7 @@ diversi); T7 dopo le altre; T8 per ultima.
 
 ## T1 — Fixture
 
-- [ ] Fatta
+- [x] Fatta
 
 Richiede l'ambiente cloud con `services.swpc.noaa.gov` fra i domini consentiti.
 
