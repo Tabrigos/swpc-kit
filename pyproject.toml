@@ -1,0 +1,81 @@
+[project]
+name = "swpc-kit"
+dynamic = ["version"]
+description = "Typed readers for NOAA SWPC space weather data products, with GeoJSON and GeoTIFF export."
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = []
+keywords = ["space weather", "noaa", "swpc", "aurora", "kp index", "geojson"]
+classifiers = [
+    "Development Status :: 2 - Pre-Alpha",
+    "Intended Audience :: Science/Research",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Scientific/Engineering :: Atmospheric Science",
+    "Typing :: Typed",
+]
+
+[project.optional-dependencies]
+# Filled in by the stages that need them (client: T7, geo: T6).
+client = []
+geo = []
+
+[dependency-groups]
+dev = [
+    "mypy>=1.17",
+    "pytest>=8.4",
+    "ruff>=0.12",
+]
+
+[build-system]
+requires = ["hatchling>=1.27"]
+build-backend = "hatchling.build"
+
+[tool.hatch.version]
+path = "src/swpc_kit/__init__.py"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/swpc_kit"]
+
+[tool.ruff]
+line-length = 88
+target-version = "py312"
+
+[tool.ruff.lint]
+select = [
+    "E",   # pycodestyle errors
+    "W",   # pycodestyle warnings
+    "F",   # pyflakes
+    "I",   # isort
+    "UP",  # pyupgrade
+    "B",   # bugbear
+    "SIM", # simplify
+    "C4",  # comprehensions
+    "PT",  # pytest style
+    "DTZ", # naive datetimes
+    "RUF", # ruff-specific
+    "D",   # docstrings
+]
+ignore = [
+    "D105", # magic methods
+    "D107", # __init__ is documented in the class docstring
+]
+
+[tool.ruff.lint.pydocstyle]
+convention = "google"
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = ["D"]
+
+[tool.mypy]
+python_version = "3.12"
+strict = true
+warn_unreachable = true
+files = ["src", "tests"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = ["-ra", "--strict-markers", "--strict-config", "--import-mode=importlib"]
+xfail_strict = true
+filterwarnings = ["error"]
