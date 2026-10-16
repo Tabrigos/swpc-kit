@@ -6,6 +6,7 @@ They accept every documented format of a product, old and new, and raise the
 errors of :mod:`swpc_kit.errors` on bad input.
 """
 
+from swpc_kit.parse.alerts import parse_alerts
 from swpc_kit.parse.bulletins import (
     parse_27_day_outlook,
     parse_geomagnetic_forecast,
@@ -30,6 +31,7 @@ from swpc_kit.parse.solar_wind import (
 
 __all__ = [
     "parse_27_day_outlook",
+    "parse_alerts",
     "parse_f107_flux_30_day",
     "parse_geomagnetic_forecast",
     "parse_goes_integral_protons",

@@ -66,7 +66,7 @@ Dst, scale NOAA. Formati vecchi e nuovi. `data_time` su ogni modello.
 
 ## T4 — Avvisi
 
-- [ ] Fatta
+- [x] Fatta
 
 - `alerts.json` → lista di messaggi con codice corto, codice lungo, numero di
   serie, ora di emissione, validità, scala NOAA (G/S/R) quando c'è, testo.
