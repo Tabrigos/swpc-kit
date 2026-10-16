@@ -257,7 +257,12 @@ class OvationAurora:
 
 @dataclass(frozen=True, slots=True)
 class DrapFrequencies:
-    """D-RAP: the highest frequency affected by D-region absorption.
+    """D-RAP: D-region absorption, as a frequency on a global grid.
+
+    The source only says "Frequency (MHz) as a function of Latitude and
+    Longitude". Reading it as the highest frequency affected by
+    D-region absorption, as ``grid.quantity`` does, is an assumption
+    (``docs/FONTI.md``).
 
     The text fields are copied from the comment lines of the source, as
     data; an empty field is ``None``.
