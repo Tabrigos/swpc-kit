@@ -19,7 +19,12 @@ classifiers = [
 [project.optional-dependencies]
 # Filled in by the stages that need them (client: T7, geo: T6).
 client = []
-geo = []
+# GeoTIFF export (swpc_kit.export.geotiff): numpy for the raster array,
+# rasterio (GDAL) to write a georeferenced file.
+geo = [
+    "numpy>=2.0",
+    "rasterio>=1.4",
+]
 
 [dependency-groups]
 dev = [
@@ -74,6 +79,13 @@ strict = true
 warn_unreachable = true
 files = ["src", "tests", "tools"]
 mypy_path = "tools"
+
+# rasterio (geo extra) ships no inline types (no py.typed): its names are typed
+# as Any. It is used only by swpc_kit/export/geotiff.py and its test. The
+# typeshed stubs (types-rasterio) would need a new dev dependency.
+[[tool.mypy.overrides]]
+module = ["rasterio", "rasterio.*"]
+ignore_missing_imports = true
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
