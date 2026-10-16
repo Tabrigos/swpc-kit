@@ -57,6 +57,18 @@ Riscritto da capo a ogni fine sessione, mai accodato.
     `A50F`, `A99F`.
   - Il parser dei tempi `2026 Oct 13 2058 UTC` è privato in
     `parse/alerts.py`: se T5 ne ha uno uguale, unirli in `_common.py` (T8).
+- **T5** (bollettini):
+  - `parse/_text.py` è il kit dei prodotti testuali: `open_text_product`
+    controlla `:Product:`/`:Issued:` e salta i `#`; `TextReader` solleva
+    `SourceNotReady` se il testo finisce prima di un elemento (o dentro
+    l'ultima riga senza a capo), altrimenti `ParseError` con `line`/`field`.
+  - Giorni senza anno: anno più vicino all'`:Issued:` (`nearest_date`).
+  - Tabelle dei Kp: celle con due decimali (più rigido delle frasi), scala
+    opzionale `(G1)`–`(G5)` in `KpPeriod.noaa_scale`; 24 `KpPeriod` in
+    ordine di tempo. Il 27-day outlook vuole esattamente 27 righe.
+  - Un taglio dentro l'ultimo rationale del 3-day forecast non si rileva.
+  - Il parser dei tempi `2026 Oct 13 2058 UTC` c'è anche in T4: da unire
+    in `_common.py` (T8).
 - **Dubbi aperti**: le ipotesi rimaste in `docs/FONTI.md` (UTC dei
   `time_tag` senza `Z`, millisecondi del vecchio Dst e flusso, significato
   delle chiavi di `noaa-scales.json`, unità dei valori OVATION).
@@ -80,3 +92,5 @@ Una riga per sessione: data, tappa, cosa è entrato, cosa resta.
   della fonte attiva, GOES X con classe del brillamento e protoni per soglia.
 - 2026-10-16 — T4 (sub-agente, branch `-t4`): `parse_alerts`, modelli dei
   messaggi, catalogo dei codici con voci verificate e dedotte.
+- 2026-10-16 — T5 (sub-agente, branch `-t5`): 3-day forecast, geomagnetic
+  forecast e 27-day outlook con lettore comune dell'intestazione.
