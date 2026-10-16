@@ -180,6 +180,31 @@ class Record:
             return None
         return self.get_int(field, minimum=minimum, maximum=maximum)
 
+    def get_optional_float(
+        self,
+        field: str,
+        *,
+        minimum: float | None = None,
+        maximum: float | None = None,
+    ) -> float | None:
+        """Return a number field that may be ``null``."""
+        if self._get(field) is None:
+            return None
+        return self.get_float(field, minimum=minimum, maximum=maximum)
+
+    def get_bool(self, field: str) -> bool:
+        """Return a JSON boolean field (quoted or numeric values are refused)."""
+        value = self._get(field)
+        if not isinstance(value, bool):
+            raise self.error(f"expected a boolean, got {value!r}", field)
+        return value
+
+    def get_optional_bool(self, field: str) -> bool | None:
+        """Return a JSON boolean field that may be ``null``."""
+        if self._get(field) is None:
+            return None
+        return self.get_bool(field)
+
 
 def _check_range(
     record: Record,

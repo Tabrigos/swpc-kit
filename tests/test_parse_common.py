@@ -183,6 +183,35 @@ def test_get_time() -> None:
     assert info.value.field == "t"
 
 
+def test_get_optional_float() -> None:
+    rec = _rec(a=None, b=4.75, c="1.5", d=-9999)
+    assert rec.get_optional_float("a") is None
+    assert rec.get_optional_float("b") == 4.75
+    assert rec.get_optional_float("c") == 1.5
+    assert rec.get_optional_float("a", minimum=0) is None
+    with pytest.raises(ParseError, match="out of range") as info:
+        rec.get_optional_float("d", minimum=0)
+    assert info.value.field == "d"
+    with pytest.raises(ParseError, match="missing"):
+        rec.get_optional_float("zzz")
+    with pytest.raises(ParseError, match="number"):
+        _rec(v=True).get_optional_float("v")
+
+
+def test_get_bool() -> None:
+    rec = _rec(a=True, b=False, c=None, d="true", e=1)
+    assert rec.get_bool("a") is True
+    assert rec.get_bool("b") is False
+    assert rec.get_optional_bool("c") is None
+    assert rec.get_optional_bool("a") is True
+    for field in ("c", "d", "e"):
+        with pytest.raises(ParseError, match="boolean") as info:
+            rec.get_bool(field)
+        assert info.value.field == field
+    with pytest.raises(ParseError, match="missing"):
+        rec.get_optional_bool("zzz")
+
+
 # --- parse_time -------------------------------------------------------------
 
 
