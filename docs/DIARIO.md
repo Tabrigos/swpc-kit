@@ -43,6 +43,20 @@ Riscritto da capo a ogni fine sessione, mai accodato.
     con `source_url=`, ma quei file non sono verificati.
   - `_check_utc`/`_check_values` sono duplicati nei moduli dei modelli: da
     raccogliere in T8.
+- **T4** (avvisi):
+  - `parse_alerts` → `Alerts` di `AlertMessage`. Intestazione (codice,
+    serial, `Issue Time`) obbligatoria: un errore lì è `ParseError` con
+    `field="message.<etichetta>"` e l'indice. Gli altri campi sono tipizzati
+    quando la forma è nota, altrimenti `None`; il grezzo resta in `fields`.
+  - `issued` = `issue_datetime` (ms), `issue_time` = riga del testo (minuto).
+    Il serial non è univoco (gli `ALTEF3` continuati lo ripetono).
+  - Array vuoto = nessun avviso: `Alerts` vuoto con `data_time` `None`
+    (T7 deve gestirlo con `max_age`).
+  - `swpc_kit/codes.py` copre i 39 codici della tabella ufficiale (riletta
+    il 2026-10-16); restano dedotti solo i codici corti `K08A`, `K09A`,
+    `A50F`, `A99F`.
+  - Il parser dei tempi `2026 Oct 13 2058 UTC` è privato in
+    `parse/alerts.py`: se T5 ne ha uno uguale, unirli in `_common.py` (T8).
 - **Dubbi aperti**: le ipotesi rimaste in `docs/FONTI.md` (UTC dei
   `time_tag` senza `Z`, millisecondi del vecchio Dst e flusso, significato
   delle chiavi di `noaa-scales.json`, unità dei valori OVATION).
@@ -64,3 +78,5 @@ Una riga per sessione: data, tappa, cosa è entrato, cosa resta.
   modelli e parser degli indici, 215 test. Resta: T3–T6.
 - 2026-10-16 — T3 (sub-agente, branch `-t3`): RTSW mag e plasma con scelta
   della fonte attiva, GOES X con classe del brillamento e protoni per soglia.
+- 2026-10-16 — T4 (sub-agente, branch `-t4`): `parse_alerts`, modelli dei
+  messaggi, catalogo dei codici con voci verificate e dedotte.

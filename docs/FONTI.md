@@ -238,6 +238,70 @@ con `\n`. Il server dà `Last-Modified`, `ETag` e `Cache-Control: max-age=60`.
   `ALTK04`). Gli esempi del 2022 dentro `swpclib` (`A20F`, `K05W`, `K05A`)
   sono coerenti.
 
+Verificato in T4 sulla stessa fixture:
+
+- `issue_datetime` cade sempre nello stesso minuto di `Issue Time:` (da 0 a
+  59 secondi dopo): il primo è il tempo preciso, il secondo è al minuto.
+- Il **numero di serie non è univoco**: tre `CONTINUED ALERT` di `ALTEF3`
+  (emessi il 6, 7 e 8 ottobre) hanno tutti `Serial Number: 3752`; gli ultimi
+  due finiscono con una riga `CORRECTED` e hanno
+  `Continuation of Serial Number: 3752`, uguale al proprio.
+- **Tempi nel testo**: tutti nella forma `2026 Oct 13 2058 UTC` (`Valid From`,
+  `Valid To`, `Now Valid Until`, `Threshold Reached`, `Begin Time`,
+  `Maximum Time`, `End Time`, `Observed`, `Original Issue Time`, `Max time`),
+  tranne `Ip Shock: 2026-10-10 14:43` (in `WARSUD`, senza `UTC`).
+  `Valid To` usa `2359`, mai `2400`; `2400` compare solo in
+  `Synoptic Period: 2100-2400`, che è un intervallo.
+- `Max time:` (con la t minuscola) compare in 5 `CONTINUED ALERT` di `ALTEF3`,
+  accanto a `Yesterday Maximum 2MeV Flux:`; nei riepiloghi c'è
+  `Maximum Time:`.
+- **Scala NOAA** in 26 messaggi. Quando ci sono entrambe le grafie
+  (`Noaa Scale:` fra i campi, `NOAA Scale:` dopo una riga vuota) il valore è
+  lo stesso; un `EXTENDED WARNING` di `WARK05` ha solo `NOAA Scale:`. Valori:
+  `G1 - Minor`, `G2 - Moderate`, `G3 - Strong` (`ALTK07`), `G3 - Greater`
+  (`WARK07`, "K-index of 7 or greater"), `R2 - Moderate`. Le **watch non hanno
+  la riga della scala**: il livello sta nel titolo
+  (`Geomagnetic Storm Category G1 Predicted`) e dopo
+  `Highest Storm Level Predicted by Day:` in una riga come
+  `Oct 12:  None (Below G1)   Oct 13:  G1 (Minor)` (nella `CANCEL WATCH`:
+  `Oct 11  : None (Below G1)`). Il parser non tratta queste righe come campi.
+- Altri campi visti: `Original Issue Time:`, `Cancelled Level Predicted:`,
+  `Observed:`, `Deviation:`, `Station:`, `Peak Flux:`, `Duration:`,
+  `Latest Penticton Noon Flux:`, `Xray Class:`, `Optical Class:` (anche
+  vuoto), `Location:`, `Yesterday Maximum 2MeV Flux:`, `Ip Shock:`. Ci sono
+  righe senza `Nome:` (`THIS SUPERSEDES ANY/ALL PRIOR WATCHES IN EFFECT`,
+  `CORRECTED`, frasi libere, il seguito di `Potential Impacts:`), e
+  `Comment:` può contenere lunghe file di spazi.
+- **Ipotesi**: un array vuoto `[]` non è mai stato visto; il parser lo legge
+  come "nessun messaggio" (non come `SourceNotReady`), perché un periodo
+  senza avvisi è uno stato legittimo.
+- **Ipotesi** (fonte non ufficiale): negli esempi del 2022 dentro `swpclib`
+  tutte le righe finiscono con `\r\n`, `Active Warning: Yes`,
+  `Synoptic Period: 0000-0300 UTC` e `NOAA Scale:` compare una volta sola. Il
+  parser accetta anche questa forma (test con dati costruiti).
+- **Catalogo dei codici** (`swpc_kit/codes.py`): le 18 coppie della tabella
+  sopra sono **verificate** sul testo dei messaggi, con significato (dal
+  titolo) e scala (dalla riga `NOAA Scale:` o, per le watch, dal titolo).
+- **Tabella ufficiale**, riletta il 2026-10-16
+  (`https://www.spaceweather.gov/content/subscription-services`), colonne
+  codice, titolo, intestazione WMO (`WOXX..`), scala, impatti. Contiene 39
+  codici lunghi, ora tutti nel catalogo (un test lo controlla):
+  - K-index: `ALTK04`…`ALTK09` (`ALTK08` = "Geomagnetic K-index of 8", G4;
+    `ALTK09` G5), `WARK04`…`WARK07`; watch `WATA20`, `WATA30`, `WATA50` (G3),
+    `WATA99` ("G4 or greater"); `SUMSUD`, `WARSUD`; `ALTEF3`;
+  - protoni ≥10 MeV: `ALTPX1`…`ALTPX5` e `SUMPX1`…`SUMPX5` (10, 100, 1 000,
+    10 000, 100 000 pfu = S1…S5), `WARPX1` ("S1 or Greater"); ≥100 MeV:
+    `ALTPC0`, `SUMPC0`, `WARPC0` (1 pfu, senza scala);
+  - raggi X: `ALTXMF`, `SUMXM5` (R2), `SUMX01` (R3), `SUMX10` (R4),
+    `SUMX20` (R5); radio: `ALTTP2`, `ALTTP4`, `SUM10R`.
+  - `ATLK04` è scritto così nella tabella (refuso per `ALTK04`, confermato
+    dai messaggi). La riga del riepilogo a 245 MHz ha `245MHz` al posto del
+    codice: non è nel catalogo.
+- Per le voci viste solo nella tabella, codice lungo, significato e scala sono
+  **verificati**. Restano **dedotti** solo i codici corti `K08A`, `K09A`,
+  `A50F`, `A99F`, che seguono lo schema di quelli visti; per protoni e raggi X
+  lo schema non si indovina e il codice corto resta `None`.
+
 ## Bollettini testuali
 
 Fixture `3-day-forecast/`, `geomag-forecast/`, `27-day-outlook/`,
