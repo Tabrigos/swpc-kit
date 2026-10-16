@@ -77,7 +77,7 @@ Dst, scale NOAA. Formati vecchi e nuovi. `data_time` su ogni modello.
 
 ## T5 — Bollettini testuali
 
-- [ ] Fatta
+- [x] Fatta
 
 3-day forecast, geomagnetic forecast, 27-day outlook. Un parser per
 intestazione comune (`:Product:`, `:Issued:`) riusato dai tre. Gli errori
