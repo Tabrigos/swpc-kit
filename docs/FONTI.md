@@ -217,15 +217,27 @@ Verificato in T4 sulla stessa fixture:
   `Synoptic Period: 0000-0300 UTC` e `NOAA Scale:` compare una volta sola. Il
   parser accetta anche questa forma (test con dati costruiti).
 - **Catalogo dei codici** (`swpc_kit/codes.py`): le 18 coppie della tabella
-  sopra sono **verificate**, con significato (dal titolo) e scala (dalla riga
-  `NOAA Scale:` o, per le watch, dal titolo). In T4 la tabella ufficiale non
-  si è potuta rileggere (connessione rifiutata dal proxy della sessione):
-  le altre voci sono **dedotte** e restano **ipotesi** finché non si
-  confrontano con la tabella: `ALTK08` (`K08A`, G4), `ALTK09` (`K09A`, G5),
-  `WATA50` (`A50F`, G3), `WATA99` (`A99F`, G4), `WARPX1`, `WARPC0`,
-  `ALTPX1`…`ALTPX3`, `ALTPC0`, `SUMPX1`, `SUMX01`, `SUMX10`. I codici corti
-  `K08A`, `K09A`, `A50F`, `A99F` seguono lo schema di quelli verificati; per
-  protoni e raggi X lo schema non si indovina, quindi il codice corto manca.
+  sopra sono **verificate** sul testo dei messaggi, con significato (dal
+  titolo) e scala (dalla riga `NOAA Scale:` o, per le watch, dal titolo).
+- **Tabella ufficiale**, riletta il 2026-10-16
+  (`https://www.spaceweather.gov/content/subscription-services`), colonne
+  codice, titolo, intestazione WMO (`WOXX..`), scala, impatti. Contiene 39
+  codici lunghi, ora tutti nel catalogo (un test lo controlla):
+  - K-index: `ALTK04`…`ALTK09` (`ALTK08` = "Geomagnetic K-index of 8", G4;
+    `ALTK09` G5), `WARK04`…`WARK07`; watch `WATA20`, `WATA30`, `WATA50` (G3),
+    `WATA99` ("G4 or greater"); `SUMSUD`, `WARSUD`; `ALTEF3`;
+  - protoni ≥10 MeV: `ALTPX1`…`ALTPX5` e `SUMPX1`…`SUMPX5` (10, 100, 1 000,
+    10 000, 100 000 pfu = S1…S5), `WARPX1` ("S1 or Greater"); ≥100 MeV:
+    `ALTPC0`, `SUMPC0`, `WARPC0` (1 pfu, senza scala);
+  - raggi X: `ALTXMF`, `SUMXM5` (R2), `SUMX01` (R3), `SUMX10` (R4),
+    `SUMX20` (R5); radio: `ALTTP2`, `ALTTP4`, `SUM10R`.
+  - `ATLK04` è scritto così nella tabella (refuso per `ALTK04`, confermato
+    dai messaggi). La riga del riepilogo a 245 MHz ha `245MHz` al posto del
+    codice: non è nel catalogo.
+- Per le voci viste solo nella tabella, codice lungo, significato e scala sono
+  **verificati**. Restano **dedotti** solo i codici corti `K08A`, `K09A`,
+  `A50F`, `A99F`, che seguono lo schema di quelli visti; per protoni e raggi X
+  lo schema non si indovina e il codice corto resta `None`.
 
 ## Bollettini testuali
 

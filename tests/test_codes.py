@@ -37,11 +37,40 @@ VERIFIED_PAIRS = {
 }
 
 
+# Long codes of the official table of products, read on 2026-10-16 from
+# https://www.spaceweather.gov/content/subscription-services (``ATLK04`` there
+# is a typo for ``ALTK04``; the ``245MHz`` summary has no code of this form).
+OFFICIAL_LONG_CODES = {
+    "ALTXMF", "SUMXM5", "SUMX01", "SUMX10", "SUMX20",
+    "ALTTP2", "ALTTP4", "SUM10R",
+    "ALTK04", "WARK04", "ALTK05", "WARK05", "ALTK06", "WARK06",
+    "ALTK07", "WARK07", "ALTK08", "ALTK09", "SUMSUD", "WARSUD",
+    "WATA20", "WATA30", "WATA50", "WATA99",
+    "ALTEF3",
+    "ALTPX1", "SUMPX1", "WARPX1", "ALTPX2", "SUMPX2", "ALTPX3", "SUMPX3",
+    "ALTPX4", "SUMPX4", "ALTPX5", "SUMPX5", "ALTPC0", "SUMPC0", "WARPC0",
+}  # fmt: skip
+
+
 def test_verified_entries_are_the_pairs_seen_in_the_fixture() -> None:
     verified = {
-        c.short: c.long for c in CATALOGUE if c.verification is Verification.VERIFIED
+        c.short: c.long
+        for c in CATALOGUE
+        if c.verification is Verification.VERIFIED and c.short is not None
     }
     assert verified == VERIFIED_PAIRS
+
+
+def test_catalogue_covers_the_official_table() -> None:
+    assert {c.long for c in CATALOGUE} == OFFICIAL_LONG_CODES
+
+
+def test_only_short_codes_are_deduced() -> None:
+    for c in CATALOGUE:
+        if c.verification is Verification.DEDUCED:
+            assert c.short is not None, c
+        elif c.short is None:
+            assert c.long in OFFICIAL_LONG_CODES, c
 
 
 def test_fixture_codes_match_the_catalogue() -> None:

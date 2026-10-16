@@ -7,11 +7,14 @@ products (https://www.spaceweather.gov/content/subscription-services).
 
 Every entry says how it is known (see ``docs/FONTI.md``, section "Avvisi"):
 
-- :attr:`Verification.VERIFIED`: the pair of codes, the meaning and the scale
-  were read in the text of the messages of the recorded fixture;
-- :attr:`Verification.DEDUCED`: the long code and meaning follow the SWPC
-  table of products but were not seen in a message; the short code, when
-  given, follows the pattern of the verified ones and may be wrong.
+- :attr:`Verification.VERIFIED`: everything in the entry is confirmed,
+  either by the text of the messages of the recorded fixture (the pair of
+  codes, meaning and scale) or by the official SWPC table of products (long
+  code, meaning and scale; the short code is then ``None`` if no message
+  showed it);
+- :attr:`Verification.DEDUCED`: long code, meaning and scale come from the
+  official table, but the short code was not seen in a message: it follows
+  the pattern of the verified ones and may be wrong.
 
 An unknown code is not an error: lookups return ``None`` and the message
 keeps its raw text.
@@ -75,7 +78,7 @@ CATALOGUE: tuple[MessageCode, ...] = (
     MessageCode("ALTK05", "K05A", "Alert: Geomagnetic K-index of 5", "G1", _V),
     MessageCode("ALTK06", "K06A", "Alert: Geomagnetic K-index of 6", "G2", _V),
     MessageCode("ALTK07", "K07A", "Alert: Geomagnetic K-index of 7", "G3", _V),
-    MessageCode("ALTK08", "K08A", "Alert: Geomagnetic K-index of 8, 9-", "G4", _D),
+    MessageCode("ALTK08", "K08A", "Alert: Geomagnetic K-index of 8", "G4", _D),
     MessageCode("ALTK09", "K09A", "Alert: Geomagnetic K-index of 9", "G5", _D),
     # Geomagnetic storm watches.
     MessageCode(
@@ -107,61 +110,111 @@ CATALOGUE: tuple[MessageCode, ...] = (
         None,
         _V,
     ),
-    # Protons.
+    # Protons (official table; short codes not seen in a message).
     MessageCode(
         "WARPX1",
         None,
         "Warning: Proton 10MeV Integral Flux above 10pfu expected",
         "S1",
-        _D,
+        _V,
     ),
     MessageCode(
         "WARPC0",
         None,
         "Warning: Proton 100MeV Integral Flux above 1pfu expected",
         None,
-        _D,
+        _V,
     ),
     MessageCode(
         "ALTPX1",
         None,
         "Alert: Proton Event 10MeV Integral Flux exceeded 10pfu",
         "S1",
-        _D,
-    ),
-    MessageCode(
-        "ALTPX2",
-        None,
-        "Alert: Proton Event 10MeV Integral Flux exceeded 100pfu",
-        "S2",
-        _D,
-    ),
-    MessageCode(
-        "ALTPX3",
-        None,
-        "Alert: Proton Event 10MeV Integral Flux exceeded 1000pfu",
-        "S3",
-        _D,
-    ),
-    MessageCode(
-        "ALTPC0",
-        None,
-        "Alert: Proton Event 100MeV Integral Flux exceeded 1pfu",
-        None,
-        _D,
+        _V,
     ),
     MessageCode(
         "SUMPX1",
         None,
         "Summary: Proton Event 10MeV Integral Flux exceeded 10pfu",
         "S1",
-        _D,
+        _V,
+    ),
+    MessageCode(
+        "ALTPX2",
+        None,
+        "Alert: Proton Event 10MeV Integral Flux exceeded 100pfu",
+        "S2",
+        _V,
+    ),
+    MessageCode(
+        "SUMPX2",
+        None,
+        "Summary: Proton Event 10MeV Integral Flux exceeded 100pfu",
+        "S2",
+        _V,
+    ),
+    MessageCode(
+        "ALTPX3",
+        None,
+        "Alert: Proton Event 10MeV Integral Flux exceeded 1,000pfu",
+        "S3",
+        _V,
+    ),
+    MessageCode(
+        "SUMPX3",
+        None,
+        "Summary: Proton Event 10MeV Integral Flux exceeded 1,000pfu",
+        "S3",
+        _V,
+    ),
+    MessageCode(
+        "ALTPX4",
+        None,
+        "Alert: Proton Event 10MeV Integral Flux exceeded 10,000pfu",
+        "S4",
+        _V,
+    ),
+    MessageCode(
+        "SUMPX4",
+        None,
+        "Summary: Proton Event 10MeV Integral Flux exceeded 10,000pfu",
+        "S4",
+        _V,
+    ),
+    MessageCode(
+        "ALTPX5",
+        None,
+        "Alert: Proton Event 10MeV Integral Flux exceeded 100,000pfu",
+        "S5",
+        _V,
+    ),
+    MessageCode(
+        "SUMPX5",
+        None,
+        "Summary: Proton Event 10MeV Integral Flux exceeded 100,000pfu",
+        "S5",
+        _V,
+    ),
+    MessageCode(
+        "ALTPC0",
+        None,
+        "Alert: Proton Event 100MeV Integral Flux exceeded 1pfu",
+        None,
+        _V,
+    ),
+    MessageCode(
+        "SUMPC0",
+        None,
+        "Summary: Proton Event 100MeV Integral Flux exceeded 1pfu",
+        None,
+        _V,
     ),
     # X-rays.
     MessageCode("ALTXMF", "XM5A", "Alert: X-Ray Flux exceeded M5", "R2", _V),
     MessageCode("SUMXM5", "XM5S", "Summary: X-ray Event exceeded M5", "R2", _V),
-    MessageCode("SUMX01", None, "Summary: X-ray Event exceeded X1", "R3", _D),
-    MessageCode("SUMX10", None, "Summary: X-ray Event exceeded X10", "R4", _D),
+    MessageCode("SUMX01", None, "Summary: X-ray Event exceeded X1", "R3", _V),
+    MessageCode("SUMX10", None, "Summary: X-ray Event exceeded X10", "R4", _V),
+    MessageCode("SUMX20", None, "Summary: X-ray Event exceeded X20", "R5", _V),
     # Radio.
     MessageCode("ALTTP2", "TIIA", "Alert: Type II Radio Emission", None, _V),
     MessageCode("ALTTP4", "TIVA", "Alert: Type IV Radio Emission", None, _V),
