@@ -40,8 +40,9 @@ Riscritto da capo a ogni fine sessione, mai accodato.
     Il serial non è univoco (gli `ALTEF3` continuati lo ripetono).
   - Array vuoto = nessun avviso: `Alerts` vuoto con `data_time` `None`
     (T7 deve gestirlo con `max_age`).
-  - `swpc_kit/codes.py`: 18 voci verificate, 13 dedotte (ipotesi); la
-    tabella ufficiale non era raggiungibile dal proxy.
+  - `swpc_kit/codes.py` copre i 39 codici della tabella ufficiale (riletta
+    il 2026-10-16); restano dedotti solo i codici corti `K08A`, `K09A`,
+    `A50F`, `A99F`.
   - Il parser dei tempi `2026 Oct 13 2058 UTC` è privato in
     `parse/alerts.py`: se T5 ne ha uno uguale, unirli in `_common.py` (T8).
 - **Dubbi aperti**: le ipotesi rimaste in `docs/FONTI.md` (UTC dei
