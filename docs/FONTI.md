@@ -213,6 +213,12 @@ Fixture `3-day-forecast/`, `geomag-forecast/`, `27-day-outlook/`,
   passo 1 (360×181). Valori 0–35 il giorno registrato (0–33 nella fixture). Che il
   valore sia la probabilità di aurora in percento resta **ipotesi**: il file non
   lo dice; il modello usa comunque `units = "%"` e lo scrive nella docstring.
+  La pagina del prodotto
+  (`https://www.spaceweather.gov/products/aurora-30-minute-forecast`, letta il
+  2026-10-16) dice che il modello calcola l'intensità dell'aurora e che la
+  "aurora viewing probability" se ne ricava con una relazione lineare, ma non
+  dà l'unità dei valori del JSON (che chiama "auroral data in grid format"):
+  l'ipotesi è plausibile, non verificata.
   La fixture tiene 15 longitudini intere (0, 1, 30, 60, … 330, 358, 359), quindi
   **non** è una griglia completa: il parser la legge solo con `partial=True`, e
   i test della griglia intera la costruiscono nel codice.
@@ -232,12 +238,26 @@ Fixture `3-day-forecast/`, `geomag-forecast/`, `27-day-outlook/`,
   e 90 righe di latitudine da 89 a -89 passo 2, nella forma
   ` 89 |  0.0  0.0 …` (latitudine su 3 caratteri, valori su 5), frequenze in
   MHz con un decimale (0,0–9,4 il giorno registrato). 111 righe chiuse da `\n`.
-- Che la frequenza sia la più alta colpita dall'assorbimento nello strato D
-  (la descrizione corrente del prodotto D-RAP) è **ipotesi**: il file dice solo
-  "Frequency (MHz)", e la pagina di SWPC non era raggiungibile in T6. Il
-  modello usa `quantity = "highest affected frequency"`. Anche il formato di
-  `Estimated Recovery Time` quando c'è una stima è **ipotesi** (visto solo
-  `No Estimate`): il modello lo tiene come testo.
+- **Significato, verificato** sulla documentazione ufficiale
+  (`https://www.spaceweather.gov/content/global-d-region-absorption-prediction-documentation`,
+  letta il 2026-10-16): la mappa globale dà la **Highest Affected Frequency**
+  (HAF), cioè la frequenza che perde 1 dB in propagazione verticale dal suolo
+  alla ionosfera e ritorno; le frequenze più basse perdono di più. Le mappe
+  polari usano 10 dB, ma non sono in questo file. Il modello usa
+  `quantity = "highest affected frequency"`, in MHz.
+- La stessa pagina dice che i "Tabular Values" sono a passi di 5° di
+  latitudine e 15° di longitudine: il file del 2026-10-15 è invece a 2° × 4°.
+  La documentazione è più vecchia del file; il parser non fissa i passi.
+- **Messaggi, verificati** sulla stessa pagina: `X-RAY Message` vale
+  `Normal x-ray background`, `Elevated x-ray flux`, `Moderate x-ray flux`
+  (M1–M5), `Strong x-ray flux` (M5–X1), `Severe x-ray flux` (X1–X20) o
+  `Extreme x-ray flux`; `Proton Message` vale `Normal proton background`,
+  `Minor`/`Moderate`/`Strong`/`Severe`/`Extreme proton flux` (soglie 10, 100,
+  1 000, 10 000, 100 000 pfu a ≥10 MeV). Il modello li tiene come testo.
+- `Estimated Recovery Time`: la pagina descrive un orologio in minuti
+  (calcolato dopo il picco di un brillamento oltre M1 o da un evento
+  protonico), ma non il testo del file quando c'è una stima: il formato resta
+  **ipotesi** (visto solo `No Estimate`) e il modello lo tiene come testo.
 - Il parser D-RAP (T6) vuole una tabella che copra il globo: longitudini
   regolari da -180 + passo/2 a 180 - passo/2, latitudini regolari da un polo
   all'altro. Una tabella che si ferma prima del polo opposto, o un'ultima riga

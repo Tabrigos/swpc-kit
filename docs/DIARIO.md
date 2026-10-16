@@ -43,8 +43,9 @@ Riscritto da capo a ogni fine sessione, mai accodato.
     poligoni o punti); `export.geotiff.write_geotiff` (extra `geo`: numpy,
     rasterio; float32, EPSG:4326, tempi nei tag). Override mypy per
     rasterio; in alternativa gli stub `types-rasterio`.
-  - Dubbi nuovi: significato della frequenza D-RAP, formato di
-    `Estimated Recovery Time` quando c'è una stima.
+  - D-RAP: il valore è la Highest Affected Frequency (1 dB), verificato
+    sulla documentazione SWPC. Restano ipotesi l'unità % di OVATION e il
+    formato di `Estimated Recovery Time` quando c'è una stima.
 - **Dubbi aperti**: le ipotesi rimaste in `docs/FONTI.md` (UTC dei
   `time_tag` senza `Z`, millisecondi del vecchio Dst e flusso, significato
   delle chiavi di `noaa-scales.json`, unità dei valori OVATION).
