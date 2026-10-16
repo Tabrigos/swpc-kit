@@ -430,6 +430,31 @@ Verificato in T5 sulle stesse fixture, e usato dai parser
   GeoJSON invece taglia i poligoni a ±90 e divide in due quelli a cavallo
   dell'antimeridiano.
 
+## Client HTTP (T7, 2026-10-16)
+
+- **Stato di httpx, verificato su PyPI** (API JSON di `pypi.org`, 2026-10-16):
+  `httpx` ha come ultima versione stabile la **0.28.1 del 2024-12-06**; dopo
+  ci sono solo versioni di sviluppo `1.0.dev2`…`1.0.dev6` (l'ultima il
+  2026-08-31). `httpcore` è fermo alla 1.0.9 del 2025-04-24.
+- **`httpx2`** (`https://github.com/pydantic/httpx2`, BSD-3-Clause, Python
+  ≥ 3.10): 2.13.1 del 2026-09-23, rilasci ogni poche settimane. La sua
+  descrizione su PyPI dice che è la continuazione di httpx, presa in carico
+  da Pydantic "so that users have a reliably maintained path forward -
+  including timely security updates". Stessa API (`httpx2.Client`,
+  `AsyncClient`, `MockTransport`, eccezioni `TransportError`/`TimeoutException`),
+  modulo `httpx2`, marcatore `py.typed`. Dipende da `httpcore2` (versione
+  bloccata uguale), `anyio`, `idna`, `truststore` (usa i certificati del
+  sistema).
+- **Scelta**: l'extra `client` usa `httpx2>=2.13`. Solo
+  `swpc_kit/client/_httpx.py` importa la libreria; i client dipendono dal
+  protocollo `Transport`/`AsyncTransport`, quindi tornare a `httpx` (o usare
+  altro) tocca un modulo solo. Alternative guardate: `niquests` (attivo, API
+  requests), `aiohttp` (solo asincrono), `requests` (solo sincrono).
+- **Verificato dal vivo** il 2026-10-16 (prova manuale, non un test): il
+  client scarica e legge tutti i 16 prodotti del giorno; SWPC manda `ETag`
+  **deboli** (`W/"12c4-…"`) e `Last-Modified`, e risponde `304 Not Modified`
+  alla richiesta condizionale con `If-None-Match`.
+
 ## Cambiamenti noti (SCN)
 
 - **SCN 26-21** (2026-03-02): nuovi formati JSON dal 2026-03-31 circa, vecchi

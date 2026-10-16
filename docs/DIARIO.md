@@ -4,15 +4,15 @@
 
 Riscritto da capo a ogni fine sessione, mai accodato.
 
-- **Stato**: T0–T6 fatte. Ci sono parser e modelli per tutti i prodotti
-  della prima versione (indici, vento solare, GOES, avvisi con catalogo dei
-  codici, bollettini, griglie OVATION e D-RAP) e l'export GeoJSON e GeoTIFF.
-  Manca il client.
-- **Prossimo passo**: T7 (client su httpx, con la verifica dello stato di
-  httpx chiesta in `docs/TAPPE.md`), poi T8.
+- **Stato**: T0–T7 fatte. Parser e modelli per tutti i prodotti della prima
+  versione, export GeoJSON e GeoTIFF, client sincrono e asincrono.
+- **Prossimo passo**: T8 (README con esempi verificati da un test,
+  CHANGELOG, versione 0.1.0, API pubblica esportata e documentata). In T8
+  conviene anche raccogliere i doppioni segnati qui sotto (`_check_utc`,
+  parser dei tempi testuali).
 - **Decisioni in sospeso**: override mypy per rasterio o stub
   `types-rasterio` (T6); `alerts.json` vuoto = elenco vuoto con
-  `data_time` `None` (T4), da gestire in T7 con `max_age`.
+  `data_time` `None` (T4; il client non lo considera mai vecchio).
 - **Da sapere** (per chi scrive i prossimi parser):
   - `swpc_kit/parse/_common.py` è il kit comune: `load_json` classifica gli
     errori (vuoto o troncato → `SourceNotReady`; HTML o non JSON →
@@ -89,6 +89,18 @@ Riscritto da capo a ogni fine sessione, mai accodato.
   - D-RAP: il valore è la Highest Affected Frequency (1 dB), verificato
     sulla documentazione SWPC. Restano ipotesi l'unità % di OVATION e il
     formato di `Estimated Recovery Time` quando c'è una stima.
+- **T7** (client):
+  - `swpc_kit.client`: `Client` e `AsyncClient`, un metodo per prodotto
+    (stessi nomi dei parser senza `parse_`, `27_day_outlook` →
+    `twenty_seven_day_outlook`) più `fetch(product)`; `PRODUCTS` elenca i
+    16 prodotti (URL e parser).
+  - httpx2 sta solo in `client/_httpx.py`; il resto usa il protocollo
+    `Transport` (`get(url, headers=, timeout=)`, `close()`). I test usano
+    un trasporto finto, e `httpx2.MockTransport` per l'adattatore.
+  - Redirect mai seguiti (`UnexpectedContent`); `408`/`425`/`429`/`5xx`,
+    timeout e rete → `SourceNotReady`; altri stati e HTML →
+    `UnexpectedContent`. `304` riusa il modello in memoria; `max_age` si
+    misura su `data_time` anche dopo un `304`.
 - **Dubbi aperti**: le ipotesi rimaste in `docs/FONTI.md` (UTC dei
   `time_tag` senza `Z`, millisecondi del vecchio Dst e flusso, significato
   delle chiavi di `noaa-scales.json`, unità dei valori OVATION).
@@ -116,3 +128,6 @@ Una riga per sessione: data, tappa, cosa è entrato, cosa resta.
   forecast e 27-day outlook con lettore comune dell'intestazione.
 - 2026-10-16 — T6 (sub-agente, branch `-t6`): griglie OVATION e D-RAP,
   export GeoJSON e GeoTIFF, extra `geo` con numpy e rasterio.
+- 2026-10-16 — T7: client sincrono e asincrono su httpx2 (scelto dopo aver
+  verificato su PyPI lo stato di httpx), richieste condizionali, `max_age`;
+  prova dal vivo su tutti i 16 prodotti. Resta: T8.
