@@ -201,6 +201,38 @@ Fixture `3-day-forecast/`, `geomag-forecast/`, `27-day-outlook/`,
   `2026 Oct 12     120          16          4` = data, flusso a 10,7 cm, Ap,
   Kp massimo; l'emissione del 2026-10-12 parte dal giorno stesso.
 
+Verificato in T5 sulle stesse fixture, e usato dai parser
+(`swpc_kit/parse/bulletins.py`):
+
+- Le celle delle tabelle dei Kp hanno **sempre due decimali** (`2.00`,
+  `0.67`), in terzi interi, in tutte e tre le fixture (2022 e 2026); il parser
+  lo pretende, così un valore tagliato (`1.6`, `1`) non passa per buono. Il Kp
+  delle frasi può invece essere intero (`was 3`).
+- Le colonne dei giorni sono scritte `Oct 15` (mese giorno) nelle tabelle e
+  `13 Oct` (giorno mese) nelle righe dell'Ap e nei titoli del geomagnetic
+  forecast, senza anno: il parser sceglie l'anno che mette la data più vicina
+  all'`:Issued:`. Come SWPC scriva il titolo `NOAA Kp index breakdown …` a
+  cavallo dell'anno (forse `Dec 31-Jan 02 2027`) è **ipotesi**: il parser non
+  lo legge.
+- Le sezioni del 3-day forecast iniziano con `A. `, `B. `, `C. `; le frasi sul
+  Kp massimo vanno lette dopo aver riunito le righe spezzate.
+- Nel geomagnetic forecast del 2026-10-14 l'Ap osservato è del giorno prima
+  dell'emissione, quello stimato del giorno stesso, la previsione dei tre
+  giorni seguenti; il parser controlla solo che previsione dell'Ap,
+  probabilità e tabella dei Kp abbiano gli stessi giorni.
+- I tre file finiscono con `\n`: un contenuto che non finisce con un a capo e
+  ha un errore sull'ultima riga è trattato come troncato (`SourceNotReady`).
+
+**Ipotesi** (una sola fixture o nessuna, da ricontrollare quando capita):
+
+- Che le annotazioni nelle celle siano solo `(G1)`…`(G5)`: visto solo `(G1)`.
+- Che il `Rationale:` possa avere più paragrafi: non visto; il parser li tiene
+  separati da una riga vuota.
+- Che il 27-day outlook abbia sempre **27** righe: lo dice il nome e la
+  fixture; il parser ne pretende 27 (meno = troncato, di più = `ParseError`).
+- Per i tre bollettini non si conoscono formati precedenti né SCN che li
+  cambino: il parser accetta solo quello delle fixture.
+
 ## Griglie
 
 - **OVATION** (`/json/ovation_aurora_latest.json`, ~0,9 MB, fixture ridotta
