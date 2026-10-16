@@ -6,7 +6,8 @@ Riscritto da capo a ogni fine sessione, mai accodato.
 
 - **Stato**: T0, T1 e T2 fatte. Parser e modelli degli indici (Kp 3 ore,
   previsione, Kp 1 minuto, Dst, F10.7, scale NOAA), formati vecchi e nuovi.
-- **Prossimo passo**: T3–T6, anche in parallelo.
+- **Prossimo passo**: T3–T6, in parallelo (sub-agenti, un branch e una PR
+  per tappa); poi T7.
 - **Da sapere** (per chi scrive i prossimi parser):
   - `swpc_kit/parse/_common.py` è il kit comune: `load_json` classifica gli
     errori (vuoto o troncato → `SourceNotReady`; HTML o non JSON →
@@ -30,6 +31,20 @@ Riscritto da capo a ogni fine sessione, mai accodato.
     record attivo e IMAP fuori minuto; avvisi con `\r\n` e `\n` mescolati.
   - `ParseError(message, field=, line=, index=)`; ruff con `D` e `DTZ`; i test
     non aprono socket.
+- **T6** (griglie ed export):
+  - `models/grids.py`: `Grid` comune (latitudini da sud a nord, longitudini
+    come arrivano, `wrapped()` per -180…180); gli export accettano un
+    `GridProduct` (`grid`, `source_url`, `data_time`, `times`).
+  - OVATION rigoroso per default (360×181); la fixture ridotta si legge con
+    `parse_ovation_aurora(raw, partial=True)`.
+  - D-RAP: tabella fermata prima del polo o ultima riga corta senza `\n` →
+    `SourceNotReady`; riga sbagliata in mezzo → `ParseError` con `line`.
+  - `export.geojson.to_geojson(product, threshold=, geometry=)` (soglia ≥,
+    poligoni o punti); `export.geotiff.write_geotiff` (extra `geo`: numpy,
+    rasterio; float32, EPSG:4326, tempi nei tag). Override mypy per
+    rasterio; in alternativa gli stub `types-rasterio`.
+  - Dubbi nuovi: significato della frequenza D-RAP, formato di
+    `Estimated Recovery Time` quando c'è una stima.
 - **Dubbi aperti**: le ipotesi rimaste in `docs/FONTI.md` (UTC dei
   `time_tag` senza `Z`, millisecondi del vecchio Dst e flusso, significato
   delle chiavi di `noaa-scales.json`, unità dei valori OVATION).
@@ -49,3 +64,5 @@ Una riga per sessione: data, tappa, cosa è entrato, cosa resta.
   Resta: T2–T6.
 - 2026-10-15 — T2 (stessa sessione, su richiesta): `parse/_common.py`,
   modelli e parser degli indici, 215 test. Resta: T3–T6.
+- 2026-10-16 — T6 (sub-agente, branch `-t6`): griglie OVATION e D-RAP,
+  export GeoJSON e GeoTIFF, extra `geo` con numpy e rasterio.
