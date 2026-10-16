@@ -365,25 +365,70 @@ Verificato in T5 sulle stesse fixture, e usato dai parser
 - **OVATION** (`/json/ovation_aurora_latest.json`, ~0,9 MB, fixture ridotta
   `ovation-aurora/2026-10-15.json`), **verificato** sul file intero: chiavi
   `Observation Time`, `Forecast Time` (con `Z`), `Data Format`
-  (`"[Longitude, Latitude, Aurora]"`), `coordinates`. `coordinates` ha 65 160
-  terne di interi: longitudine 0–359 come ciclo esterno, latitudine -90…90 come
-  ciclo interno, passo 1 (360×181). Valori 0–35 il giorno registrato. Che il
+  (`"[Longitude, Latitude, Aurora]"`), `coordinates`, più `"type": "MultiPoint"`
+  (verificato in T6 sulla fixture; il parser la ignora). Formato JSON di Python
+  (separatori `", "` e `": "`). `coordinates` ha 65 160 terne di interi:
+  longitudine 0–359 come ciclo esterno, latitudine -90…90 come ciclo interno,
+  passo 1 (360×181). Valori 0–35 il giorno registrato (0–33 nella fixture). Che il
   valore sia la probabilità di aurora in percento resta **ipotesi**: il file non
-  lo dice. La fixture tiene 15 longitudini intere (0, 1, 30, 60, … 330, 358,
-  359), quindi **non** è una griglia completa: i test della griglia intera
-  vanno costruiti nel codice.
+  lo dice; il modello usa comunque `units = "%"` e lo scrive nella docstring.
+  La pagina del prodotto
+  (`https://www.spaceweather.gov/products/aurora-30-minute-forecast`, letta il
+  2026-10-16) dice che il modello calcola l'intensità dell'aurora e che la
+  "aurora viewing probability" se ne ricava con una relazione lineare, ma non
+  dà l'unità dei valori del JSON (che chiama "auroral data in grid format"):
+  l'ipotesi è plausibile, non verificata.
+  La fixture tiene 15 longitudini intere (0, 1, 30, 60, … 330, 358, 359), quindi
+  **non** è una griglia completa: il parser la legge solo con `partial=True`, e
+  i test della griglia intera la costruiscono nel codice.
+- Il parser OVATION (T6) non dipende dall'ordine delle terne, ma vuole ogni
+  punto una volta sola e ogni longitudine presente con tutte le 181
+  latitudini. Accetta `Data Format` con spazi o maiuscole diversi; un ordine
+  diverso dei tre campi è `UnexpectedContent`. Che i valori possano essere non
+  interi è previsto ma non visto: il parser li accetta (≥ 0), senza tetto a 100
+  finché l'unità è un'ipotesi.
 - **D-RAP** (`/text/drap_global_frequencies.txt`, fixture `drap/2026-10-15.txt`
-  intera), **verificato**: commenti `#` con `Product Valid At : 2026-10-15 17:47 UTC`,
-  `Estimated Recovery Time : No Estimate`, `X-RAY Message :`,
-  `X-RAY Warning :`, `Proton Message :`, `Proton Warning :` (gli avvisi
-  possono essere vuoti); poi una riga di intestazione con 90 longitudini da
-  -178 a 178 passo 4, una riga tratteggiata e 90 righe di latitudine da 89 a
-  -89 passo 2, nella forma ` 89 |  0.0  0.0 …`, frequenze in MHz con un
-  decimale.
+  intera), **verificato**: prima riga `# DRAP Tabular Values`, poi commenti `#`
+  con `Product Valid At : 2026-10-15 17:54 UTC`, `Estimated Recovery Time : No Estimate`,
+  `X-RAY Message :`, `X-RAY Warning :`, `Proton Message :`, `Proton Warning :`
+  (gli avvisi possono essere vuoti, anche con spazi in coda), e
+  `# Frequency (MHz) as a function of Latitude and Longitude`; poi una riga di
+  intestazione con 90 longitudini da -178 a 178 passo 4, una riga tratteggiata
+  e 90 righe di latitudine da 89 a -89 passo 2, nella forma
+  ` 89 |  0.0  0.0 …` (latitudine su 3 caratteri, valori su 5), frequenze in
+  MHz con un decimale (0,0–9,4 il giorno registrato). 111 righe chiuse da `\n`.
+- **Significato, verificato** sulla documentazione ufficiale
+  (`https://www.spaceweather.gov/content/global-d-region-absorption-prediction-documentation`,
+  letta il 2026-10-16): la mappa globale dà la **Highest Affected Frequency**
+  (HAF), cioè la frequenza che perde 1 dB in propagazione verticale dal suolo
+  alla ionosfera e ritorno; le frequenze più basse perdono di più. Le mappe
+  polari usano 10 dB, ma non sono in questo file. Il modello usa
+  `quantity = "highest affected frequency"`, in MHz.
+- La stessa pagina dice che i "Tabular Values" sono a passi di 5° di
+  latitudine e 15° di longitudine: il file del 2026-10-15 è invece a 2° × 4°.
+  La documentazione è più vecchia del file; il parser non fissa i passi.
+- **Messaggi, verificati** sulla stessa pagina: `X-RAY Message` vale
+  `Normal x-ray background`, `Elevated x-ray flux`, `Moderate x-ray flux`
+  (M1–M5), `Strong x-ray flux` (M5–X1), `Severe x-ray flux` (X1–X20) o
+  `Extreme x-ray flux`; `Proton Message` vale `Normal proton background`,
+  `Minor`/`Moderate`/`Strong`/`Severe`/`Extreme proton flux` (soglie 10, 100,
+  1 000, 10 000, 100 000 pfu a ≥10 MeV). Il modello li tiene come testo.
+- `Estimated Recovery Time`: la pagina descrive un orologio in minuti
+  (calcolato dopo il picco di un brillamento oltre M1 o da un evento
+  protonico), ma non il testo del file quando c'è una stima: il formato resta
+  **ipotesi** (visto solo `No Estimate`) e il modello lo tiene come testo.
+- Il parser D-RAP (T6) vuole una tabella che copra il globo: longitudini
+  regolari da -180 + passo/2 a 180 - passo/2, latitudini regolari da un polo
+  all'altro. Una tabella che si ferma prima del polo opposto, o un'ultima riga
+  corta in un testo senza `\n` finale, è `SourceNotReady`; una riga corta o
+  sbagliata in mezzo è `ParseError` con la riga.
 - Per il GeoTIFF: le coordinate sono centri di cella su griglia regolare
   lat/lon (EPSG:4326). La longitudine di OVATION (0–359) va ruotata a
   -180…180 per l'uso su mappa: l'export lo fa, il modello conserva i dati
-  come arrivano.
+  come arrivano. Con i centri a ±90 e a -180, i bordi delle celle OVATION
+  escono di mezzo grado (raster da -180,5 a 179,5 e da -90,5 a 90,5); il
+  GeoJSON invece taglia i poligoni a ±90 e divide in due quelli a cavallo
+  dell'antimeridiano.
 
 ## Cambiamenti noti (SCN)
 

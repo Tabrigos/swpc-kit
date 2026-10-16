@@ -85,7 +85,7 @@ dicono la riga.
 
 ## T6 — Griglie ed export
 
-- [ ] Fatta
+- [x] Fatta
 
 - OVATION e D-RAP in un modello di griglia comune (assi, valori, unità,
   tempi).
