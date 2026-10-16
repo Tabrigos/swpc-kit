@@ -6,7 +6,8 @@ Riscritto da capo a ogni fine sessione, mai accodato.
 
 - **Stato**: T0, T1 e T2 fatte. Parser e modelli degli indici (Kp 3 ore,
   previsione, Kp 1 minuto, Dst, F10.7, scale NOAA), formati vecchi e nuovi.
-- **Prossimo passo**: T3–T6, anche in parallelo.
+- **Prossimo passo**: T3–T6, in parallelo (sub-agenti, un branch e una PR
+  per tappa); poi T7.
 - **Da sapere** (per chi scrive i prossimi parser):
   - `swpc_kit/parse/_common.py` è il kit comune: `load_json` classifica gli
     errori (vuoto o troncato → `SourceNotReady`; HTML o non JSON →
@@ -30,6 +31,19 @@ Riscritto da capo a ogni fine sessione, mai accodato.
     record attivo e IMAP fuori minuto; avvisi con `\r\n` e `\n` mescolati.
   - `ParseError(message, field=, line=, index=)`; ruff con `D` e `DTZ`; i test
     non aprono socket.
+- **T4** (avvisi):
+  - `parse_alerts` → `Alerts` di `AlertMessage`. Intestazione (codice,
+    serial, `Issue Time`) obbligatoria: un errore lì è `ParseError` con
+    `field="message.<etichetta>"` e l'indice. Gli altri campi sono tipizzati
+    quando la forma è nota, altrimenti `None`; il grezzo resta in `fields`.
+  - `issued` = `issue_datetime` (ms), `issue_time` = riga del testo (minuto).
+    Il serial non è univoco (gli `ALTEF3` continuati lo ripetono).
+  - Array vuoto = nessun avviso: `Alerts` vuoto con `data_time` `None`
+    (T7 deve gestirlo con `max_age`).
+  - `swpc_kit/codes.py`: 18 voci verificate, 13 dedotte (ipotesi); la
+    tabella ufficiale non era raggiungibile dal proxy.
+  - Il parser dei tempi `2026 Oct 13 2058 UTC` è privato in
+    `parse/alerts.py`: se T5 ne ha uno uguale, unirli in `_common.py` (T8).
 - **Dubbi aperti**: le ipotesi rimaste in `docs/FONTI.md` (UTC dei
   `time_tag` senza `Z`, millisecondi del vecchio Dst e flusso, significato
   delle chiavi di `noaa-scales.json`, unità dei valori OVATION).
@@ -49,3 +63,5 @@ Una riga per sessione: data, tappa, cosa è entrato, cosa resta.
   Resta: T2–T6.
 - 2026-10-15 — T2 (stessa sessione, su richiesta): `parse/_common.py`,
   modelli e parser degli indici, 215 test. Resta: T3–T6.
+- 2026-10-16 — T4 (sub-agente, branch `-t4`): `parse_alerts`, modelli dei
+  messaggi, catalogo dei codici con voci verificate e dedotte.
