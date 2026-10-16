@@ -115,6 +115,34 @@ con `\n`. Il server dà `Last-Modified`, `ETag` e `Cache-Control: max-age=60`.
   fonti; nel giorno registrato copre circa dalle 20:27 alle 15:54.
 - Dal 2026-06-30 la fonte primaria è **SOLAR-1** (SWFO-L1), con ACE di
   riserva; DSCOVR non è più elaborato.
+- **Verificato in T3** sulle fixture ridotte (223 record mag, 220 plasma):
+  - i secondi di IMAP dipendono dal file: nel mag `:01` (21 record) e `:09`
+    (uno), nel plasma sempre `:03` (28 record);
+  - nessun istante ha due record attivi; nel mag 23 istanti su 137 non hanno
+    il record attivo (22 di solo IMAP, uno di solo ACE alle 21:01 del
+    14), nel plasma 41 su 134 (28 di solo IMAP, 13 di solo ACE);
+  - `max_data_flag` vale `-9999` per SOLAR1 e ACE nel mag, `0` per IMAP; nel
+    plasma è sempre `0`. Che `-9999` sia un valore di riempimento
+    ("flag non disponibile") è **ipotesi**: il parser lo tiene com'è;
+  - `range`, `scale` e `sensitivity` del mag sono sempre `null`: il tipo
+    non si può dedurre e il parser non li legge;
+  - ACE e IMAP non danno le componenti della velocità (`proton_v*` a
+    `null`); gli `alpha_*` sono `null` per tutte le fonti;
+  - nei campi fisici non compare mai `-9999`: che un valore mancante sia
+    sempre `null` è **ipotesi**. Il parser rifiuta (`ParseError`) valori
+    impossibili: `bt`, velocità, densità e temperatura negative, `theta_*`
+    fuori da -90…90, `phi_*` fuori da 0…360 (nella fixture `phi` va da 4,0 a
+    359,8);
+  - `overall_quality`, `max_telemetry_flag` e `sample_size` (60 nel mag, 1
+    nel plasma) hanno sempre lo stesso valore: il significato dei flag non è
+    documentato.
+- **Scelte del modello** (T3): i record sono riordinati dal più vecchio,
+  tenendo l'ordine del file fra quelli dello stesso istante; il record
+  attivo di un istante è quello con `active: true` (se fossero due, vince il
+  primo nel file); un istante senza record attivo resta senza, non si
+  ripiega su un'altra fonte. Le fonti sconosciute restano stringhe.
+  `data_time` è l'ultimo `time_tag` di qualunque fonte; la freschezza della
+  sola fonte attiva è `latest_active().time`.
 
 ## GOES
 
@@ -136,6 +164,41 @@ con `\n`. Il server dà `Last-Modified`, `ETag` e `Cache-Control: max-age=60`.
   crescente, passo di 5 minuti (qualche istante manca), otto energie per
   istante: `>=1`, `>=5`, `>=10`, `>=30`, `>=50`, `>=60`, `>=100`,
   `>=500 MeV`.
+- **Verificato in T3** sulle fixture:
+  - nei raggi X `flux` = `observed_flux` − `electron_correction`, ma con un
+    **minimo** di 1e-9 (scritto `9.999999717180685e-10`, cioè 1e-9 in
+    precisione singola): nei 6 record in cui la differenza è più bassa, o
+    negativa, `flux` vale quel minimo. Succede solo nella banda
+    0,05–0,4 nm, sempre con `electron_contaminaton: true`. Che il minimo
+    valga sempre è **ipotesi**: il parser non controlla il segno del flusso,
+    e la classe del brillamento esce `None` per un flusso nullo o negativo;
+  - `electron_contaminaton` è `true` solo nella banda corta (100 record su
+    129), mai nella lunga;
+  - nei protoni le otto energie di un istante sono in ordine di stringa
+    (`>=1`, `>=10`, `>=100`, `>=30`, `>=5`, `>=50`, `>=500`, `>=60`), non di
+    soglia: il parser ricava la soglia in MeV dall'etichetta `>=N MeV` e
+    rifiuta (`ParseError`) un'etichetta di altra forma.
+- **Ipotesi**: i file `*-6-hour`, `*-3-day`, `*-7-day` e la cartella
+  `secondary/` hanno lo stesso formato dei file di un giorno del primario
+  (gli unici registrati); i parser li accettano con `source_url=`.
+- **Verificato** sulle pagine SWPC (lette il 2026-10-16):
+  - `products/goes-proton-flux`: i file `integral-protons` danno flussi
+    integrali mediati su 5 minuti in protoni/(cm² s sr) (= pfu) per le
+    soglie ≥1, 5, 10, 30, 50, 60, 100 e 500 MeV, le stesse delle fixture;
+    soglie degli avvisi 10…100 000 pfu a ≥10 MeV e 1 pfu a ≥100 MeV;
+  - `products/goes-x-ray-flux`: medie di 1 minuto nelle bande 0,1–0,8 nm e
+    0,05–0,4 nm, dati del satellite primario e secondario; massimo di un
+    evento = minuto del picco;
+  - `phenomena/solar-flares-radio-blackouts`: la classe si definisce sul
+    picco della banda 0,1–0,8 nm, in W/m², con A da 10⁻⁸, B da 10⁻⁷, C da
+    10⁻⁶, M da 10⁻⁵, X da 10⁻⁴.
+- **Classe del brillamento** (T3): il moltiplicatore è **troncato** a un
+  decimale (3,95e-6 → C3.9; 9,99e-6 → C9.9, mai C10.0), calcolato sulla forma
+  decimale più corta del flusso, così 2,3e-5 dà M2.3. Che SWPC tronchi invece
+  di arrotondare resta **ipotesi** (le pagine SWPC non lo dicono): il
+  troncamento è scelto perché tiene la
+  lettera coerente con le soglie. La classe si calcola solo sulla banda
+  0,1–0,8 nm; X non ha tetto (1,2e-3 → X12.0).
 
 ## Avvisi
 
