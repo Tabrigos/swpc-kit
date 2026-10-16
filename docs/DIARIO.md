@@ -6,7 +6,8 @@ Riscritto da capo a ogni fine sessione, mai accodato.
 
 - **Stato**: T0, T1 e T2 fatte. Parser e modelli degli indici (Kp 3 ore,
   previsione, Kp 1 minuto, Dst, F10.7, scale NOAA), formati vecchi e nuovi.
-- **Prossimo passo**: T3–T6, anche in parallelo.
+- **Prossimo passo**: T3–T6, in parallelo (sub-agenti, un branch e una PR
+  per tappa); poi T7.
 - **Da sapere** (per chi scrive i prossimi parser):
   - `swpc_kit/parse/_common.py` è il kit comune: `load_json` classifica gli
     errori (vuoto o troncato → `SourceNotReady`; HTML o non JSON →
@@ -30,6 +31,18 @@ Riscritto da capo a ogni fine sessione, mai accodato.
     record attivo e IMAP fuori minuto; avvisi con `\r\n` e `\n` mescolati.
   - `ParseError(message, field=, line=, index=)`; ruff con `D` e `DTZ`; i test
     non aprono socket.
+- **T3** (vento solare e GOES):
+  - RTSW: i modelli tengono tutte le fonti in ordine crescente;
+    `active_series()`/`active_at()` scelgono `active: true` senza ripiegare
+    su un'altra fonte (istanti di solo ACE o IMAP restano senza record
+    attivo). `data_time` = ultimo `time_tag` di qualunque fonte; la
+    freschezza della fonte attiva è `latest_active().time` (utile a T7).
+  - `Record` ha anche `get_optional_float`, `get_bool`, `get_optional_bool`.
+  - `FlareClass.from_flux` (banda 0.1-0.8 nm, moltiplicatore troncato a un
+    decimale). I parser GOES valgono per 6-hour/3-day/7-day e `secondary/`
+    con `source_url=`, ma quei file non sono verificati.
+  - `_check_utc`/`_check_values` sono duplicati nei moduli dei modelli: da
+    raccogliere in T8.
 - **Dubbi aperti**: le ipotesi rimaste in `docs/FONTI.md` (UTC dei
   `time_tag` senza `Z`, millisecondi del vecchio Dst e flusso, significato
   delle chiavi di `noaa-scales.json`, unità dei valori OVATION).
@@ -49,3 +62,5 @@ Una riga per sessione: data, tappa, cosa è entrato, cosa resta.
   Resta: T2–T6.
 - 2026-10-15 — T2 (stessa sessione, su richiesta): `parse/_common.py`,
   modelli e parser degli indici, 215 test. Resta: T3–T6.
+- 2026-10-16 — T3 (sub-agente, branch `-t3`): RTSW mag e plasma con scelta
+  della fonte attiva, GOES X con classe del brillamento e protoni per soglia.

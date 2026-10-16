@@ -57,7 +57,7 @@ Dst, scale NOAA. Formati vecchi e nuovi. `data_time` su ogni modello.
 
 ## T3 — Vento solare e GOES
 
-- [ ] Fatta
+- [x] Fatta
 
 - RTSW mag e plasma: modelli per campione, scelta del record attivo per
   istante, accesso alle serie per fonte.
