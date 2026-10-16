@@ -180,13 +180,23 @@ con `\n`. Il server dà `Last-Modified`, `ETag` e `Cache-Control: max-age=60`.
     rifiuta (`ParseError`) un'etichetta di altra forma.
 - **Ipotesi**: i file `*-6-hour`, `*-3-day`, `*-7-day` e la cartella
   `secondary/` hanno lo stesso formato dei file di un giorno del primario
-  (gli unici registrati); i parser li accettano con `source_url=`. Le unità
-  (W/m² per i raggi X, pfu per i protoni) vengono dalle pagine dei grafici
-  SWPC, non dai file.
+  (gli unici registrati); i parser li accettano con `source_url=`.
+- **Verificato** sulle pagine SWPC (lette il 2026-10-16):
+  - `products/goes-proton-flux`: i file `integral-protons` danno flussi
+    integrali mediati su 5 minuti in protoni/(cm² s sr) (= pfu) per le
+    soglie ≥1, 5, 10, 30, 50, 60, 100 e 500 MeV, le stesse delle fixture;
+    soglie degli avvisi 10…100 000 pfu a ≥10 MeV e 1 pfu a ≥100 MeV;
+  - `products/goes-x-ray-flux`: medie di 1 minuto nelle bande 0,1–0,8 nm e
+    0,05–0,4 nm, dati del satellite primario e secondario; massimo di un
+    evento = minuto del picco;
+  - `phenomena/solar-flares-radio-blackouts`: la classe si definisce sul
+    picco della banda 0,1–0,8 nm, in W/m², con A da 10⁻⁸, B da 10⁻⁷, C da
+    10⁻⁶, M da 10⁻⁵, X da 10⁻⁴.
 - **Classe del brillamento** (T3): il moltiplicatore è **troncato** a un
   decimale (3,95e-6 → C3.9; 9,99e-6 → C9.9, mai C10.0), calcolato sulla forma
   decimale più corta del flusso, così 2,3e-5 dà M2.3. Che SWPC tronchi invece
-  di arrotondare è **ipotesi**: il troncamento è scelto perché tiene la
+  di arrotondare resta **ipotesi** (le pagine SWPC non lo dicono): il
+  troncamento è scelto perché tiene la
   lettera coerente con le soglie. La classe si calcola solo sulla banda
   0,1–0,8 nm; X non ha tetto (1,2e-3 → X12.0).
 
