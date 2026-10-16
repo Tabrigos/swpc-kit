@@ -4,10 +4,15 @@
 
 Riscritto da capo a ogni fine sessione, mai accodato.
 
-- **Stato**: T0, T1 e T2 fatte. Parser e modelli degli indici (Kp 3 ore,
-  previsione, Kp 1 minuto, Dst, F10.7, scale NOAA), formati vecchi e nuovi.
-- **Prossimo passo**: T3–T6, in parallelo (sub-agenti, un branch e una PR
-  per tappa); poi T7.
+- **Stato**: T0–T6 fatte. Ci sono parser e modelli per tutti i prodotti
+  della prima versione (indici, vento solare, GOES, avvisi con catalogo dei
+  codici, bollettini, griglie OVATION e D-RAP) e l'export GeoJSON e GeoTIFF.
+  Manca il client.
+- **Prossimo passo**: T7 (client su httpx, con la verifica dello stato di
+  httpx chiesta in `docs/TAPPE.md`), poi T8.
+- **Decisioni in sospeso**: override mypy per rasterio o stub
+  `types-rasterio` (T6); `alerts.json` vuoto = elenco vuoto con
+  `data_time` `None` (T4), da gestire in T7 con `max_age`.
 - **Da sapere** (per chi scrive i prossimi parser):
   - `swpc_kit/parse/_common.py` è il kit comune: `load_json` classifica gli
     errori (vuoto o troncato → `SourceNotReady`; HTML o non JSON →
