@@ -10,23 +10,13 @@ Times are UTC (the source writes them with ``Z``).
 """
 
 import math
-from collections.abc import Sequence
 from dataclasses import dataclass
-from datetime import datetime, timedelta
+from datetime import datetime
 from decimal import ROUND_FLOOR, Decimal
 from enum import StrEnum
 from itertools import pairwise
 
-
-def _check_utc(name: str, value: datetime) -> None:
-    if value.utcoffset() != timedelta(0):
-        raise ValueError(f"{name} must be an aware datetime in UTC, got {value!r}")
-
-
-def _check_values(values: Sequence[object]) -> None:
-    if not values:
-        raise ValueError("values must not be empty")
-
+from swpc_kit.models._checks import check_utc, check_values
 
 # --- Flare class -------------------------------------------------------------
 
@@ -138,7 +128,7 @@ class XraySample:
     electron_contamination: bool | None
 
     def __post_init__(self) -> None:
-        _check_utc("time", self.time)
+        check_utc("time", self.time)
 
     @property
     def flare_class(self) -> FlareClass | None:
@@ -166,7 +156,7 @@ class GoesXrays:
     source_url: str
 
     def __post_init__(self) -> None:
-        _check_values(self.values)
+        check_values(self.values)
 
     @property
     def data_time(self) -> datetime:
@@ -218,7 +208,7 @@ class ProtonSample:
     flux: float | None
 
     def __post_init__(self) -> None:
-        _check_utc("time", self.time)
+        check_utc("time", self.time)
 
 
 @dataclass(frozen=True, slots=True)
@@ -235,7 +225,7 @@ class GoesIntegralProtons:
     source_url: str
 
     def __post_init__(self) -> None:
-        _check_values(self.values)
+        check_values(self.values)
 
     @property
     def data_time(self) -> datetime:

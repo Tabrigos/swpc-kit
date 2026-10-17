@@ -11,21 +11,12 @@ Times are UTC. SWPC writes the ``time_tag`` values without a time zone; they
 are read as UTC.
 """
 
-from collections.abc import Sequence
 from dataclasses import dataclass
-from datetime import datetime, timedelta
+from datetime import datetime
 from enum import StrEnum
 from typing import Protocol
 
-
-def _check_utc(name: str, value: datetime) -> None:
-    if value.utcoffset() != timedelta(0):
-        raise ValueError(f"{name} must be an aware datetime in UTC, got {value!r}")
-
-
-def _check_values(values: Sequence[object]) -> None:
-    if not values:
-        raise ValueError("values must not be empty")
+from swpc_kit.models._checks import check_utc, check_values
 
 
 class RtswSource(StrEnum):
@@ -94,7 +85,7 @@ class RtswMagSample:
     overall_quality: int | None
 
     def __post_init__(self) -> None:
-        _check_utc("time", self.time)
+        check_utc("time", self.time)
 
 
 @dataclass(frozen=True, slots=True)
@@ -172,7 +163,7 @@ class RtswWindSample:
     overall_quality: int | None
 
     def __post_init__(self) -> None:
-        _check_utc("time", self.time)
+        check_utc("time", self.time)
 
 
 class _Sample(Protocol):
@@ -254,7 +245,7 @@ class RtswMag1m(_RtswSeries[RtswMagSample]):
     source_url: str
 
     def __post_init__(self) -> None:
-        _check_values(self.values)
+        check_values(self.values)
 
 
 @dataclass(frozen=True, slots=True)
@@ -271,4 +262,4 @@ class RtswWind1m(_RtswSeries[RtswWindSample]):
     source_url: str
 
     def __post_init__(self) -> None:
-        _check_values(self.values)
+        check_values(self.values)

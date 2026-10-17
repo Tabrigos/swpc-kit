@@ -4,15 +4,17 @@
 
 Riscritto da capo a ogni fine sessione, mai accodato.
 
-- **Stato**: T0–T7 fatte. Parser e modelli per tutti i prodotti della prima
-  versione, export GeoJSON e GeoTIFF, client sincrono e asincrono.
-- **Prossimo passo**: T8 (README con esempi verificati da un test,
-  CHANGELOG, versione 0.1.0, API pubblica esportata e documentata). In T8
-  conviene anche raccogliere i doppioni segnati qui sotto (`_check_utc`,
-  parser dei tempi testuali).
+- **Stato**: T0–T8 fatte: versione **0.1.0**, non pubblicata su PyPI.
+  Parser e modelli per tutti i prodotti della prima versione, export GeoJSON
+  e GeoTIFF, client sincrono e asincrono, README con esempi verificati da
+  `tests/test_readme.py`, `CHANGELOG.md`.
+- **Prossimo passo**: nessuna tappa aperta. Da decidere: pubblicazione su
+  PyPI (nome `swpc-kit` libero al 2026-10-15, da ricontrollare), licenza
+  (`SPEC.md`: "da decidere quando il repo diventa pubblico"), tag `v0.1.0`.
 - **Decisioni in sospeso**: override mypy per rasterio o stub
   `types-rasterio` (T6); `alerts.json` vuoto = elenco vuoto con
-  `data_time` `None` (T4; il client non lo considera mai vecchio).
+  `data_time` `None` (T4; il client non lo considera mai vecchio); unire il
+  parser dei tempi testuali di T4 (`parse/alerts.py`) e T5 (`parse/_text.py`).
 - **Da sapere** (per chi scrive i prossimi parser):
   - `swpc_kit/parse/_common.py` è il kit comune: `load_json` classifica gli
     errori (vuoto o troncato → `SourceNotReady`; HTML o non JSON →
@@ -101,6 +103,15 @@ Riscritto da capo a ogni fine sessione, mai accodato.
     timeout e rete → `SourceNotReady`; altri stati e HTML →
     `UnexpectedContent`. `304` riusa il modello in memoria; `max_age` si
     misura su `data_time` anche dopo un `304`.
+- **T8** (rifinitura):
+  - `swpc_kit.models` riesporta tutti i modelli; `swpc_kit.export`
+    riesporta `to_geojson` (non `write_geotiff`, per non importare numpy).
+    `tests/test_public_api.py` controlla che ogni nome pubblico sia
+    riesportato e abbia la docstring.
+  - Gli esempi del README girano in `tests/test_readme.py`: blocchi
+    `pycon` come doctest, blocchi `python` eseguiti con il client che legge
+    le fixture al posto di SWPC. Un esempio nuovo va scritto lì.
+  - `models/_checks.py` raccoglie `check_utc` e `check_values`.
 - **Dubbi aperti**: le ipotesi rimaste in `docs/FONTI.md` (UTC dei
   `time_tag` senza `Z`, millisecondi del vecchio Dst e flusso, significato
   delle chiavi di `noaa-scales.json`, unità dei valori OVATION).
@@ -131,3 +142,6 @@ Una riga per sessione: data, tappa, cosa è entrato, cosa resta.
 - 2026-10-16 — T7: client sincrono e asincrono su httpx2 (scelto dopo aver
   verificato su PyPI lo stato di httpx), richieste condizionali, `max_age`;
   prova dal vivo su tutti i 16 prodotti. Resta: T8.
+- 2026-10-17 — T8: API pubblica riesportata e verificata da test, README con
+  esempi eseguiti dai test, CHANGELOG, versione 0.1.0, controlli comuni dei
+  modelli raccolti. Nessuna tappa aperta.

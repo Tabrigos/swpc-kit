@@ -19,16 +19,13 @@ from dataclasses import dataclass
 from datetime import date, datetime, timedelta
 from itertools import pairwise
 
+from swpc_kit.models._checks import check_utc
+
 KP_PERIOD = timedelta(hours=3)
 """Length of one interval of a Kp table."""
 
 KP_PERIODS_PER_DAY = 8
 """Rows of a Kp table: ``00-03UT`` to ``21-00UT``."""
-
-
-def _check_utc(name: str, value: datetime) -> None:
-    if value.utcoffset() != timedelta(0):
-        raise ValueError(f"{name} must be an aware datetime in UTC, got {value!r}")
 
 
 def _check_days(days: Sequence[date]) -> None:
@@ -68,7 +65,7 @@ class KpPeriod:
     noaa_scale: str | None
 
     def __post_init__(self) -> None:
-        _check_utc("start", self.start)
+        check_utc("start", self.start)
 
     @property
     def end(self) -> datetime:
@@ -125,7 +122,7 @@ class ThreeDayForecast:
     source_url: str
 
     def __post_init__(self) -> None:
-        _check_utc("issued", self.issued)
+        check_utc("issued", self.issued)
         _check_days(self.days)
         _check_kp(self.kp, self.days)
         _check_aligned("s1_or_greater", self.s1_or_greater, self.days)
@@ -185,7 +182,7 @@ class GeomagneticForecast:
     source_url: str
 
     def __post_init__(self) -> None:
-        _check_utc("issued", self.issued)
+        check_utc("issued", self.issued)
         _check_days(self.days)
         if tuple(a.day for a in self.predicted_ap) != self.days:
             raise ValueError("predicted_ap must give one value for each of days")
@@ -233,7 +230,7 @@ class TwentySevenDayOutlook:
     source_url: str
 
     def __post_init__(self) -> None:
-        _check_utc("issued", self.issued)
+        check_utc("issued", self.issued)
         _check_days([d.day for d in self.days])
 
     @property

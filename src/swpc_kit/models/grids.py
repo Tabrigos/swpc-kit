@@ -15,16 +15,13 @@ use on a map.
 import math
 from collections.abc import Iterator, Mapping
 from dataclasses import dataclass
-from datetime import datetime, timedelta
+from datetime import datetime
 from itertools import pairwise
 from typing import Protocol
 
+from swpc_kit.models._checks import check_utc
+
 _TOLERANCE = 1e-9
-
-
-def _check_utc(name: str, value: datetime) -> None:
-    if value.utcoffset() != timedelta(0):
-        raise ValueError(f"{name} must be an aware datetime in UTC, got {value!r}")
 
 
 def wrap_longitude(longitude: float) -> float:
@@ -238,8 +235,8 @@ class OvationAurora:
     source_url: str
 
     def __post_init__(self) -> None:
-        _check_utc("observation_time", self.observation_time)
-        _check_utc("forecast_time", self.forecast_time)
+        check_utc("observation_time", self.observation_time)
+        check_utc("forecast_time", self.forecast_time)
 
     @property
     def data_time(self) -> datetime:
@@ -292,7 +289,7 @@ class DrapFrequencies:
     source_url: str
 
     def __post_init__(self) -> None:
-        _check_utc("valid_at", self.valid_at)
+        check_utc("valid_at", self.valid_at)
 
     @property
     def data_time(self) -> datetime:

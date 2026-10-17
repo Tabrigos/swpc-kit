@@ -1,6 +1,114 @@
 """Models: frozen, typed dataclasses for SWPC products.
 
-Every time is a ``datetime`` in UTC. Each model exposes ``data_time`` (the
-most recent time declared by the content), ``source_url``, and ``issued``,
-``observed``, ``valid_from`` or ``valid_to`` where the source provides them.
+Every time is a ``datetime`` in UTC. Each top-level model exposes
+``data_time`` (the most recent time declared by the content), ``source_url``,
+and ``issued``, ``observed``, ``valid_from`` or ``valid_to`` where the source
+provides them. The models are re-exported here from their modules:
+``indices``, ``solar_wind``, ``goes``, ``alerts``, ``bulletins``, ``grids``.
 """
+
+from swpc_kit.models.alerts import (
+    AlertMessage,
+    Alerts,
+    MessageField,
+    MessageKind,
+    NoaaScale,
+    ScaleCategory,
+    field_key,
+)
+from swpc_kit.models.bulletins import (
+    DailyAp,
+    GeomagneticForecast,
+    KpPeriod,
+    OutlookDay,
+    ThreeDayForecast,
+    TwentySevenDayOutlook,
+)
+from swpc_kit.models.goes import (
+    FlareClass,
+    GoesIntegralProtons,
+    GoesXrays,
+    ProtonSample,
+    XrayBand,
+    XraySample,
+)
+from swpc_kit.models.grids import (
+    DrapFrequencies,
+    Grid,
+    GridProduct,
+    OvationAurora,
+    wrap_longitude,
+)
+from swpc_kit.models.indices import (
+    DstValue,
+    F107Flux,
+    F107Value,
+    GeomagneticStormScale,
+    Kp1mValue,
+    KpForecastStatus,
+    KpForecastValue,
+    KpValue,
+    KyotoDst,
+    NoaaScales,
+    NoaaScalesDay,
+    PlanetaryKIndex,
+    PlanetaryKIndex1m,
+    PlanetaryKIndexForecast,
+    RadioBlackoutScale,
+    SolarRadiationScale,
+)
+from swpc_kit.models.solar_wind import (
+    RtswMag1m,
+    RtswMagSample,
+    RtswSource,
+    RtswWind1m,
+    RtswWindSample,
+)
+
+__all__ = [
+    "AlertMessage",
+    "Alerts",
+    "DailyAp",
+    "DrapFrequencies",
+    "DstValue",
+    "F107Flux",
+    "F107Value",
+    "FlareClass",
+    "GeomagneticForecast",
+    "GeomagneticStormScale",
+    "GoesIntegralProtons",
+    "GoesXrays",
+    "Grid",
+    "GridProduct",
+    "Kp1mValue",
+    "KpForecastStatus",
+    "KpForecastValue",
+    "KpPeriod",
+    "KpValue",
+    "KyotoDst",
+    "MessageField",
+    "MessageKind",
+    "NoaaScale",
+    "NoaaScales",
+    "NoaaScalesDay",
+    "OutlookDay",
+    "OvationAurora",
+    "PlanetaryKIndex",
+    "PlanetaryKIndex1m",
+    "PlanetaryKIndexForecast",
+    "ProtonSample",
+    "RadioBlackoutScale",
+    "RtswMag1m",
+    "RtswMagSample",
+    "RtswSource",
+    "RtswWind1m",
+    "RtswWindSample",
+    "ScaleCategory",
+    "SolarRadiationScale",
+    "ThreeDayForecast",
+    "TwentySevenDayOutlook",
+    "XrayBand",
+    "XraySample",
+    "field_key",
+    "wrap_longitude",
+]
