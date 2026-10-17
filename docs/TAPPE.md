@@ -96,7 +96,7 @@ dicono la riga.
 
 ## T7 — Client
 
-- [ ] Fatta
+- [x] Fatta
 
 `Client` e `AsyncClient` su `httpx` (extra `client`): un metodo per prodotto,
 richieste condizionali (ETag), classificazione degli errori di `SPEC.md`,

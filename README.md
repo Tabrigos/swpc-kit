@@ -4,9 +4,10 @@ Typed Python readers for the public data products of NOAA's Space Weather
 Prediction Center: indices, solar wind, GOES, alerts, text bulletins, and the
 OVATION and D-RAP grids, with GeoJSON and GeoTIFF export.
 
-**Status: in development, not released.** The index parsers (Kp, Dst,
-F10.7, NOAA scales) are in; the rest is in progress. See `SPEC.md` for what
-the library will do and `docs/TAPPE.md` for the plan.
+**Status: in development, not released.** Parsers for every first-version
+product, GeoJSON and GeoTIFF export, and the HTTP client are in; examples and
+the 0.1.0 release come next. See `SPEC.md` for what the library does and
+`docs/TAPPE.md` for the plan.
 
 ## Design
 
@@ -15,7 +16,8 @@ the library will do and `docs/TAPPE.md` for the plan.
 - **Models** (`swpc_kit.models`): frozen dataclasses with UTC `datetime`
   fields and the time the content declares (`data_time`).
 - **Outputs**: GeoJSON export (standard library), GeoTIFF export (`geo`
-  extra), and an HTTP client (`client` extra).
+  extra: numpy, rasterio), and an HTTP client (`client` extra: httpx2) with
+  conditional requests and a `max_age` check.
 - **Typed errors** under `SwpcError`: `SourceNotReady` (truncated or empty
   data, try again later), `UnexpectedContent` (an HTML page or an unknown
   format), `ParseError` (a known format with an inconsistent value), and

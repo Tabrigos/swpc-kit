@@ -17,8 +17,11 @@ classifiers = [
 ]
 
 [project.optional-dependencies]
-# Filled in by the stages that need them (client: T7, geo: T6).
-client = []
+# HTTP client (swpc_kit.client): httpx2, the maintained continuation of
+# httpx (see docs/FONTI.md, "Client HTTP").
+client = [
+    "httpx2>=2.13",
+]
 # GeoTIFF export (swpc_kit.export.geotiff): numpy for the raster array,
 # rasterio (GDAL) to write a georeferenced file.
 geo = [

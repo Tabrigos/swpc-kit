@@ -29,7 +29,8 @@ Tre strati, ognuno usabile da solo:
 3. **Uscite**:
    - `swpc_kit.export.geojson` (libreria standard);
    - `swpc_kit.export.geotiff` (extra `geo`, con `numpy` e `rasterio`);
-   - `swpc_kit.client` (extra `client`, con `httpx`): scarica, riconosce gli
+   - `swpc_kit.client` (extra `client`, con `httpx2`, la continuazione
+     mantenuta di httpx: vedi `docs/FONTI.md`): scarica, riconosce gli
      errori della fonte, chiama il parser.
 
 ```python
