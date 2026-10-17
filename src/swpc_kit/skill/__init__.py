@@ -24,6 +24,19 @@ from pathlib import Path
 
 from swpc_kit import __version__
 
+__all__ = [
+    "DEFAULT_TARGET",
+    "SKILL_NAME",
+    "SkillInfo",
+    "Status",
+    "bundled",
+    "check",
+    "install",
+    "main",
+    "read_skill",
+    "skill_info",
+]
+
 SKILL_NAME = "swpc-kit"
 """Name of the skill, also the name of its directory."""
 

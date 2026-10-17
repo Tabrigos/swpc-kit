@@ -16,6 +16,7 @@ PACKAGES = [
     "swpc_kit.models",
     "swpc_kit.export",
     "swpc_kit.client",
+    "swpc_kit.skill",
 ]
 PUBLIC_MODULES = [
     "swpc_kit.errors",
@@ -79,4 +80,4 @@ def test_top_level_exports_errors_and_version() -> None:
         "StaleData",
         "__version__",
     }
-    assert swpc_kit.__version__ == "0.1.0"
+    assert swpc_kit.__version__ == "0.2.0"
