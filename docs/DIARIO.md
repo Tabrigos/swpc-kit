@@ -4,13 +4,14 @@
 
 Riscritto da capo a ogni fine sessione, mai accodato.
 
-- **Stato**: T0–T8 fatte: versione **0.1.0**, non pubblicata su PyPI.
+- **Stato**: T0–T9 fatte: versione **0.2.0**, non pubblicata su PyPI.
   Parser e modelli per tutti i prodotti della prima versione, export GeoJSON
   e GeoTIFF, client sincrono e asincrono, README con esempi verificati da
-  `tests/test_readme.py`, `CHANGELOG.md`.
+  `tests/test_readme.py`, `CHANGELOG.md`, skill per gli assistenti AI
+  dentro il pacchetto.
 - **Prossimo passo**: nessuna tappa aperta. Da decidere: pubblicazione su
   PyPI (nome `swpc-kit` libero al 2026-10-15, da ricontrollare), licenza
-  (`SPEC.md`: "da decidere quando il repo diventa pubblico"), tag `v0.1.0`.
+  (`SPEC.md`: "da decidere quando il repo diventa pubblico"), tag `v0.2.0`.
 - **Decisioni in sospeso**: override mypy per rasterio o stub
   `types-rasterio` (T6); `alerts.json` vuoto = elenco vuoto con
   `data_time` `None` (T4; il client non lo considera mai vecchio); unire il
@@ -112,6 +113,20 @@ Riscritto da capo a ogni fine sessione, mai accodato.
     `pycon` come doctest, blocchi `python` eseguiti con il client che legge
     le fixture al posto di SWPC. Un esempio nuovo va scritto lì.
   - `models/_checks.py` raccoglie `check_utc` e `check_values`.
+- **T9** (skill):
+  - `src/swpc_kit/skill/swpc-kit/`: `SKILL.md` a mano, `references/api.md`
+    generato da `tools/build_skill.py` (introspezione: prodotti da
+    `PRODUCTS` e dai `source_url` dei parser, campi dalle dataclass,
+    significati dalla sezione `Attributes:` delle docstring). Chi cambia
+    l'API rigenera; `--check` dice se è vecchio.
+  - `python -m swpc_kit.skill`: `install` (predefinito
+    `.claude/skills/swpc-kit/`; sostituisce solo una copia della stessa
+    skill, altrimenti serve `--force`), `check`, `show`, `path`.
+  - `tests/test_skill.py`: formato del frontmatter, versione = pacchetto,
+    tabella = `PRODUCTS`, nomi citati esistenti, esempi eseguiti con il
+    client sulle fixture (orologio fissato al 2026-10-15), comandi.
+  - La fixture `swpc_from_fixtures` (client che legge le fixture) ora sta
+    in `tests/conftest.py`, usata da README e skill.
 - **Dubbi aperti**: le ipotesi rimaste in `docs/FONTI.md` (UTC dei
   `time_tag` senza `Z`, millisecondi del vecchio Dst e flusso, significato
   delle chiavi di `noaa-scales.json`, unità dei valori OVATION).
@@ -145,3 +160,6 @@ Una riga per sessione: data, tappa, cosa è entrato, cosa resta.
 - 2026-10-17 — T8: API pubblica riesportata e verificata da test, README con
   esempi eseguiti dai test, CHANGELOG, versione 0.1.0, controlli comuni dei
   modelli raccolti. Nessuna tappa aperta.
+- 2026-10-17 — T9: skill per gli assistenti AI nel pacchetto (guida a mano,
+  riferimento API generato, comando `python -m swpc_kit.skill`), test che la
+  tengono allineata al codice, versione 0.2.0. Nessuna tappa aperta.

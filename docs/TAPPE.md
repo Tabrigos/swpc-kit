@@ -117,3 +117,24 @@ che cambiare libreria tocchi un modulo solo.
 README con esempi eseguibili (verificati da un test), CHANGELOG, versione
 0.1.0, controllo che l'API pubblica sia esportata e documentata. Niente
 pubblicazione su PyPI: si decide dopo.
+
+## T9 — Skill per gli assistenti AI
+
+- [x] Fatta
+
+Il pacchetto porta con sé una skill (formato Agent Skills) che spiega a un
+assistente AI come usare la libreria senza leggerne il sorgente:
+
+- `src/swpc_kit/skill/swpc-kit/SKILL.md`, scritto a mano e leggibile anche da
+  una persona: quale metodo per quale domanda, errori, tempi, trappole,
+  esempi. Sotto le 500 righe.
+- `references/api.md`, generato dal codice da `tools/build_skill.py`
+  (prodotti, client, modelli con campi e metodi, errori, export, codici):
+  l'assistente lo apre solo quando gli serve un dettaglio.
+- `python -m swpc_kit.skill install | check | show | path`: copia la skill
+  dove gli assistenti la cercano (`.claude/skills/swpc-kit/`) e dice se la
+  copia installata è della versione del pacchetto.
+- Test che tengono la skill allineata: riferimento rigenerato uguale a
+  quello nel repo, versione della skill uguale a quella del pacchetto, ogni
+  prodotto nella tabella, ogni nome citato esistente, esempi eseguiti.
+- Versione 0.2.0.
