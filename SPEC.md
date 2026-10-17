@@ -19,7 +19,7 @@ servizio FastAPI), uno script di analisi, un notebook.
 
 ## Architettura
 
-Tre strati, ognuno usabile da solo:
+Tre strati, ognuno usabile da solo, più la skill che li descrive:
 
 1. **Parser** (`swpc_kit.parse.*`): funzioni pure, `str | bytes` → modello.
    Solo libreria standard.
@@ -32,6 +32,10 @@ Tre strati, ognuno usabile da solo:
    - `swpc_kit.client` (extra `client`, con `httpx2`, la continuazione
      mantenuta di httpx: vedi `docs/FONTI.md`): scarica, riconosce gli
      errori della fonte, chiama il parser.
+4. **Skill per gli assistenti AI** (`swpc_kit/skill/`): istruzioni in formato
+   Agent Skills (`SKILL.md` scritto a mano, `references/api.md` generato dal
+   codice) installate con `python -m swpc_kit.skill install`. Versionata con
+   il pacchetto; i test la tengono allineata all'API.
 
 ```python
 from swpc_kit.parse import parse_planetary_k_index
@@ -94,7 +98,8 @@ virgolette. Un parser riconosce **tutti** i formati documentati in
   Actions che esegue gli stessi comandi.
 - Ogni parser ha test su fixture reali e su casi limite costruiti a mano
   (campo mancante, troncato, valori fuori scala, fonte inattiva).
-- API pubblica documentata nelle docstring; README con esempi eseguibili.
+- API pubblica documentata nelle docstring; README con esempi eseguibili;
+  skill per gli assistenti AI con esempi eseguiti dai test.
 
 ## Licenza
 

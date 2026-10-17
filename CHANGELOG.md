@@ -4,6 +4,16 @@ All notable changes to this project are listed here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project uses
 [semantic versioning](https://semver.org/).
 
+## [0.2.0] - 2026-10-17
+
+### Added
+
+- An agent skill bundled with the package (`swpc_kit/skill/swpc-kit/`): a
+  hand-written `SKILL.md` guide for AI coding assistants and a
+  `references/api.md` generated from the code by `tools/build_skill.py`.
+- `python -m swpc_kit.skill install | check | show | path` to copy the skill
+  where assistants look for it and to tell whether the copy is current.
+
 ## [0.1.0] - 2026-10-17
 
 First version. Not published on PyPI.
@@ -32,4 +42,5 @@ First version. Not published on PyPI.
   declares.
 - Recorded fixtures and the tools that record them (`tools/`).
 
+[0.2.0]: https://github.com/Tabrigos/swpc-kit/releases/tag/v0.2.0
 [0.1.0]: https://github.com/Tabrigos/swpc-kit/releases/tag/v0.1.0
