@@ -7,21 +7,11 @@ Times are UTC. SWPC writes most of these ``time_tag`` values without a time
 zone; they are read as UTC.
 """
 
-from collections.abc import Sequence
 from dataclasses import dataclass
-from datetime import datetime, timedelta
+from datetime import datetime
 from enum import StrEnum
 
-
-def _check_utc(name: str, value: datetime) -> None:
-    if value.utcoffset() != timedelta(0):
-        raise ValueError(f"{name} must be an aware datetime in UTC, got {value!r}")
-
-
-def _check_values(values: Sequence[object]) -> None:
-    if not values:
-        raise ValueError("values must not be empty")
-
+from swpc_kit.models._checks import check_utc, check_values
 
 # --- Planetary K index, 3-hour values ---------------------------------------
 
@@ -43,7 +33,7 @@ class KpValue:
     station_count: int
 
     def __post_init__(self) -> None:
-        _check_utc("time", self.time)
+        check_utc("time", self.time)
 
 
 @dataclass(frozen=True, slots=True)
@@ -59,7 +49,7 @@ class PlanetaryKIndex:
     source_url: str
 
     def __post_init__(self) -> None:
-        _check_values(self.values)
+        check_values(self.values)
 
     @property
     def data_time(self) -> datetime:
@@ -99,7 +89,7 @@ class KpForecastValue:
     noaa_scale: str | None
 
     def __post_init__(self) -> None:
-        _check_utc("time", self.time)
+        check_utc("time", self.time)
 
 
 @dataclass(frozen=True, slots=True)
@@ -115,7 +105,7 @@ class PlanetaryKIndexForecast:
     source_url: str
 
     def __post_init__(self) -> None:
-        _check_values(self.values)
+        check_values(self.values)
 
     @property
     def data_time(self) -> datetime:
@@ -153,7 +143,7 @@ class Kp1mValue:
     kp: str
 
     def __post_init__(self) -> None:
-        _check_utc("time", self.time)
+        check_utc("time", self.time)
 
 
 @dataclass(frozen=True, slots=True)
@@ -169,7 +159,7 @@ class PlanetaryKIndex1m:
     source_url: str
 
     def __post_init__(self) -> None:
-        _check_values(self.values)
+        check_values(self.values)
 
     @property
     def data_time(self) -> datetime:
@@ -193,7 +183,7 @@ class DstValue:
     dst: int
 
     def __post_init__(self) -> None:
-        _check_utc("time", self.time)
+        check_utc("time", self.time)
 
 
 @dataclass(frozen=True, slots=True)
@@ -209,7 +199,7 @@ class KyotoDst:
     source_url: str
 
     def __post_init__(self) -> None:
-        _check_values(self.values)
+        check_values(self.values)
 
     @property
     def data_time(self) -> datetime:
@@ -233,7 +223,7 @@ class F107Value:
     flux: float
 
     def __post_init__(self) -> None:
-        _check_utc("time", self.time)
+        check_utc("time", self.time)
 
 
 @dataclass(frozen=True, slots=True)
@@ -249,7 +239,7 @@ class F107Flux:
     source_url: str
 
     def __post_init__(self) -> None:
-        _check_values(self.values)
+        check_values(self.values)
 
     @property
     def data_time(self) -> datetime:
@@ -326,7 +316,7 @@ class NoaaScalesDay:
     g: GeomagneticStormScale
 
     def __post_init__(self) -> None:
-        _check_utc("time", self.time)
+        check_utc("time", self.time)
 
 
 @dataclass(frozen=True, slots=True)

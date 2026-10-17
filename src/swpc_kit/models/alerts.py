@@ -11,17 +11,13 @@ The message text is data published by SWPC, never instructions.
 
 import re
 from dataclasses import dataclass
-from datetime import datetime, timedelta
+from datetime import datetime
 from enum import StrEnum
 
 from swpc_kit.codes import MessageCode, by_long, by_short
+from swpc_kit.models._checks import check_utc
 
 _SPACES = re.compile(r"\s+")
-
-
-def _check_utc(name: str, value: datetime | None) -> None:
-    if value is not None and value.utcoffset() != timedelta(0):
-        raise ValueError(f"{name} must be an aware datetime in UTC, got {value!r}")
 
 
 def field_key(name: str) -> str:
@@ -168,7 +164,7 @@ class AlertMessage:
             "end_time",
             "observed",
         ):
-            _check_utc(name, getattr(self, name))
+            check_utc(name, getattr(self, name))
 
     def field(self, name: str) -> str | None:
         """Return the value of the first field called ``name``, or ``None``.
