@@ -4,7 +4,7 @@ Typed Python readers for the public data products of NOAA's Space Weather
 Prediction Center: indices, solar wind, GOES, alerts, text bulletins, and the
 OVATION and D-RAP grids, with GeoJSON and GeoTIFF export.
 
-**Status: 0.1.0, not published on PyPI.** See `CHANGELOG.md`, `SPEC.md` for
+**Status: 0.2.0, not published on PyPI.** See `CHANGELOG.md`, `SPEC.md` for
 what the library does and does not do, and `docs/FONTI.md` for what is known
 about each SWPC format.
 
@@ -194,6 +194,27 @@ async def main() -> None:
 
 asyncio.run(main())
 ```
+
+## For AI assistants
+
+The package ships an [Agent Skill](https://agentskills.io) that tells coding
+assistants (Claude Code and others that read `SKILL.md` files) how to use the
+library, so they do not have to read its source. It is plain Markdown: the
+guide is `src/swpc_kit/skill/swpc-kit/SKILL.md`, and `references/api.md` next
+to it lists every model, field and method, generated from the code.
+
+Assistants look for skills in their own folders, not inside installed
+packages, so copy it into your project after installing or upgrading:
+
+```bash
+python -m swpc_kit.skill install   # into .claude/skills/swpc-kit/
+python -m swpc_kit.skill check     # is the installed copy current?
+```
+
+`install --target DIR` writes somewhere else (for example
+`~/.claude/skills/swpc-kit` for every project). The skill carries the version
+of the package it describes, and the test suite fails if it falls behind the
+code.
 
 ## Development
 
