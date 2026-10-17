@@ -112,7 +112,7 @@ che cambiare libreria tocchi un modulo solo.
 
 ## T8 — Rifinitura
 
-- [ ] Fatta
+- [x] Fatta
 
 README con esempi eseguibili (verificati da un test), CHANGELOG, versione
 0.1.0, controllo che l'API pubblica sia esportata e documentata. Niente
