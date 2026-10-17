@@ -51,6 +51,11 @@ uv run mypy
   pagina HTML al posto del JSON non sono un crash generico.
 - **Un formato nuovo entra con la sua fixture**, registrata o copiata da un
   esempio ufficiale, con URL e data in `tests/fixtures/README.md`.
+- **La skill segue il codice.** Chi cambia l'API pubblica rigenera
+  `src/swpc_kit/skill/swpc-kit/references/api.md` con
+  `uv run python tools/build_skill.py` e rilegge `SKILL.md` (stessa cartella);
+  chi cambia versione la cambia anche in `metadata.version` di `SKILL.md`. I
+  test (`tests/test_skill.py`) falliscono se uno dei due resta indietro.
 - Ogni tappa tocca i suoi moduli. I file condivisi (`__init__.py`, il catalogo
   dei codici) si toccano il minimo, per non creare conflitti fra PR parallele.
 
