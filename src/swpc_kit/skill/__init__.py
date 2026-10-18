@@ -29,7 +29,7 @@ import sys
 from collections.abc import Iterable, Sequence
 from dataclasses import dataclass
 from importlib import resources
-from importlib.metadata import entry_points
+from importlib.metadata import EntryPoint, entry_points
 from importlib.resources.abc import Traversable
 from pathlib import Path
 
@@ -46,6 +46,7 @@ __all__ = [
     "SyncReport",
     "bundled",
     "check",
+    "declared",
     "discover",
     "install",
     "main",
@@ -219,6 +220,15 @@ def _normalise(name: str) -> str:
     return re.sub(r"[-_.]+", "-", name).lower()
 
 
+def _distribution(point: EntryPoint) -> str:
+    return _normalise(point.dist.name if point.dist else point.name)
+
+
+def declared() -> set[str]:
+    """Return the distributions declaring a skill, whether it loads or not."""
+    return {_distribution(point) for point in entry_points(group=ENTRY_POINT_GROUP)}
+
+
 def discover() -> tuple[list[Source], list[str]]:
     """Find the skills of the installed packages (``agent_skills`` entry points).
 
@@ -228,7 +238,7 @@ def discover() -> tuple[list[Source], list[str]]:
     sources: dict[str, Source] = {}
     warnings: list[str] = []
     for point in entry_points(group=ENTRY_POINT_GROUP):
-        distribution = _normalise(point.dist.name if point.dist else point.name)
+        distribution = _distribution(point)
         try:
             directory = point.load().bundled()
         except Exception as exc:  # any broken package must not stop the others
@@ -257,17 +267,26 @@ class SyncReport:
         return "skills: " + (", ".join(self.entries) or "none")
 
 
-def sync(root: Path = Path(), sources: Iterable[Source] | None = None) -> SyncReport:
+def sync(
+    root: Path = Path(),
+    sources: Iterable[Source] | None = None,
+    *,
+    keep: Iterable[str] | None = None,
+) -> SyncReport:
     """Make ``<root>/.claude/skills/`` hold the skills of the installed packages.
 
     A missing skill is copied, with a ``.gitignore`` that ignores the copy. A
     copy whose version differs is replaced, keeping its ``.gitignore`` if it
-    had one. A marked copy whose package is gone is removed. Directories
-    without the ``.package-skill`` marker are never touched.
+    had one. A marked copy whose package is gone is removed; the copy of a
+    package that is installed but fails to load is kept. Directories without
+    the ``.package-skill`` marker are never touched.
 
     Args:
         root: Project directory.
         sources: Skills to sync; by default those found by :func:`discover`.
+        keep: Distributions whose copies are never removed, besides those in
+            ``sources``; by default, with ``sources`` omitted, every
+            distribution that :func:`declared` lists.
 
     Returns:
         The summary and the warnings; problems never raise.
@@ -276,9 +295,11 @@ def sync(root: Path = Path(), sources: Iterable[Source] | None = None) -> SyncRe
     if sources is None:
         found, warnings = discover()
         sources = found
+        if keep is None:
+            keep = declared()
     skills = root / ".claude" / "skills"
     entries: dict[str, str] = {}
-    known: set[str] = set()
+    known: set[str] = set(keep or ())
     for source in sources:
         known.add(source.distribution)
         name = source.directory.name

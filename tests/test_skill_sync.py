@@ -20,6 +20,7 @@ from swpc_kit.skill import (
     MARKER,
     SKILL_NAME,
     Source,
+    declared,
     discover,
     install,
     main,
@@ -62,6 +63,7 @@ def test_discover_finds_this_package() -> None:
     assert len(ours) == 1
     assert ours[0].directory.name == SKILL_NAME
     assert ours[0].directory.joinpath("SKILL.md").is_file()
+    assert SKILL_NAME in declared()
 
 
 def test_discover_skips_broken_entry_points(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -137,6 +139,28 @@ def test_sync_removes_skills_of_uninstalled_packages(tmp_path: Path) -> None:
     assert not (_skills(tmp_path) / "alpha").exists()
     assert (_skills(tmp_path) / "beta").is_dir()
     assert report.summary == "skills: alpha (removed), beta 2"
+
+
+def test_sync_keeps_the_skill_of_a_package_that_fails_to_load(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Installed but broken (say, a half-done upgrade): keep the old copy."""
+    sync(tmp_path, [_package(tmp_path, "alpha", "1.0")])
+    broken = EntryPoint("alpha", "no_such_module_for_swpc_kit", ENTRY_POINT_GROUP)
+    monkeypatch.setattr(swpc_kit.skill, "entry_points", lambda group: [broken])
+    assert declared() == {"alpha"}
+    report = sync(tmp_path)
+    assert (_skills(tmp_path) / "alpha" / "SKILL.md").is_file()
+    assert report.summary == "skills: none"
+    assert len(report.warnings) == 1
+    assert "alpha" in report.warnings[0]
+
+
+def test_sync_keep_protects_copies_from_removal(tmp_path: Path) -> None:
+    sync(tmp_path, [_package(tmp_path, "alpha", "1.0")])
+    report = sync(tmp_path, [], keep={"alpha"})
+    assert (_skills(tmp_path) / "alpha").is_dir()
+    assert report.summary == "skills: none"
 
 
 def test_sync_leaves_unmarked_directories_alone(tmp_path: Path) -> None:
