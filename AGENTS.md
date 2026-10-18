@@ -55,7 +55,9 @@ uv run mypy
   `src/swpc_kit/skill/swpc-kit/references/api.md` con
   `uv run python tools/build_skill.py` e rilegge `SKILL.md` (stessa cartella);
   chi cambia versione la cambia anche in `metadata.version` di `SKILL.md`. I
-  test (`tests/test_skill.py`) falliscono se uno dei due resta indietro.
+  test (`tests/test_skill.py`) falliscono se uno dei due resta indietro. Il
+  modulo `swpc_kit/skill/__init__.py` segue lo schema comune dei pacchetti
+  (`SPEC.md`, Architettura): non si cambia da soli.
 - Ogni tappa tocca i suoi moduli. I file condivisi (`__init__.py`, il catalogo
   dei codici) si toccano il minimo, per non creare conflitti fra PR parallele.
 

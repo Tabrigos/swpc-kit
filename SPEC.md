@@ -34,8 +34,21 @@ Tre strati, ognuno usabile da solo, più la skill che li descrive:
      errori della fonte, chiama il parser.
 4. **Skill per gli assistenti AI** (`swpc_kit/skill/`): istruzioni in formato
    Agent Skills (`SKILL.md` scritto a mano, `references/api.md` generato dal
-   codice) installate con `python -m swpc_kit.skill install`. Versionata con
-   il pacchetto; i test la tengono allineata all'API.
+   codice), versionate con il pacchetto; i test le tengono allineate all'API.
+   Segue lo schema comune "skill dei pacchetti" v1, uguale negli altri
+   pacchetti dello stesso autore (per esempio politefetch):
+   - entry point `agent_skills` (`swpc-kit = "swpc_kit.skill"`): il modulo
+     espone `bundled()`, la cartella della skill. È l'unico contratto fra
+     pacchetti;
+   - `python -m swpc_kit.skill sync [--root DIR]` porta in
+     `<root>/.claude/skills/<nome>/` le skill di tutti i pacchetti installati
+     (aggiunge, aggiorna se la versione cambia, rimuove quelle dei pacchetti
+     spariti), stampa una riga ed esce sempre con 0. Pensato per un hook
+     `SessionStart` del progetto che usa i pacchetti (README);
+   - ogni copia scritta da `install` o `sync` ha il marcatore
+     `.package-skill`; `sync` tocca solo le cartelle marcate. Le cartelle
+     create da `sync` hanno un `.gitignore` con `*`; `install` non lo scrive;
+   - le skill stanno solo nei progetti, mai in `~/.claude/skills`.
 
 ```python
 from swpc_kit.parse import parse_planetary_k_index
