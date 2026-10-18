@@ -138,3 +138,23 @@ assistente AI come usare la libreria senza leggerne il sorgente:
   quello nel repo, versione della skill uguale a quella del pacchetto, ogni
   prodotto nella tabella, ogni nome citato esistente, esempi eseguiti.
 - Versione 0.2.0.
+
+## T10 — Schema comune delle skill dei pacchetti
+
+- [x] Fatta
+
+Allinea la skill di T9 allo schema "skill dei pacchetti" v1, concordato con
+politefetch perché i pacchetti dello stesso autore si comportino allo stesso
+modo:
+
+- entry point `agent_skills` che punta a `swpc_kit.skill` (`bundled()`);
+- `python -m swpc_kit.skill sync [--root DIR]`: installa, aggiorna (solo se
+  la versione cambia) e rimuove le skill di tutti i pacchetti installati in
+  `.claude/skills/`, una riga di riepilogo, uscita sempre 0, avvisi su
+  stderr;
+- marcatore `.package-skill` nelle copie scritte da `install` e `sync`;
+  `.gitignore` con `*` solo nelle cartelle create da `sync`;
+- README con l'hook `SessionStart` per il progetto che usa i pacchetti; tolto
+  il suggerimento di installare in `~/.claude/skills`.
+
+Resta nella versione 0.2.0 (il tag non era ancora stato fatto).

@@ -4,11 +4,11 @@
 
 Riscritto da capo a ogni fine sessione, mai accodato.
 
-- **Stato**: T0–T9 fatte: versione **0.2.0**, non pubblicata su PyPI.
+- **Stato**: T0–T10 fatte: versione **0.2.0**, non pubblicata su PyPI.
   Parser e modelli per tutti i prodotti della prima versione, export GeoJSON
   e GeoTIFF, client sincrono e asincrono, README con esempi verificati da
   `tests/test_readme.py`, `CHANGELOG.md`, skill per gli assistenti AI
-  dentro il pacchetto.
+  dentro il pacchetto, sincronizzata nei progetti da `sync`.
 - **Prossimo passo**: nessuna tappa aperta. Da decidere: pubblicazione su
   PyPI (nome `swpc-kit` libero al 2026-10-15, da ricontrollare), licenza
   (`SPEC.md`: "da decidere quando il repo diventa pubblico"), tag `v0.2.0`.
@@ -127,6 +127,20 @@ Riscritto da capo a ogni fine sessione, mai accodato.
     client sulle fixture (orologio fissato al 2026-10-15), comandi.
   - La fixture `swpc_from_fixtures` (client che legge le fixture) ora sta
     in `tests/conftest.py`, usata da README e skill.
+- **T10** (schema comune delle skill):
+  - Schema "skill dei pacchetti" v1, concordato con la sessione di
+    politefetch: entry point `agent_skills`, `sync`, marcatore
+    `.package-skill`, `.gitignore` `*` solo nelle copie create da `sync`.
+    Il modulo `swpc_kit/skill/__init__.py` deve restare uguale a quello di
+    politefetch salvo le costanti: un cambiamento va concordato.
+  - `sync` legge la versione da `metadata.version` di `SKILL.md` (copia e
+    pacchetto); aggiorna anche se una delle due manca. Riepilogo:
+    `skills: a 1.0 (added), b 2.0 (updated), c 0.2.0, d (removed)` o
+    `skills: none`.
+  - Non c'è un file DECISIONI: la scelta sta in `SPEC.md` (Architettura).
+  - La rimozione confronta i marcatori con gli entry point **dichiarati**
+    (`declared()`), non con quelli caricati: un pacchetto installato ma
+    rotto tiene la sua copia vecchia e dà un avviso.
 - **Dubbi aperti**: le ipotesi rimaste in `docs/FONTI.md` (UTC dei
   `time_tag` senza `Z`, millisecondi del vecchio Dst e flusso, significato
   delle chiavi di `noaa-scales.json`, unità dei valori OVATION).
@@ -163,3 +177,6 @@ Una riga per sessione: data, tappa, cosa è entrato, cosa resta.
 - 2026-10-17 — T9: skill per gli assistenti AI nel pacchetto (guida a mano,
   riferimento API generato, comando `python -m swpc_kit.skill`), test che la
   tengono allineata al codice, versione 0.2.0. Nessuna tappa aperta.
+- 2026-10-18 — T10: skill allineata allo schema comune dei pacchetti (entry
+  point `agent_skills`, `sync` per l'hook `SessionStart`, marcatore), README
+  con l'hook. Sempre 0.2.0. Nessuna tappa aperta.

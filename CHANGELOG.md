@@ -13,6 +13,11 @@ All notable changes to this project are listed here. The format follows
   `references/api.md` generated from the code by `tools/build_skill.py`.
 - `python -m swpc_kit.skill install | check | show | path` to copy the skill
   where assistants look for it and to tell whether the copy is current.
+- `python -m swpc_kit.skill sync`, meant for a `SessionStart` hook: brings the
+  skills of every installed package that declares one in the `agent_skills`
+  entry point group into `.claude/skills/`, updating and removing copies as
+  packages change, in one line of output and without ever failing.
+- The `agent_skills` entry point (`swpc-kit = "swpc_kit.skill"`).
 
 ## [0.1.0] - 2026-10-17
 

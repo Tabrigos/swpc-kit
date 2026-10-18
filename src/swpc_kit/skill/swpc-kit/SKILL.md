@@ -172,7 +172,10 @@ library offers no generic downloader.
 ## Keeping this skill current
 
 This skill is bundled with swpc-kit and versioned with it (`metadata.version`
-above). After upgrading the package, refresh the installed copy:
+above). If the project runs `python -m swpc_kit.skill sync` from a
+`SessionStart` hook, the copy in `.claude/skills/swpc-kit/` is refreshed at
+every session: do not edit it, changes are lost. Otherwise, after upgrading
+the package:
 
 ```bash
 python -m swpc_kit.skill check     # says whether the installed copy is current
