@@ -138,6 +138,9 @@ Riscritto da capo a ogni fine sessione, mai accodato.
     `skills: a 1.0 (added), b 2.0 (updated), c 0.2.0, d (removed)` o
     `skills: none`.
   - Non c'è un file DECISIONI: la scelta sta in `SPEC.md` (Architettura).
+  - La rimozione confronta i marcatori con gli entry point **dichiarati**
+    (`declared()`), non con quelli caricati: un pacchetto installato ma
+    rotto tiene la sua copia vecchia e dà un avviso.
 - **Dubbi aperti**: le ipotesi rimaste in `docs/FONTI.md` (UTC dei
   `time_tag` senza `Z`, millisecondi del vecchio Dst e flusso, significato
   delle chiavi di `noaa-scales.json`, unità dei valori OVATION).
