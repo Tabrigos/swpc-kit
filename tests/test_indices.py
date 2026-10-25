@@ -1,6 +1,9 @@
 import dataclasses
+import json
+from collections.abc import Callable
 from datetime import UTC, datetime
 from pathlib import Path
+from typing import Any
 
 import pytest
 
@@ -102,9 +105,11 @@ def test_kp_3h_accepts_str() -> None:
             0,
         ),
         (
-            b'[{"time_tag":"2026-10-08T00:00:00","a_running":4,"station_count":8}]',
+            b'[{"time_tag":"2026-10-08T00:00:00","Kp":1,"a_running":4,'
+            b'"station_count":8},'
+            b'{"time_tag":"2026-10-08T03:00:00","a_running":4,"station_count":8}]',
             "Kp",
-            0,
+            1,
         ),
         (
             b'[["time_tag","Kp","a_running","station_count"],'
@@ -127,6 +132,12 @@ def test_kp_3h_inconsistent_values(raw: bytes, field: str, index: int) -> None:
         parse_planetary_k_index(raw)
     assert info.value.field == field
     assert info.value.index == index
+
+
+def test_kp_3h_field_missing_from_the_format_is_unexpected() -> None:
+    raw = b'[{"time_tag":"2026-10-08T00:00:00","a_running":4,"station_count":8}]'
+    with pytest.raises(UnexpectedContent, match="'Kp' missing from the first"):
+        parse_planetary_k_index(raw)
 
 
 def test_kp_3h_truncated_is_not_ready() -> None:
@@ -362,3 +373,52 @@ def test_noaa_scales_needs_an_observed_day() -> None:
     raw = _scales('{"Scale": "0", "Text": "none"}').replace(b'"0":', b'"1":')
     with pytest.raises(ParseError, match="observed"):
         parse_noaa_scales(raw)
+
+
+# --- record order and duplicates (all the series) ---------------------------
+
+SERIES = [
+    (parse_planetary_k_index, "kp-3h/2026-10-15.json"),
+    (parse_planetary_k_index, "kp-3h/2026-10-15-built.json"),
+    (parse_planetary_k_index_forecast, "kp-forecast/2026-10-15.json"),
+    (parse_planetary_k_index_1m, "kp-1m/2026-10-15.json"),
+    (parse_kyoto_dst, "dst/2026-10-15.json"),
+    (parse_kyoto_dst, "dst/2026-10-15-built.json"),
+    (parse_f107_flux_30_day, "f107-30-day/2026-10-15.json"),
+    (parse_f107_flux_30_day, "f107-30-day/2026-10-15-built.json"),
+]
+
+
+def _records(name: str) -> tuple[list[Any], list[Any]]:
+    """The header (empty in the current format) and the records of a file."""
+    document = json.loads(fixture(name).decode("utf-8-sig"))
+    if isinstance(document[0], list):
+        return document[:1], document[1:]
+    return [], document
+
+
+@pytest.mark.parametrize(("parse", "name"), SERIES)
+def test_series_come_out_oldest_first_whatever_the_order(
+    parse: Callable[[bytes], Any], name: str
+) -> None:
+    header, records = _records(name)
+    assert len(records) >= 3
+    forward = parse(fixture(name))
+    backward = parse(json.dumps(header + records[::-1]).encode())
+    assert backward.values == forward.values
+    times = [v.time for v in backward.values]
+    assert times == sorted(times)
+    assert backward.data_time == forward.data_time
+
+
+@pytest.mark.parametrize(("parse", "name"), SERIES)
+def test_series_reject_a_repeated_time(
+    parse: Callable[[bytes], Any], name: str
+) -> None:
+    header, records = _records(name)
+    repeated = [*records, records[1]]
+    with pytest.raises(ParseError) as error:
+        parse(json.dumps(header + repeated).encode())
+    assert error.value.field == "time_tag"
+    assert error.value.index == len(records)
+    assert "twice" in str(error.value)
