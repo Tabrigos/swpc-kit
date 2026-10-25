@@ -203,7 +203,7 @@ asyncio.run(main())
   client: `Client(urls={"kyoto_dst": "https://..."})`. The parsers also work
   on content you downloaded yourself, with `source_url=`.
 - **A format that changed** in a way no parser knows (a field that is gone
-  from the first record, HTML, an unknown shape) is `UnexpectedContent`:
+  from every record, HTML, an unknown shape) is `UnexpectedContent`:
   stop and report it, a new version is needed. A known format with an
   inconsistent value is `ParseError`, which names the field and the record or
   line. Each parser reads every format of its product documented in

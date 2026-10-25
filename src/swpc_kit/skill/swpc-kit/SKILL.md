@@ -118,7 +118,7 @@ All errors are `SwpcError`. React to the class, not to the message text:
 | Error | Meaning | Whose fault | What to do |
 |---|---|---|---|
 | `SourceNotReady` | Timeout, network failure, HTTP 408/425/429/5xx, or a truncated file (SWPC rewrites files in place) | Nobody: a transient state of SWPC or of the network | Retry after a short wait |
-| `UnexpectedContent` | Redirect, other HTTP status (`status`, `location`), HTML page, unknown format, a field missing from the first record (a new format) | SWPC moved or changed the product, or the URL is wrong | Do not retry in a loop; report it. If the product moved, see below |
+| `UnexpectedContent` | Redirect, other HTTP status (`status`, `location`), HTML page, unknown format, a field missing from every record (a new format) | SWPC moved or changed the product, or the URL is wrong | Do not retry in a loop; report it. If the product moved, see below |
 | `ParseError` | Known format, inconsistent value, and no record of the file could be read; `field`, `line` or `index` say where | The data SWPC served | Report it; do not patch the value |
 | `StaleData` | Content older than `max_age`; has `data_time`, `max_age`, `age` | Nobody: SWPC has not updated the product | Use it with a warning, or wait |
 
