@@ -268,10 +268,34 @@ def test_mag_two_active_records_first_in_file_wins() -> None:
 
 
 def test_mag_without_active_records() -> None:
-    mag = parse_rtsw_mag_1m(dump(mag_record(source="ACE", active=False)))
+    mag = parse_rtsw_mag_1m(
+        dump(
+            mag_record(source="ACE", active=False),
+            mag_record(source="ACE", active=False, time_tag="2026-10-15T11:00:00"),
+        )
+    )
     assert mag.active_series() == ()
     assert mag.latest_active() is None
-    assert mag.data_time == utc(2026, 10, 15, 17, 52)
+    # No time of the file has active data: freshness is that of its start.
+    assert mag.data_time == utc(2026, 10, 15, 11)
+
+
+@pytest.mark.parametrize(
+    ("parse", "record"),
+    [(parse_rtsw_mag_1m, mag_record), (parse_rtsw_wind_1m, wind_record)],
+)
+def test_data_time_follows_the_active_source(parse: Any, record: Any) -> None:
+    # SOLAR1 (active) stopped at 11:53; ACE (inactive backup) went on.
+    rtsw = parse(
+        dump(
+            record(time_tag="2026-10-15T11:53:00"),
+            record(time_tag="2026-10-15T11:53:00", source="ACE", active=False),
+            record(time_tag="2026-10-15T17:51:00", source="ACE", active=False),
+        )
+    )
+    assert rtsw.data_time == utc(2026, 10, 15, 11, 53)
+    assert rtsw.latest_active().time == rtsw.data_time
+    assert max(v.time for v in rtsw.values) == utc(2026, 10, 15, 17, 51)
 
 
 @pytest.mark.parametrize(
@@ -301,9 +325,12 @@ def test_mag_inconsistent_values(changes: dict[str, Any], field: str) -> None:
 def test_mag_missing_field() -> None:
     record = mag_record()
     del record["bz_gsm"]
-    with pytest.raises(ParseError, match="missing") as info:
+    with pytest.raises(UnexpectedContent, match="'bz_gsm' missing from the first"):
         parse_rtsw_mag_1m(dump(record))
+    with pytest.raises(ParseError, match="missing") as info:
+        parse_rtsw_mag_1m(dump(mag_record(), record))
     assert info.value.field == "bz_gsm"
+    assert info.value.index == 1
 
 
 def test_mag_truncated_is_not_ready() -> None:
