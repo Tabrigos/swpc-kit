@@ -43,5 +43,8 @@ jobs:
       - run: uv sync --all-extras
       # rasterio before 1.5.2 multiplies affine transforms with `*`, which
       # affine 3 deprecates: a warning for users, an error under the test
-      # settings (filterwarnings = error).
-      - run: uv run pytest -W "ignore:Use:PendingDeprecationWarning"
+      # settings (filterwarnings = error). The wheel does not depend on the
+      # versions installed, and the checks job tests it already.
+      - run: >-
+          uv run pytest -W "ignore:Use:PendingDeprecationWarning"
+          --deselect tests/test_skill.py::test_the_built_wheel_ships_the_skill
