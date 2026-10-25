@@ -316,21 +316,20 @@ def test_data_time_follows_the_active_source(parse: Any, record: Any) -> None:
 )
 def test_mag_inconsistent_values(changes: dict[str, Any], field: str) -> None:
     raw = dump(mag_record(time_tag="2026-10-15T17:53:00"), mag_record(**changes))
+    mag = parse_rtsw_mag_1m(raw)
+    assert [(s.index, s.field) for s in mag.skipped] == [(1, field)]
     with pytest.raises(ParseError) as info:
-        parse_rtsw_mag_1m(raw)
+        parse_rtsw_mag_1m(dump(mag_record(**changes)))
     assert info.value.field == field
-    assert info.value.index == 1
 
 
 def test_mag_missing_field() -> None:
     record = mag_record()
     del record["bz_gsm"]
-    with pytest.raises(UnexpectedContent, match="'bz_gsm' missing from the first"):
+    with pytest.raises(UnexpectedContent, match="'bz_gsm' missing from every"):
         parse_rtsw_mag_1m(dump(record))
-    with pytest.raises(ParseError, match="missing") as info:
-        parse_rtsw_mag_1m(dump(mag_record(), record))
-    assert info.value.field == "bz_gsm"
-    assert info.value.index == 1
+    mag = parse_rtsw_mag_1m(dump(mag_record(), record))
+    assert [(s.index, s.field) for s in mag.skipped] == [(1, "bz_gsm")]
 
 
 def test_mag_truncated_is_not_ready() -> None:

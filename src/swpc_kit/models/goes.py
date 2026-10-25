@@ -17,6 +17,7 @@ from enum import StrEnum
 from itertools import pairwise
 
 from swpc_kit.models._checks import check_utc, check_values
+from swpc_kit.models.records import SkippedRecord
 
 # --- Flare class -------------------------------------------------------------
 
@@ -150,10 +151,12 @@ class GoesXrays:
         values: The values of every band, oldest first; values with the same
             time keep the order of the source file.
         source_url: Where the content came from.
+        skipped: The records that could not be read, in source order.
     """
 
     values: tuple[XraySample, ...]
     source_url: str
+    skipped: tuple[SkippedRecord, ...] = ()
 
     def __post_init__(self) -> None:
         check_values(self.values)
@@ -219,10 +222,12 @@ class GoesIntegralProtons:
         values: The values of every threshold, oldest first; values with the
             same time keep the order of the source file.
         source_url: Where the content came from.
+        skipped: The records that could not be read, in source order.
     """
 
     values: tuple[ProtonSample, ...]
     source_url: str
+    skipped: tuple[SkippedRecord, ...] = ()
 
     def __post_init__(self) -> None:
         check_values(self.values)

@@ -66,6 +66,9 @@ class ParseError(SwpcError):
 
     The message names the offending field and where it is, when known.
 
+    The arguments are also attributes; ``reason`` is ``message``, without
+    the location.
+
     Args:
         message: What is wrong with the value.
         field: Name of the offending field or column.
@@ -88,6 +91,7 @@ class ParseError(SwpcError):
             raise ValueError(f"line is 1-based, got {line}")
         if index is not None and index < 0:
             raise ValueError(f"index must not be negative, got {index}")
+        self.reason = message
         self.field = field
         self.line = line
         self.index = index

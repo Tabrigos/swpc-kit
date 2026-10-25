@@ -243,10 +243,11 @@ def test_xrays_are_sorted_oldest_first() -> None:
     ],
 )
 def test_xrays_inconsistent_values(changes: dict[str, Any], field: str) -> None:
+    xrays = parse_goes_xrays(dump(xray_record(), xray_record(**changes)))
+    assert [(s.index, s.field) for s in xrays.skipped] == [(1, field)]
     with pytest.raises(ParseError) as info:
-        parse_goes_xrays(dump(xray_record(), xray_record(**changes)))
+        parse_goes_xrays(dump(xray_record(**changes)))
     assert info.value.field == field
-    assert info.value.index == 1
 
 
 def test_xrays_missing_misspelled_field() -> None:
@@ -255,11 +256,9 @@ def test_xrays_missing_misspelled_field() -> None:
     # Missing from every record: SWPC fixed the spelling, a new format.
     with pytest.raises(UnexpectedContent, match="'electron_contaminaton' missing"):
         parse_goes_xrays(dump(record))
-    # Missing from one record only: an inconsistent file.
-    with pytest.raises(ParseError, match="missing") as info:
-        parse_goes_xrays(dump(xray_record(), record))
-    assert info.value.field == "electron_contaminaton"
-    assert info.value.index == 1
+    # Missing from one record only: that record is skipped.
+    xrays = parse_goes_xrays(dump(xray_record(), record))
+    assert [(s.index, s.field) for s in xrays.skipped] == [(1, "electron_contaminaton")]
 
 
 def test_xrays_errors() -> None:

@@ -17,6 +17,7 @@ from enum import StrEnum
 from typing import Protocol
 
 from swpc_kit.models._checks import check_utc, check_values
+from swpc_kit.models.records import SkippedRecord
 
 
 class RtswSource(StrEnum):
@@ -243,10 +244,12 @@ class RtswMag1m(_RtswSeries[RtswMagSample]):
         values: The records of every source, oldest first; records with the
             same time keep the order of the source file.
         source_url: Where the content came from.
+        skipped: The records that could not be read, in source order.
     """
 
     values: tuple[RtswMagSample, ...]
     source_url: str
+    skipped: tuple[SkippedRecord, ...] = ()
 
     def __post_init__(self) -> None:
         check_values(self.values)
@@ -260,10 +263,12 @@ class RtswWind1m(_RtswSeries[RtswWindSample]):
         values: The records of every source, oldest first; records with the
             same time keep the order of the source file.
         source_url: Where the content came from.
+        skipped: The records that could not be read, in source order.
     """
 
     values: tuple[RtswWindSample, ...]
     source_url: str
+    skipped: tuple[SkippedRecord, ...] = ()
 
     def __post_init__(self) -> None:
         check_values(self.values)

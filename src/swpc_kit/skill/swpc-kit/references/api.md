@@ -5,7 +5,7 @@
 
 Read only the section you need.
 
-Modules: `swpc_kit` · `swpc_kit.client` · `swpc_kit.models` · `swpc_kit.models.indices` · `swpc_kit.models.solar_wind` · `swpc_kit.models.goes` · `swpc_kit.models.alerts` · `swpc_kit.models.bulletins` · `swpc_kit.models.grids` · `swpc_kit.parse` · `swpc_kit.parse.indices` · `swpc_kit.parse.solar_wind` · `swpc_kit.parse.goes` · `swpc_kit.parse.alerts` · `swpc_kit.parse.bulletins` · `swpc_kit.parse.grids` · `swpc_kit.errors` · `swpc_kit.export` · `swpc_kit.export.geojson` · `swpc_kit.export.geotiff` · `swpc_kit.codes`
+Modules: `swpc_kit` · `swpc_kit.client` · `swpc_kit.models` · `swpc_kit.models.indices` · `swpc_kit.models.solar_wind` · `swpc_kit.models.goes` · `swpc_kit.models.alerts` · `swpc_kit.models.bulletins` · `swpc_kit.models.grids` · `swpc_kit.models.records` · `swpc_kit.parse` · `swpc_kit.parse.indices` · `swpc_kit.parse.solar_wind` · `swpc_kit.parse.goes` · `swpc_kit.parse.alerts` · `swpc_kit.parse.bulletins` · `swpc_kit.parse.grids` · `swpc_kit.errors` · `swpc_kit.export` · `swpc_kit.export.geojson` · `swpc_kit.export.geotiff` · `swpc_kit.codes`
 
 ## `swpc_kit`
 
@@ -145,7 +145,7 @@ Protocol. Fetches a URL synchronously.
 
 Models: frozen, typed dataclasses for SWPC products.
 
-Re-exports: `AlertMessage` (swpc_kit.models.alerts), `Alerts` (swpc_kit.models.alerts), `DailyAp` (swpc_kit.models.bulletins), `DrapFrequencies` (swpc_kit.models.grids), `DstValue` (swpc_kit.models.indices), `F107Flux` (swpc_kit.models.indices), `F107Value` (swpc_kit.models.indices), `FlareClass` (swpc_kit.models.goes), `GeomagneticForecast` (swpc_kit.models.bulletins), `GeomagneticStormScale` (swpc_kit.models.indices), `GoesIntegralProtons` (swpc_kit.models.goes), `GoesXrays` (swpc_kit.models.goes), `Grid` (swpc_kit.models.grids), `GridProduct` (swpc_kit.models.grids), `Kp1mValue` (swpc_kit.models.indices), `KpForecastStatus` (swpc_kit.models.indices), `KpForecastValue` (swpc_kit.models.indices), `KpPeriod` (swpc_kit.models.bulletins), `KpValue` (swpc_kit.models.indices), `KyotoDst` (swpc_kit.models.indices), `MessageField` (swpc_kit.models.alerts), `MessageKind` (swpc_kit.models.alerts), `NoaaScale` (swpc_kit.models.alerts), `NoaaScales` (swpc_kit.models.indices), `NoaaScalesDay` (swpc_kit.models.indices), `OutlookDay` (swpc_kit.models.bulletins), `OvationAurora` (swpc_kit.models.grids), `PlanetaryKIndex` (swpc_kit.models.indices), `PlanetaryKIndex1m` (swpc_kit.models.indices), `PlanetaryKIndexForecast` (swpc_kit.models.indices), `ProtonSample` (swpc_kit.models.goes), `RadioBlackoutScale` (swpc_kit.models.indices), `RtswMag1m` (swpc_kit.models.solar_wind), `RtswMagSample` (swpc_kit.models.solar_wind), `RtswSource` (swpc_kit.models.solar_wind), `RtswWind1m` (swpc_kit.models.solar_wind), `RtswWindSample` (swpc_kit.models.solar_wind), `ScaleCategory` (swpc_kit.models.alerts), `SolarRadiationScale` (swpc_kit.models.indices), `ThreeDayForecast` (swpc_kit.models.bulletins), `TwentySevenDayOutlook` (swpc_kit.models.bulletins), `XrayBand` (swpc_kit.models.goes), `XraySample` (swpc_kit.models.goes), `field_key` (swpc_kit.models.alerts), `wrap_longitude` (swpc_kit.models.grids).
+Re-exports: `AlertMessage` (swpc_kit.models.alerts), `Alerts` (swpc_kit.models.alerts), `DailyAp` (swpc_kit.models.bulletins), `DrapFrequencies` (swpc_kit.models.grids), `DstValue` (swpc_kit.models.indices), `F107Flux` (swpc_kit.models.indices), `F107Value` (swpc_kit.models.indices), `FlareClass` (swpc_kit.models.goes), `GeomagneticForecast` (swpc_kit.models.bulletins), `GeomagneticStormScale` (swpc_kit.models.indices), `GoesIntegralProtons` (swpc_kit.models.goes), `GoesXrays` (swpc_kit.models.goes), `Grid` (swpc_kit.models.grids), `GridProduct` (swpc_kit.models.grids), `Kp1mValue` (swpc_kit.models.indices), `KpForecastStatus` (swpc_kit.models.indices), `KpForecastValue` (swpc_kit.models.indices), `KpPeriod` (swpc_kit.models.bulletins), `KpValue` (swpc_kit.models.indices), `KyotoDst` (swpc_kit.models.indices), `MessageField` (swpc_kit.models.alerts), `MessageKind` (swpc_kit.models.alerts), `NoaaScale` (swpc_kit.models.alerts), `NoaaScales` (swpc_kit.models.indices), `NoaaScalesDay` (swpc_kit.models.indices), `OutlookDay` (swpc_kit.models.bulletins), `OvationAurora` (swpc_kit.models.grids), `PlanetaryKIndex` (swpc_kit.models.indices), `PlanetaryKIndex1m` (swpc_kit.models.indices), `PlanetaryKIndexForecast` (swpc_kit.models.indices), `ProtonSample` (swpc_kit.models.goes), `RadioBlackoutScale` (swpc_kit.models.indices), `RtswMag1m` (swpc_kit.models.solar_wind), `RtswMagSample` (swpc_kit.models.solar_wind), `RtswSource` (swpc_kit.models.solar_wind), `RtswWind1m` (swpc_kit.models.solar_wind), `RtswWindSample` (swpc_kit.models.solar_wind), `ScaleCategory` (swpc_kit.models.alerts), `SkippedRecord` (swpc_kit.models.records), `SolarRadiationScale` (swpc_kit.models.indices), `ThreeDayForecast` (swpc_kit.models.bulletins), `TwentySevenDayOutlook` (swpc_kit.models.bulletins), `XrayBand` (swpc_kit.models.goes), `XraySample` (swpc_kit.models.goes), `field_key` (swpc_kit.models.alerts), `wrap_longitude` (swpc_kit.models.grids).
 
 ## `swpc_kit.models.indices`
 
@@ -166,7 +166,7 @@ One 3-hour planetary K index value.
 
 ### `PlanetaryKIndex`
 
-`PlanetaryKIndex(values: tuple[KpValue, ...], source_url: str)`
+`PlanetaryKIndex(values: tuple[KpValue, ...], source_url: str, skipped: tuple[SkippedRecord, ...] = ())`
 
 The 3-hour planetary K index of the last days.
 
@@ -174,6 +174,7 @@ The 3-hour planetary K index of the last days.
 |---|---|---|
 | `values` | `tuple[KpValue, ...]` | The values, oldest first, one per time. |
 | `source_url` | `str` | Where the content came from. |
+| `skipped` | `tuple[SkippedRecord, ...]` | The records that could not be read, in source order. |
 
 - `.data_time` (property): Start of the most recent 3-hour interval.
 
@@ -200,7 +201,7 @@ One 3-hour value of the Kp forecast.
 
 ### `PlanetaryKIndexForecast`
 
-`PlanetaryKIndexForecast(values: tuple[KpForecastValue, ...], source_url: str)`
+`PlanetaryKIndexForecast(values: tuple[KpForecastValue, ...], source_url: str, skipped: tuple[SkippedRecord, ...] = ())`
 
 Kp of the past week followed by the forecast for the next days.
 
@@ -208,6 +209,7 @@ Kp of the past week followed by the forecast for the next days.
 |---|---|---|
 | `values` | `tuple[KpForecastValue, ...]` | The values, oldest first, one per time. |
 | `source_url` | `str` | Where the content came from. |
+| `skipped` | `tuple[SkippedRecord, ...]` | The records that could not be read, in source order. |
 
 - `.data_time` (property): Start of the most recent observed interval.
 
@@ -226,7 +228,7 @@ One 1-minute estimate of the planetary K index.
 
 ### `PlanetaryKIndex1m`
 
-`PlanetaryKIndex1m(values: tuple[Kp1mValue, ...], source_url: str)`
+`PlanetaryKIndex1m(values: tuple[Kp1mValue, ...], source_url: str, skipped: tuple[SkippedRecord, ...] = ())`
 
 The 1-minute planetary K index estimates of the last hours.
 
@@ -234,6 +236,7 @@ The 1-minute planetary K index estimates of the last hours.
 |---|---|---|
 | `values` | `tuple[Kp1mValue, ...]` | The values, oldest first, one per time. |
 | `source_url` | `str` | Where the content came from. |
+| `skipped` | `tuple[SkippedRecord, ...]` | The records that could not be read, in source order. |
 
 - `.data_time` (property): Time of the most recent estimate.
 
@@ -250,7 +253,7 @@ One hourly value of the Kyoto Dst index.
 
 ### `KyotoDst`
 
-`KyotoDst(values: tuple[DstValue, ...], source_url: str)`
+`KyotoDst(values: tuple[DstValue, ...], source_url: str, skipped: tuple[SkippedRecord, ...] = ())`
 
 Hourly Kyoto Dst of the last week.
 
@@ -258,6 +261,7 @@ Hourly Kyoto Dst of the last week.
 |---|---|---|
 | `values` | `tuple[DstValue, ...]` | The values, oldest first, one per time. |
 | `source_url` | `str` | Where the content came from. |
+| `skipped` | `tuple[SkippedRecord, ...]` | The records that could not be read, in source order. |
 
 - `.data_time` (property): Time of the most recent value.
 
@@ -274,7 +278,7 @@ One daily value of the 10.7 cm solar radio flux.
 
 ### `F107Flux`
 
-`F107Flux(values: tuple[F107Value, ...], source_url: str)`
+`F107Flux(values: tuple[F107Value, ...], source_url: str, skipped: tuple[SkippedRecord, ...] = ())`
 
 Daily 10.7 cm solar radio flux of the last 30 days.
 
@@ -282,6 +286,7 @@ Daily 10.7 cm solar radio flux of the last 30 days.
 |---|---|---|
 | `values` | `tuple[F107Value, ...]` | The values, oldest first, one per time. |
 | `source_url` | `str` | Where the content came from. |
+| `skipped` | `tuple[SkippedRecord, ...]` | The records that could not be read, in source order. |
 
 - `.data_time` (property): Time of the most recent value.
 
@@ -431,7 +436,7 @@ One one-minute record of the solar wind plasma.
 
 ### `RtswMag1m`
 
-`RtswMag1m(values: tuple[RtswMagSample, ...], source_url: str)` (subclass of `_RtswSeries`)
+`RtswMag1m(values: tuple[RtswMagSample, ...], source_url: str, skipped: tuple[SkippedRecord, ...] = ())` (subclass of `_RtswSeries`)
 
 One-minute interplanetary magnetic field of the last 24 hours.
 
@@ -439,10 +444,11 @@ One-minute interplanetary magnetic field of the last 24 hours.
 |---|---|---|
 | `values` | `tuple[RtswMagSample, ...]` | The records of every source, oldest first; records with the same time keep the order of the source file. |
 | `source_url` | `str` | Where the content came from. |
+| `skipped` | `tuple[SkippedRecord, ...]` | The records that could not be read, in source order. |
 
 ### `RtswWind1m`
 
-`RtswWind1m(values: tuple[RtswWindSample, ...], source_url: str)` (subclass of `_RtswSeries`)
+`RtswWind1m(values: tuple[RtswWindSample, ...], source_url: str, skipped: tuple[SkippedRecord, ...] = ())` (subclass of `_RtswSeries`)
 
 One-minute solar wind plasma of the last 24 hours.
 
@@ -450,6 +456,7 @@ One-minute solar wind plasma of the last 24 hours.
 |---|---|---|
 | `values` | `tuple[RtswWindSample, ...]` | The records of every source, oldest first; records with the same time keep the order of the source file. |
 | `source_url` | `str` | Where the content came from. |
+| `skipped` | `tuple[SkippedRecord, ...]` | The records that could not be read, in source order. |
 
 ## `swpc_kit.models.goes`
 
@@ -496,7 +503,7 @@ One GOES X-ray flux value of one band.
 
 ### `GoesXrays`
 
-`GoesXrays(values: tuple[XraySample, ...], source_url: str)`
+`GoesXrays(values: tuple[XraySample, ...], source_url: str, skipped: tuple[SkippedRecord, ...] = ())`
 
 GOES X-ray flux in both bands.
 
@@ -504,6 +511,7 @@ GOES X-ray flux in both bands.
 |---|---|---|
 | `values` | `tuple[XraySample, ...]` | The values of every band, oldest first; values with the same time keep the order of the source file. |
 | `source_url` | `str` | Where the content came from. |
+| `skipped` | `tuple[SkippedRecord, ...]` | The records that could not be read, in source order. |
 
 - `.data_time` (property): Time of the most recent value, of any band.
 - `.energies` (property): The bands in the content, sorted.
@@ -527,7 +535,7 @@ One GOES integral proton flux value above one energy threshold.
 
 ### `GoesIntegralProtons`
 
-`GoesIntegralProtons(values: tuple[ProtonSample, ...], source_url: str)`
+`GoesIntegralProtons(values: tuple[ProtonSample, ...], source_url: str, skipped: tuple[SkippedRecord, ...] = ())`
 
 GOES integral proton flux above each energy threshold.
 
@@ -535,6 +543,7 @@ GOES integral proton flux above each energy threshold.
 |---|---|---|
 | `values` | `tuple[ProtonSample, ...]` | The values of every threshold, oldest first; values with the same time keep the order of the source file. |
 | `source_url` | `str` | Where the content came from. |
+| `skipped` | `tuple[SkippedRecord, ...]` | The records that could not be read, in source order. |
 
 - `.data_time` (property): Time of the most recent value, of any threshold.
 - `.thresholds` (property): The energy thresholds in the content, in MeV, ascending.
@@ -628,7 +637,7 @@ One space weather message (alert, warning, watch or summary).
 
 ### `Alerts`
 
-`Alerts(messages: tuple[AlertMessage, ...], source_url: str)`
+`Alerts(messages: tuple[AlertMessage, ...], source_url: str, skipped: tuple[SkippedRecord, ...] = ())`
 
 The space weather messages of the last weeks (`alerts.json`).
 
@@ -636,6 +645,7 @@ The space weather messages of the last weeks (`alerts.json`).
 |---|---|---|
 | `messages` | `tuple[AlertMessage, ...]` | The messages, in source order (newest first). May be empty. |
 | `source_url` | `str` | Where the content came from. |
+| `skipped` | `tuple[SkippedRecord, ...]` | The records that could not be read, in source order. |
 
 - `.data_time` (property): Issue time of the most recent message, or `None` when empty.
 
@@ -819,6 +829,22 @@ D-RAP: D-region absorption, as a frequency on a global grid.
 
 - `.data_time` (property): The time the product is valid at.
 - `.times` (property): `valid_at`.
+
+## `swpc_kit.models.records`
+
+What a product made of records says about the records it could not read.
+
+### `SkippedRecord`
+
+`SkippedRecord(index: int, field: str | None, reason: str)`
+
+A record of the source that the parser could not read.
+
+| Field | Type | Meaning |
+|---|---|---|
+| `index` | `int` | 0-based position of the record in the JSON array. |
+| `field` | `str \| None` | The field that is wrong, when one is. |
+| `reason` | `str` | What is wrong, for a person to read. |
 
 ## `swpc_kit.parse`
 

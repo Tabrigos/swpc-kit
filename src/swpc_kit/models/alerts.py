@@ -16,6 +16,7 @@ from enum import StrEnum
 
 from swpc_kit.codes import MessageCode, by_long, by_short
 from swpc_kit.models._checks import check_utc
+from swpc_kit.models.records import SkippedRecord
 
 _SPACES = re.compile(r"\s+")
 
@@ -191,10 +192,12 @@ class Alerts:
         messages: The messages, in source order (newest first). May be
             empty.
         source_url: Where the content came from.
+        skipped: The records that could not be read, in source order.
     """
 
     messages: tuple[AlertMessage, ...]
     source_url: str
+    skipped: tuple[SkippedRecord, ...] = ()
 
     @property
     def data_time(self) -> datetime | None:

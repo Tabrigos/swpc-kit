@@ -3,7 +3,13 @@ from datetime import UTC, datetime
 import pytest
 
 from swpc_kit.errors import ParseError, SourceNotReady, UnexpectedContent
-from swpc_kit.parse._common import Record, json_records, load_json, parse_time
+from swpc_kit.parse._common import (
+    Record,
+    json_records,
+    load_json,
+    parse_time,
+    read_records,
+)
 
 # --- load_json --------------------------------------------------------------
 
@@ -133,10 +139,29 @@ def test_missing_field_names_field_and_record() -> None:
     assert info.value.index == 3
 
 
-def test_field_missing_from_the_first_record_is_unexpected() -> None:
+def _kp(record: Record) -> float:
+    return record.get_float("Kp", maximum=9)
+
+
+def test_read_records_skips_the_records_that_cannot_be_read() -> None:
+    records = [Record(0, {"Kp": 1}), Record(1, {"Kp": 12}), Record(2, {"x": 1})]
+    good, skipped = read_records(records, _kp)
+    assert good == [(0, 1.0)]
+    assert [(s.index, s.field) for s in skipped] == [(1, "Kp"), (2, "Kp")]
+    assert "out of range" in skipped[0].reason
+    assert skipped[1].reason == "missing field"
+
+
+def test_read_records_without_a_good_record_raises_the_first_error() -> None:
+    with pytest.raises(ParseError, match="out of range") as info:
+        read_records([Record(4, {"Kp": 12}), Record(5, {"x": 1})], _kp)
+    assert info.value.index == 4
+
+
+def test_a_field_missing_from_every_record_is_unexpected() -> None:
     # Not this product, or a format no parser knows: do not retry, report.
-    with pytest.raises(UnexpectedContent, match="'Kp' missing from the first"):
-        Record(0, {"a": 1}).get_float("Kp")
+    with pytest.raises(UnexpectedContent, match="'Kp' missing from every"):
+        read_records([Record(0, {"a": 1}), Record(1, {"a": 2})], _kp)
 
 
 @pytest.mark.parametrize(

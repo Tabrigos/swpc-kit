@@ -14,12 +14,26 @@ from swpc_kit.models.solar_wind import (
     RtswWind1m,
     RtswWindSample,
 )
-from swpc_kit.parse._common import Record, json_records
+from swpc_kit.parse._common import Record, json_records, read_records
 
 RTSW_MAG_1M_URL = "https://services.swpc.noaa.gov/json/rtsw/rtsw_mag_1m.json"
 RTSW_WIND_1M_URL = "https://services.swpc.noaa.gov/json/rtsw/rtsw_wind_1m.json"
 
 _COMPONENTS = ("vx_gse", "vy_gse", "vz_gse", "vx_gsm", "vy_gsm", "vz_gsm")
+
+# Plausibility limits, wider than anything measured at L1: a value beyond
+# them skips the record (docs/FONTI.md, "Plausibility limits").
+_MAX_FIELD = 1000.0  # nT, field strength and each component
+_MAX_SPEED = 5000.0  # km/s
+
+
+def _component(r: Record, field: str) -> float | None:
+    return r.get_optional_float(field, minimum=-_MAX_FIELD, maximum=_MAX_FIELD)
+
+
+def _flag(r: Record, field: str) -> int | None:
+    # Undocumented flags: SWPC may drop one without notice.
+    return r.get_optional_int(field, may_be_absent=True)
 
 
 def _mag_sample(r: Record) -> RtswMagSample:
@@ -27,22 +41,22 @@ def _mag_sample(r: Record) -> RtswMagSample:
         time=r.get_time("time_tag"),
         source=r.get_str("source"),
         active=r.get_bool("active"),
-        bt=r.get_optional_float("bt", minimum=0),
-        bx_gse=r.get_optional_float("bx_gse"),
-        by_gse=r.get_optional_float("by_gse"),
-        bz_gse=r.get_optional_float("bz_gse"),
+        bt=r.get_optional_float("bt", minimum=0, maximum=_MAX_FIELD),
+        bx_gse=_component(r, "bx_gse"),
+        by_gse=_component(r, "by_gse"),
+        bz_gse=_component(r, "bz_gse"),
         theta_gse=r.get_optional_float("theta_gse", minimum=-90, maximum=90),
         phi_gse=r.get_optional_float("phi_gse", minimum=0, maximum=360),
-        bx_gsm=r.get_optional_float("bx_gsm"),
-        by_gsm=r.get_optional_float("by_gsm"),
-        bz_gsm=r.get_optional_float("bz_gsm"),
+        bx_gsm=_component(r, "bx_gsm"),
+        by_gsm=_component(r, "by_gsm"),
+        bz_gsm=_component(r, "bz_gsm"),
         theta_gsm=r.get_optional_float("theta_gsm", minimum=-90, maximum=90),
         phi_gsm=r.get_optional_float("phi_gsm", minimum=0, maximum=360),
-        manual_mode=r.get_optional_bool("manual_mode"),
-        sample_size=r.get_optional_int("sample_size", minimum=0),
-        max_telemetry_flag=r.get_optional_int("max_telemetry_flag"),
-        max_data_flag=r.get_optional_int("max_data_flag"),
-        overall_quality=r.get_optional_int("overall_quality"),
+        manual_mode=r.get_optional_bool("manual_mode", may_be_absent=True),
+        sample_size=r.get_optional_int("sample_size", minimum=0, may_be_absent=True),
+        max_telemetry_flag=_flag(r, "max_telemetry_flag"),
+        max_data_flag=_flag(r, "max_data_flag"),
+        overall_quality=_flag(r, "overall_quality"),
     )
 
 
@@ -64,14 +78,19 @@ def parse_rtsw_mag_1m(
         ParseError: If a value is missing or inconsistent (a negative field
             strength, an angle out of range, a non-boolean ``active``).
     """
-    values = sorted((_mag_sample(r) for r in json_records(raw)), key=lambda v: v.time)
-    return RtswMag1m(values=tuple(values), source_url=source_url)
+    read, skipped = read_records(json_records(raw), _mag_sample)
+    values = sorted((v for _, v in read), key=lambda v: v.time)
+    return RtswMag1m(
+        values=tuple(values), source_url=source_url, skipped=tuple(skipped)
+    )
 
 
 def _wind_sample(r: Record) -> RtswWindSample:
     species = {}
     for name in ("proton", "alpha"):
-        species[f"{name}_speed"] = r.get_optional_float(f"{name}_speed", minimum=0)
+        species[f"{name}_speed"] = r.get_optional_float(
+            f"{name}_speed", minimum=0, maximum=_MAX_SPEED
+        )
         species[f"{name}_temperature"] = r.get_optional_float(
             f"{name}_temperature", minimum=0
         )
@@ -102,14 +121,14 @@ def _wind_sample(r: Record) -> RtswWindSample:
         alpha_vy_gsm=species["alpha_vy_gsm"],
         alpha_vz_gsm=species["alpha_vz_gsm"],
         alpha_sample_size=r.get_optional_int("alpha_sample_size", minimum=0),
-        max_convergence_flag=r.get_optional_int("max_convergence_flag"),
-        max_data_flag=r.get_optional_int("max_data_flag"),
-        max_error_count_flag=r.get_optional_int("max_error_count_flag"),
-        max_processing_flag=r.get_optional_int("max_processing_flag"),
-        max_range_flag=r.get_optional_int("max_range_flag"),
-        max_sample_count_flag=r.get_optional_int("max_sample_count_flag"),
-        max_telemetry_flag=r.get_optional_int("max_telemetry_flag"),
-        overall_quality=r.get_optional_int("overall_quality"),
+        max_convergence_flag=_flag(r, "max_convergence_flag"),
+        max_data_flag=_flag(r, "max_data_flag"),
+        max_error_count_flag=_flag(r, "max_error_count_flag"),
+        max_processing_flag=_flag(r, "max_processing_flag"),
+        max_range_flag=_flag(r, "max_range_flag"),
+        max_sample_count_flag=_flag(r, "max_sample_count_flag"),
+        max_telemetry_flag=_flag(r, "max_telemetry_flag"),
+        overall_quality=_flag(r, "overall_quality"),
     )
 
 
@@ -128,5 +147,8 @@ def parse_rtsw_wind_1m(
         ParseError: If a value is missing or inconsistent (a negative speed,
             density or temperature, a non-boolean ``active``).
     """
-    values = sorted((_wind_sample(r) for r in json_records(raw)), key=lambda v: v.time)
-    return RtswWind1m(values=tuple(values), source_url=source_url)
+    read, skipped = read_records(json_records(raw), _wind_sample)
+    values = sorted((v for _, v in read), key=lambda v: v.time)
+    return RtswWind1m(
+        values=tuple(values), source_url=source_url, skipped=tuple(skipped)
+    )
