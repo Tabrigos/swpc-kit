@@ -10,8 +10,12 @@ Riscritto da capo a ogni fine sessione, mai accodato.
   `tests/test_readme.py`, `CHANGELOG.md`, skill per gli assistenti AI
   dentro il pacchetto, sincronizzata nei progetti da `sync`.
 - **Prossimo passo**: nessuna tappa aperta. Repository pronto per diventare
-  pubblico (licenza MIT, autore Sidereus Team). Da decidere: pubblicazione su
-  PyPI (nome `swpc-kit` libero al 2026-10-15, da ricontrollare), tag `v0.2.0`.
+  pubblico (licenza MIT, autore Sidereus Team). Pubblicazione decisa il
+  2026-10-25: PyPI (nome `swpc-kit` libero su PyPI e TestPyPI quel giorno),
+  account Sidereus Team, solo da `.github/workflows/release.yml` con
+  Trusted Publishing e l'approvazione del maintainer (`AGENTS.md`,
+  "Releases"); prova su TestPyPI la prima volta. Prima la skill v2, perché
+  toglie `sync` e l'entry point `agent_skills`.
 - **Decisioni in sospeso**: override mypy per rasterio o stub
   `types-rasterio` (T6); `alerts.json` vuoto = elenco vuoto con
   `data_time` `None` (T4; il client non lo considera mai vecchio); unire il
@@ -180,3 +184,9 @@ Una riga per sessione: data, tappa, cosa è entrato, cosa resta.
 - 2026-10-18 — T10: skill allineata allo schema comune dei pacchetti (entry
   point `agent_skills`, `sync` per l'hook `SessionStart`, marcatore), README
   con l'hook. Sempre 0.2.0. Nessuna tappa aperta.
+- 2026-10-25 — preparazione all'open source, in locale: licenza MIT e autore
+  Sidereus Team, `AGENTS.md`, `SPEC.md` e `docs/FONTI.md` in inglese, storia
+  riscritta senza identità personali (i numeri di PR fino a qui sono quelli
+  di `swpc-kit-archivio`, privato). Workflow di rilascio su PyPI e sdist con
+  elenco esplicito di file. Resta: renderlo pubblico, la skill v2, la prima
+  pubblicazione.
