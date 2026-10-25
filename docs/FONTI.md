@@ -477,6 +477,39 @@ comes):
   `ETag`s (`W/"12c4-…"`) and `Last-Modified`, and answers
   `304 Not Modified` to the conditional request with `If-None-Match`.
 
+## Plausibility limits (T14, 2026-10-25)
+
+SWPC documents no fill value for the physical fields (that a missing value
+is always `null` is a **hypothesis**, see "Solar wind"). So the parsers do
+not turn any value into `None`: a value beyond these limits makes the record
+**skipped** (`skipped` of the model, with the reason), and the other records
+are read. The limits are deliberately far beyond anything measured, to catch
+fill values such as `99999` or `-99999` and changes of unit, never a real
+extreme. They are **choices**, not documented by SWPC:
+
+| Field | Limit | Why |
+|---|---|---|
+| Dst | -2000 to 500 nT | the strongest storm measured is about -590 nT (1989); estimates for 1859 go to about -1700 nT |
+| F10.7 | 30 to 5000 sfu | the quiet Sun stays above about 60 sfu; flare-enhanced daily values stay well below 5000 |
+| RTSW field strength `bt` and each component | ±1000 nT | at L1 the field rarely exceeds 100 nT |
+| RTSW proton and alpha speed | up to 5000 km/s | the fastest solar wind measured is below 3000 km/s |
+| GOES X-ray flux (`flux`, `observed_flux`) | up to 0.1 W/m² (X1000) | about 35 times the strongest flare recorded (X28, 2.8e-3 W/m², November 2003) |
+| GOES integral proton flux | up to 1e8 pfu | the largest events stay below 1e6 pfu, even at ≥1 MeV |
+
+Consistency checks, also by record:
+
+- **1-minute Kp**, **verified** on the fixture (358 records, no exception):
+  `kp_index` is the digit of the `kp` label, and `estimated_kp` rounded to
+  thirds is the label (`Z` whole, `P` plus a third, `M` minus a third). A
+  record where they disagree is skipped.
+- **Quoted numbers** (old format) must be plain decimals: `0_5`, `+5`,
+  `nan`, `inf` are not numbers here, although Python's `float()` accepts
+  them. Spaces around the number are accepted.
+- **3-day forecast**: a storm scale such as `(G1)` needs a Kp of at least
+  4.67 (5-): a `2.00 (G2)` cell is a `ParseError` (the bulletins stay
+  strict). Which third starts each level above G1 is a **hypothesis** not
+  checked: the fixture has a single scale cell, `5.33 (G1)`.
+
 ## Known changes (SCN)
 
 - **SCN 26-21** (2026-03-02): new JSON formats from about 2026-03-31, old

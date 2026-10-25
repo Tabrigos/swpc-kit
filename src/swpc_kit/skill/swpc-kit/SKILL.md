@@ -118,8 +118,8 @@ All errors are `SwpcError`. React to the class, not to the message text:
 | Error | Meaning | Whose fault | What to do |
 |---|---|---|---|
 | `SourceNotReady` | Timeout, network failure, HTTP 408/425/429/5xx, or a truncated file (SWPC rewrites files in place) | Nobody: a transient state of SWPC or of the network | Retry after a short wait |
-| `UnexpectedContent` | Redirect, other HTTP status (`status`, `location`), HTML page, unknown format, a field missing from the first record (a new format) | SWPC moved or changed the product, or the URL is wrong | Do not retry in a loop; report it. If the product moved, see below |
-| `ParseError` | Known format, inconsistent value; `field`, `line` or `index` say where | The data SWPC served, or a format change the library does not know yet | Report it; do not patch the value |
+| `UnexpectedContent` | Redirect, other HTTP status (`status`, `location`), HTML page, unknown format, a field missing from every record (a new format) | SWPC moved or changed the product, or the URL is wrong | Do not retry in a loop; report it. If the product moved, see below |
+| `ParseError` | Known format, inconsistent value, and no record of the file could be read; `field`, `line` or `index` say where | The data SWPC served | Report it; do not patch the value |
 | `StaleData` | Content older than `max_age`; has `data_time`, `max_age`, `age` | Nobody: SWPC has not updated the product | Use it with a warning, or wait |
 
 Errors that go through the client also carry `product` (the method name) and
@@ -130,6 +130,16 @@ Errors that go through the client also carry `product` (the method name) and
 Until a new version of swpc-kit knows the new address, pass it with
 `Client(urls={"kyoto_dst": "https://..."})`; the method, the parser and
 `max_age` stay the same.
+
+## Records that could not be read
+
+The products made of records (indices, solar wind, GOES, alerts) are read
+record by record. A record with an impossible value (Dst 99999, a field of
+-99999 nT), a time already seen or a missing field goes to `skipped` (each a
+`SkippedRecord` with `index`, `field` and `reason`); the other records are
+read, and the client logs a warning on the `swpc_kit.client` logger. So
+`values` can have gaps: check `skipped` when completeness matters. The
+bulletins and the grids stay strict: one wrong line is a `ParseError`.
 
 ## Time and freshness
 
@@ -191,6 +201,8 @@ GeoTIFF with the times in its tags; it needs the `geo` extra.
   product that moved, give the client its new URL with `urls=`.
 - Do not poll faster than once a minute, nor create a `Client` per request:
   keep one, so unchanged products cost a `304 Not Modified`.
+- Do not ignore `skipped` when you need every value (a daily report, an
+  average): a gap in `values` may be a record SWPC served wrong.
 - Do not compare times as strings or convert them to local time before
   computing: keep the aware UTC `datetime`, convert only for display.
 - Do not read `values[-1]` of the solar wind files as "the solar wind now":

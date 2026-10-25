@@ -222,10 +222,14 @@ trovato casi di dato sbagliato senza errore e buchi d'integrazione. Le tappe
 T13–T16 li chiudono, in quest'ordine, prima della prima versione pubblica.
 T13 ha la precedenza; T12 resta valida e può andare in parallelo.
 
-Fuori dalle tappe, da concordare con politefetch prima di scrivere codice:
-retry con backoff, `Retry-After`, cache dell'ETag che sopravviva al
-processo (un cron oggi riscarica tutto a ogni giro). Vedi
-`docs/DECISIONI.md`, D-005 e D-006.
+**Roadmap**, decisa con il maintainer il 2026-10-25:
+
+1. T14, poi T15, poi T16; T12 in parallelo (se Windows va supportato, il
+   suo job di CI entra in T16).
+2. Prima versione pubblica, 0.3.0 (`AGENTS.md`, "Releases"), con il pending
+   publisher su pypi.org registrato dal maintainer.
+3. T17, il trasporto educato su politefetch, dopo che politefetch è su PyPI
+   (D-016). Fino ad allora il README documenta un ciclo di retry.
 
 ## T13 — Niente dati sbagliati in silenzio, client senza buchi
 
@@ -268,32 +272,35 @@ correzione.
 
 ## T14 — Tolleranza e plausibilità
 
-- [ ] Fatta
+- [x] Fatta
 
-**Da decidere con Paolo prima di partire**: oggi un solo record sbagliato
-fa fallire l'intero prodotto, e il record resta nel file per tutta la sua
-finestra (24 h il vento solare, 7 giorni il Kp, circa 30 giorni gli
-avvisi). Le alternative: tolleranza per record (i record malformati in una
-tupla `skipped` del modello, con il motivo) oppure "tutto o niente"
-dichiarato nel README. È un cambio di contratto: dopo la prima versione
-pubblica diventa incompatibile.
+Oggi un solo record sbagliato fa fallire l'intero prodotto, e il record
+resta nel file per tutta la sua finestra (24 h il vento solare, 7 giorni il
+Kp, circa 30 giorni gli avvisi). **Scelta del maintainer, 2026-10-25**:
+tolleranza per record (D-015).
 
-- [ ] La scelta, in `docs/DECISIONI.md`.
-- [ ] Se tolleranza: almeno `alerts.json` (un messaggio senza
-  `Serial Number:` fa cadere gli altri 80) e i campi flag di RTSW sempre
-  `null` (un campo assente diventa `None`).
-- [ ] **Plausibilità**: limiti su Dst, F10.7, componenti del campo
+- [x] **Tolleranza** nei prodotti JSON fatti di record (indici, vento
+  solare, GOES, avvisi): un record che non si legge va in `skipped` del
+  modello (indice, campo, motivo) e gli altri si leggono. Il prodotto
+  fallisce solo se nessun record è buono. Bollettini e griglie restano
+  rigidi.
+- [x] **Formato nuovo**: un campo che manca da *tutti* i record è
+  `UnexpectedContent`; se manca da alcuni, quei record vanno in `skipped`.
+  Sostituisce la regola del primo record di D-013.
+- [x] **Tempi ripetuti** (D-011): il secondo va in `skipped`.
+- [x] **Plausibilità**: limiti su Dst, F10.7, componenti del campo
   magnetico e flusso GOES, oggi senza limiti (Dst 99999, Bz -99999, un
-  flusso di 1 W/m² che diventa classe X10000 passano). I valori sentinella
-  documentati da SWPC diventano `None`, gli altri fuori limite
-  `ParseError`. Prima verificare in `docs/FONTI.md` quali sentinelle SWPC
-  usa davvero: senza fonte è un'ipotesi.
-- [ ] **Coerenza interna**: Kp a 1 minuto con `kp_index` diverso da
+  flusso di 1 W/m² che diventa classe X10000 passano). In `docs/FONTI.md`
+  SWPC non documenta valori sentinella per i campi fisici (che un dato
+  mancante sia sempre `null` è un'ipotesi), quindi un valore fuori limite
+  manda il record in `skipped`; i limiti e il loro perché vanno in
+  `docs/FONTI.md`.
+- [x] **Coerenza interna**: Kp a 1 minuto con `kp_index` diverso da
   `estimated_kp`; celle del 3-day forecast come `2.00 (G2)`; numeri con
   `_` accettati da `float()`.
-- [ ] **Logger `swpc_kit`**: debug per i `304`, warning per i campi degli
-  avvisi caduti a `None` e per i record scartati. Nessun handler
-  predefinito.
+- [x] **Logger `swpc_kit`**, nel client (i parser restano senza effetti):
+  warning per un prodotto con record scartati, debug per i `304`. Nessun
+  handler predefinito.
 
 ## T15 — Integrazione: serializzazione, griglie, async
 
@@ -329,3 +336,23 @@ pubblica diventa incompatibile.
 - [ ] Valutare un writer GeoTIFF senza rasterio (il raster è piccolo):
   solo valutazione, con la scelta in `docs/DECISIONI.md`.
 - [ ] Ricontrollare che `swpc-kit` sia libero su PyPI subito prima del tag.
+
+## T17 — Trasporto educato su politefetch
+
+- [ ] Fatta
+
+Dopo la 0.3.0 e dopo che politefetch è su PyPI (D-016). Progetto concordato
+con l'agente di politefetch il 2026-10-25:
+
+- [ ] Extra `swpc-kit[polite]` che dipende da `politefetch` senza extra, e
+  `PoliteTransport` / `AsyncPoliteTransport` in swpc-kit che avvolgono un
+  `Transport` esistente dentro `gate.attempt(url)`. Niente codice di
+  swpc-kit dentro politefetch; httpx2 resta il client di swpc-kit.
+- [ ] Intervallo minimo per host (scelta del maintainer): il trasporto
+  aspetta l'intervallo invece di passare `Refused(MIN_INTERVAL)` a chi
+  chiama; il README dice quanti prodotti al minuto si leggono.
+- [ ] Un errore distinto per l'host congelato (fermo finché una persona non
+  sblocca) e per i rifiuti con `retry_after`: non `SourceNotReady`.
+- [ ] politefetch ricorda solo ETag e Last-Modified, non i corpi: per
+  riusare un `304` dopo un riavvio swpc-kit salva l'ultimo corpo buono per
+  URL, oppure non manda le intestazioni condizionali quando non ce l'ha.

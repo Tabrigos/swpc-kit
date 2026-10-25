@@ -92,6 +92,11 @@ _INTEGER = re.compile(r"\d+")
 # --- Shared pieces -----------------------------------------------------------
 
 
+# A storm scale needs Kp 5- (4.67) at least: G1 is Kp 5. Which third starts
+# each level above G1 is not checked (docs/FONTI.md, "Plausibility limits").
+_G1_KP = 4.67
+
+
 def _check_kp(reader: TextReader, kp: float, line: int, field: str) -> None:
     if not 0 <= kp <= 9:
         raise reader.error(f"Kp {kp} out of range [0, 9]", line, field)
@@ -202,6 +207,12 @@ def _kp_table(
             if scale is not None and not _KP_SCALE.fullmatch(scale.strip()):
                 raise reader.error(
                     f"expected a scale like '(G1)', got {scale!r}", line.number, "Kp"
+                )
+            if scale is not None and kp < _G1_KP:
+                raise reader.error(
+                    f"Kp {value} is below storm level, yet marked {scale.strip()}",
+                    line.number,
+                    "Kp",
                 )
             start = datetime.combine(days[column], time(3 * row), tzinfo=UTC)
             columns[column].append(

@@ -6,11 +6,11 @@ and quoted numbers). Both give the same model.
 """
 
 import re
-from collections.abc import Iterable
+from collections.abc import Callable
 from datetime import datetime
 from typing import Any, Protocol
 
-from swpc_kit.errors import ParseError, SourceNotReady, SwpcError, UnexpectedContent
+from swpc_kit.errors import ParseError, SourceNotReady, UnexpectedContent
 from swpc_kit.models.indices import (
     DstValue,
     F107Flux,
@@ -29,7 +29,14 @@ from swpc_kit.models.indices import (
     RadioBlackoutScale,
     SolarRadiationScale,
 )
-from swpc_kit.parse._common import Record, json_records, load_json, parse_time
+from swpc_kit.models.records import SkippedRecord
+from swpc_kit.parse._common import (
+    Record,
+    json_records,
+    load_json,
+    parse_time,
+    read_records,
+)
 
 PLANETARY_K_INDEX_URL = (
     "https://services.swpc.noaa.gov/products/noaa-planetary-k-index.json"
@@ -53,24 +60,40 @@ class _Timed(Protocol):
     def time(self) -> datetime: ...
 
 
-def _in_time_order[V: _Timed](values: Iterable[V]) -> tuple[V, ...]:
-    """Sort the values oldest first; a time that appears twice is an error.
+# Plausibility limits, wider than anything measured: a value beyond them
+# skips the record (docs/FONTI.md, "Plausibility limits").
+_DST_RANGE = (-2000, 500)
+_F107_RANGE = (30.0, 5000.0)
+_THIRDS = {"Z": 0, "P": 1, "M": -1}
+
+
+def _series[V: _Timed](
+    raw: str | bytes, build: Callable[[Record], V]
+) -> tuple[tuple[V, ...], tuple[SkippedRecord, ...]]:
+    """Read a series record by record, oldest first, one value per time.
 
     SWPC writes these series oldest first, but nothing guarantees it, and
-    callers read ``values[-1]`` as the latest value.
+    callers read ``values[-1]`` as the latest value. A record that cannot be
+    read, or whose time an earlier record already has, is skipped.
     """
-    items = list(values)
-    seen: dict[datetime, int] = {}
-    for index, value in enumerate(items):
-        first = seen.setdefault(value.time, index)
-        if first != index:
-            raise ParseError(
-                f"time {value.time.isoformat()} appears twice"
-                f" (records {first} and {index})",
-                field="time_tag",
-                index=index,
+    read, skipped = read_records(json_records(raw), build)
+    first: dict[datetime, int] = {}
+    values: list[V] = []
+    for index, value in read:
+        earlier = first.setdefault(value.time, index)
+        if earlier == index:
+            values.append(value)
+        else:
+            skipped.append(
+                SkippedRecord(
+                    index=index,
+                    field="time_tag",
+                    reason=f"time {value.time.isoformat()} appears twice"
+                    f" (first in record {earlier})",
+                )
             )
-    return tuple(sorted(items, key=lambda v: v.time))
+    values.sort(key=lambda v: v.time)
+    return tuple(values), tuple(sorted(skipped, key=lambda s: s.index))
 
 
 def parse_planetary_k_index(
@@ -87,16 +110,16 @@ def parse_planetary_k_index(
         UnexpectedContent: If the content is not this product.
         ParseError: If a value is missing or inconsistent.
     """
-    values = _in_time_order(
-        KpValue(
+    values, skipped = _series(
+        raw,
+        lambda r: KpValue(
             time=r.get_time("time_tag"),
             kp=r.get_float("Kp", minimum=0, maximum=9),
             a_running=r.get_int("a_running", minimum=0),
             station_count=r.get_int("station_count", minimum=0),
-        )
-        for r in json_records(raw)
+        ),
     )
-    return PlanetaryKIndex(values=values, source_url=source_url)
+    return PlanetaryKIndex(values=values, source_url=source_url, skipped=skipped)
 
 
 def _forecast_status(record: Record) -> KpForecastStatus:
@@ -125,16 +148,18 @@ def parse_planetary_k_index_forecast(
         UnexpectedContent: If the content is not this product.
         ParseError: If a value is missing or inconsistent.
     """
-    values = _in_time_order(
-        KpForecastValue(
+    values, skipped = _series(
+        raw,
+        lambda r: KpForecastValue(
             time=r.get_time("time_tag"),
             kp=r.get_float("kp", minimum=0, maximum=9),
             status=_forecast_status(r),
             noaa_scale=r.get_optional_str("noaa_scale"),
-        )
-        for r in json_records(raw)
+        ),
     )
-    return PlanetaryKIndexForecast(values=values, source_url=source_url)
+    return PlanetaryKIndexForecast(
+        values=values, source_url=source_url, skipped=skipped
+    )
 
 
 def _kp_label(record: Record) -> str:
@@ -142,6 +167,26 @@ def _kp_label(record: Record) -> str:
     if not _KP_LABEL.fullmatch(label):
         raise record.error(f"expected a label like '3M', got {label!r}", "kp")
     return label
+
+
+def _kp_1m_value(record: Record) -> Kp1mValue:
+    """One 1-minute estimate, whose three forms of Kp must agree."""
+    value = Kp1mValue(
+        time=record.get_time("time_tag"),
+        kp_index=record.get_int("kp_index", minimum=0, maximum=9),
+        estimated_kp=record.get_float("estimated_kp", minimum=0, maximum=9),
+        kp=_kp_label(record),
+    )
+    digit, third = int(value.kp[0]), _THIRDS[value.kp[1]]
+    if value.kp_index != digit:
+        raise record.error(
+            f"kp_index {value.kp_index} is not the digit of {value.kp!r}", "kp_index"
+        )
+    if round(value.estimated_kp * 3) != digit * 3 + third:
+        raise record.error(
+            f"estimated_kp {value.estimated_kp} is not {value.kp!r}", "estimated_kp"
+        )
+    return value
 
 
 def parse_planetary_k_index_1m(
@@ -158,16 +203,8 @@ def parse_planetary_k_index_1m(
         UnexpectedContent: If the content is not this product.
         ParseError: If a value is missing or inconsistent.
     """
-    values = _in_time_order(
-        Kp1mValue(
-            time=r.get_time("time_tag"),
-            kp_index=r.get_int("kp_index", minimum=0, maximum=9),
-            estimated_kp=r.get_float("estimated_kp", minimum=0, maximum=9),
-            kp=_kp_label(r),
-        )
-        for r in json_records(raw)
-    )
-    return PlanetaryKIndex1m(values=values, source_url=source_url)
+    values, skipped = _series(raw, _kp_1m_value)
+    return PlanetaryKIndex1m(values=values, source_url=source_url, skipped=skipped)
 
 
 def parse_kyoto_dst(raw: str | bytes, *, source_url: str = KYOTO_DST_URL) -> KyotoDst:
@@ -182,11 +219,15 @@ def parse_kyoto_dst(raw: str | bytes, *, source_url: str = KYOTO_DST_URL) -> Kyo
         UnexpectedContent: If the content is not this product.
         ParseError: If a value is missing or inconsistent.
     """
-    values = _in_time_order(
-        DstValue(time=r.get_time("time_tag"), dst=r.get_int("dst"))
-        for r in json_records(raw)
+    minimum, maximum = _DST_RANGE
+    values, skipped = _series(
+        raw,
+        lambda r: DstValue(
+            time=r.get_time("time_tag"),
+            dst=r.get_int("dst", minimum=minimum, maximum=maximum),
+        ),
     )
-    return KyotoDst(values=values, source_url=source_url)
+    return KyotoDst(values=values, source_url=source_url, skipped=skipped)
 
 
 def parse_f107_flux_30_day(
@@ -203,11 +244,15 @@ def parse_f107_flux_30_day(
         UnexpectedContent: If the content is not this product.
         ParseError: If a value is missing or inconsistent.
     """
-    values = _in_time_order(
-        F107Value(time=r.get_time("time_tag"), flux=r.get_float("flux", minimum=0))
-        for r in json_records(raw)
+    minimum, maximum = _F107_RANGE
+    values, skipped = _series(
+        raw,
+        lambda r: F107Value(
+            time=r.get_time("time_tag"),
+            flux=r.get_float("flux", minimum=minimum, maximum=maximum),
+        ),
     )
-    return F107Flux(values=values, source_url=source_url)
+    return F107Flux(values=values, source_url=source_url, skipped=skipped)
 
 
 def _group(day: str, entry: dict[str, Any], name: str) -> Record:
@@ -229,7 +274,7 @@ class _ScalesRecord(Record):
     def error(self, message: str, field: str) -> ParseError:
         return ParseError(message, field=f"{self.prefix}{field}")
 
-    def missing(self, field: str) -> SwpcError:
+    def missing(self, field: str) -> ParseError:
         return self.error("missing field", field)
 
 

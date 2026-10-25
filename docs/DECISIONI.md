@@ -180,6 +180,7 @@ scelte già prese e sparse fra `SPEC.md`, `docs/FONTI.md` e il diario; la data
 ## D-011 — Le serie degli indici sono ordinate e senza tempi ripetuti
 
 - **Data e tappa**: 2026-10-25, T13
+- **Superata in parte da**: D-015 (il tempo ripetuto va in `skipped`)
 - **Contesto**: README e SKILL insegnano `values[-1]` come valore più recente,
   ma i parser degli indici tenevano l'ordine del file: un file in ordine
   inverso dava un valore vecchio senza errore. RTSW e GOES già ordinavano.
@@ -211,6 +212,7 @@ scelte già prese e sparse fra `SPEC.md`, `docs/FONTI.md` e il diario; la data
 ## D-013 — Un campo assente dal primo record è un formato nuovo
 
 - **Data e tappa**: 2026-10-25, T13
+- **Superata da**: D-015 (la regola guarda tutti i record, non il primo)
 - **Contesto**: i docstring dei parser promettono `UnexpectedContent` per
   "content is not this product", ma un campo rinominato o un prodotto
   sbagliato davano `ParseError`. Chi distingue "SWPC ha cambiato formato"
@@ -240,4 +242,67 @@ scelte già prese e sparse fra `SPEC.md`, `docs/FONTI.md` e il diario; la data
   chiamata (andrebbe ripetuto in ogni punto del programma).
 - **Conseguenze**: il nuovo indirizzo si mette in un solo posto finché una
   versione nuova non lo conosce.
+
+## D-015 — Tolleranza per record nei prodotti JSON fatti di record
+
+- **Data e tappa**: 2026-10-25, T14 (scelta del maintainer)
+- **Sostituisce**: D-013; in parte D-011
+- **Contesto**: un solo record sbagliato faceva fallire l'intero prodotto, e
+  il record resta nel file per tutta la sua finestra (24 h il vento solare,
+  7 giorni il Kp, circa 30 giorni gli avvisi): il prodotto restava illeggibile
+  altrettanto. Prima della prima versione pubblica il cambio di contratto non
+  rompe nessuno.
+- **Decisione**:
+  - indici, vento solare, GOES e avvisi si leggono record per record
+    (`read_records`): un record che non si legge va in `skipped` del modello
+    (`SkippedRecord`: indice, campo, motivo), gli altri si leggono;
+  - il prodotto fallisce solo se nessun record si legge: con
+    `UnexpectedContent` se lo stesso campo manca da tutti (formato nuovo),
+    altrimenti con il `ParseError` del primo record;
+  - un tempo ripetuto in una serie degli indici: il secondo record va in
+    `skipped`;
+  - i flag non documentati di RTSW possono mancare: diventano `None`;
+  - bollettini, griglie e `noaa-scales.json` restano rigidi: sono tabelle,
+    una riga sbagliata rende dubbio il resto;
+  - il client scrive un warning sul logger `swpc_kit.client` per ogni
+    prodotto con record scartati; i parser restano senza effetti.
+- **Alternative scartate**: tolleranza a scelta con `strict=False` (due modi
+  di funzionare da documentare e provare); "tutto o niente" dichiarato (chi
+  lo usa in produzione resta senza dati per giorni).
+- **Conseguenze**: chi chiama guarda `skipped` quando conta la completezza;
+  `values` può avere buchi dove un record è stato scartato.
+
+## D-016 — Trasporto educato su politefetch, dopo la 0.3.0
+
+- **Data e tappa**: 2026-10-25, scelta del maintainer dopo la risposta
+  dell'agente di politefetch
+- **Contesto**: in un cron il client non regge: nessun retry, `Retry-After`
+  ignorato, cache dell'ETag solo in memoria. politefetch esiste per questo,
+  ma non è ancora su PyPI.
+- **Decisione**: un extra `swpc-kit[polite]` con un `PoliteTransport` che
+  avvolge il `Transport` di swpc-kit dentro `gate.attempt(url)` del core di
+  politefetch; httpx2 resta il client di swpc-kit; intervallo minimo per
+  host (scelta del maintainer, valida anche in politefetch); un errore
+  distinto per l'host congelato e per i rifiuti con `retry_after`. Esce dopo
+  la 0.3.0 di swpc-kit, in T17.
+- **Alternative scartate**: usare il client di politefetch (`HttpxFetcher`,
+  non httpx2, e con i suoi controlli sul contenuto); far uscire swpc-kit
+  dopo politefetch (nessuno dei due deve aspettare l'altro).
+- **Conseguenze**: la 0.3.0 documenta un ciclo di retry nel README.
+
+## D-017 — Limiti di plausibilità larghi, senza sentinelle
+
+- **Data e tappa**: 2026-10-25, T14
+- **Contesto**: Dst 99999, Bz -99999 o un flusso X di 1 W/m² passavano senza
+  errore. SWPC non documenta valori sentinella per i campi fisici.
+- **Decisione**: limiti molto più larghi di qualunque misura (tabella in
+  `docs/FONTI.md`, "Plausibility limits"); oltre il limite il record va in
+  `skipped`. Nessun valore diventa `None` per un limite. In più: coerenza
+  del Kp a 1 minuto (verificata su 358 record) e numeri fra virgolette solo
+  decimali (niente `_`, `+`, `nan`, `inf`).
+- **Alternative scartate**: trattare `-99999` come sentinella e renderlo
+  `None` (senza fonte è un'ipotesi); limiti stretti sui valori tipici
+  (scarterebbero proprio le tempeste che interessano).
+- **Conseguenze**: un cambio di unità o una sentinella nuova si vedono in
+  `skipped` invece che nei dati.
 

@@ -54,6 +54,7 @@ MODULES: list[str] = [
     "swpc_kit.client",
     "swpc_kit.models",
     *(f"swpc_kit.models.{name}" for name in _GROUPS),
+    "swpc_kit.models.records",
     "swpc_kit.parse",
     *(f"swpc_kit.parse.{name}" for name in _GROUPS),
     "swpc_kit.errors",

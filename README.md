@@ -203,13 +203,24 @@ asyncio.run(main())
   client: `Client(urls={"kyoto_dst": "https://..."})`. The parsers also work
   on content you downloaded yourself, with `source_url=`.
 - **A format that changed** in a way no parser knows (a field that is gone
-  from the first record, HTML, an unknown shape) is `UnexpectedContent`:
+  from every record, HTML, an unknown shape) is `UnexpectedContent`:
   stop and report it, a new version is needed. A known format with an
   inconsistent value is `ParseError`, which names the field and the record or
   line. Each parser reads every format of its product documented in
   `docs/FONTI.md`, old and new.
 - Every error that goes through the client says which product and URL it
   comes from, in the message and in its `product` and `url` attributes.
+
+### Records that could not be read
+
+The products made of records (indices, solar wind, GOES, alerts) are read
+record by record: one record with an impossible value, a repeated time or a
+missing field goes to the model's `skipped` (index, field, reason) and the
+others are read, so one bad record does not hide the whole file for the
+hours or days it stays there. The product fails only when no record can be
+read. The client logs a warning on the `swpc_kit.client` logger for each
+product with skipped records. Bulletins and grids stay strict. The limits of
+what is plausible are in `docs/FONTI.md`, "Plausibility limits".
 
 ## For AI assistants
 

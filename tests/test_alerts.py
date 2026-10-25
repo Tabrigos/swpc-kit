@@ -444,18 +444,20 @@ def test_empty_array_means_no_messages() -> None:
         ("", "message.Space Weather Message Code"),
     ],
 )
-def test_broken_header_is_a_parse_error(message: str, field: str) -> None:
+def test_broken_header_skips_the_message(message: str, field: str) -> None:
     good = {
         "product_id": "K04W",
         "issue_datetime": "2026-10-13 20:58:58.750",
         "message": HEADER,
     }
     bad = {**good, "message": message}
-    raw = json.dumps([good, bad])
+    alerts = parse_alerts(json.dumps([good, bad]))
+    assert len(alerts.messages) == 1
+    assert [(s.index, s.field) for s in alerts.skipped] == [(1, field)]
+    # Alone, the message makes the product fail.
     with pytest.raises(ParseError) as info:
-        parse_alerts(raw)
+        parse_alerts(json.dumps([bad]))
     assert info.value.field == field
-    assert info.value.index == 1
 
 
 @pytest.mark.parametrize(
@@ -496,33 +498,30 @@ def test_broken_header_is_a_parse_error(message: str, field: str) -> None:
         ),
     ],
 )
-def test_broken_record_is_a_parse_error(record: dict[str, object], field: str) -> None:
+def test_broken_record_skips_the_message(record: dict[str, object], field: str) -> None:
     good = {
         "product_id": "K04W",
         "issue_datetime": "2026-10-13 20:58:58.750",
         "message": HEADER,
     }
-    with pytest.raises(ParseError) as info:
-        parse_alerts(json.dumps([good, record]))
-    assert info.value.field == field
-    assert info.value.index == 1
+    alerts = parse_alerts(json.dumps([good, record]))
+    assert [(s.index, s.field) for s in alerts.skipped] == [(1, field)]
 
 
-def test_field_missing_from_the_first_message_is_unexpected() -> None:
+def test_field_missing_from_every_message_is_unexpected() -> None:
     record = {"issue_datetime": "2026-10-13 20:58:58.750", "message": HEADER}
-    with pytest.raises(UnexpectedContent, match="'product_id' missing"):
-        parse_alerts(json.dumps([record]))
+    with pytest.raises(UnexpectedContent, match="'product_id' missing from every"):
+        parse_alerts(json.dumps([record, record]))
 
 
-def test_non_object_record_is_a_parse_error() -> None:
+def test_non_object_record_is_skipped() -> None:
     good = {
         "product_id": "K04W",
         "issue_datetime": "2026-10-13 20:58:58.750",
         "message": HEADER,
     }
-    with pytest.raises(ParseError) as info:
-        parse_alerts(json.dumps([good, "oops"]))
-    assert info.value.index == 1
+    alerts = parse_alerts(json.dumps([good, "oops"]))
+    assert [(s.index, s.field) for s in alerts.skipped] == [(1, None)]
 
 
 @pytest.mark.parametrize(

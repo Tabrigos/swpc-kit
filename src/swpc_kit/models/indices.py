@@ -12,6 +12,7 @@ from datetime import datetime
 from enum import StrEnum
 
 from swpc_kit.models._checks import check_utc, check_values
+from swpc_kit.models.records import SkippedRecord
 
 # --- Planetary K index, 3-hour values ---------------------------------------
 
@@ -43,10 +44,12 @@ class PlanetaryKIndex:
     Attributes:
         values: The values, oldest first, one per time.
         source_url: Where the content came from.
+        skipped: The records that could not be read, in source order.
     """
 
     values: tuple[KpValue, ...]
     source_url: str
+    skipped: tuple[SkippedRecord, ...] = ()
 
     def __post_init__(self) -> None:
         check_values(self.values)
@@ -99,10 +102,12 @@ class PlanetaryKIndexForecast:
     Attributes:
         values: The values, oldest first, one per time.
         source_url: Where the content came from.
+        skipped: The records that could not be read, in source order.
     """
 
     values: tuple[KpForecastValue, ...]
     source_url: str
+    skipped: tuple[SkippedRecord, ...] = ()
 
     def __post_init__(self) -> None:
         check_values(self.values)
@@ -153,10 +158,12 @@ class PlanetaryKIndex1m:
     Attributes:
         values: The values, oldest first, one per time.
         source_url: Where the content came from.
+        skipped: The records that could not be read, in source order.
     """
 
     values: tuple[Kp1mValue, ...]
     source_url: str
+    skipped: tuple[SkippedRecord, ...] = ()
 
     def __post_init__(self) -> None:
         check_values(self.values)
@@ -193,10 +200,12 @@ class KyotoDst:
     Attributes:
         values: The values, oldest first, one per time.
         source_url: Where the content came from.
+        skipped: The records that could not be read, in source order.
     """
 
     values: tuple[DstValue, ...]
     source_url: str
+    skipped: tuple[SkippedRecord, ...] = ()
 
     def __post_init__(self) -> None:
         check_values(self.values)
@@ -233,10 +242,12 @@ class F107Flux:
     Attributes:
         values: The values, oldest first, one per time.
         source_url: Where the content came from.
+        skipped: The records that could not be read, in source order.
     """
 
     values: tuple[F107Value, ...]
     source_url: str
+    skipped: tuple[SkippedRecord, ...] = ()
 
     def __post_init__(self) -> None:
         check_values(self.values)

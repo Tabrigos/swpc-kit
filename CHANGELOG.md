@@ -8,6 +8,18 @@ All notable changes to this project are listed here. The format follows
 
 ### Added
 
+- Tolerance per record in the products made of records (indices, solar wind,
+  GOES, alerts): a record that cannot be read goes to the model's `skipped`
+  (`swpc_kit.models.SkippedRecord`: index, field, reason) and the others are
+  read. A product fails only when no record can be read.
+- Plausibility limits on Dst, F10.7, the solar wind field and speed and the
+  GOES fluxes, and a consistency check of the 1-minute Kp: a record beyond
+  them is skipped. A storm scale in the 3-day forecast needs Kp 4.67 at
+  least.
+- `ParseError.reason`: the message without the location.
+- The client logs a warning on the `swpc_kit.client` logger for a product
+  with skipped records, and a debug line for each `304 Not Modified`.
+
 - `Client(urls=...)` and `AsyncClient(urls=...)`: new URLs by product name,
   for a product that SWPC moved before a new version knows the address.
 - `UnexpectedContent.status` and `UnexpectedContent.location` (the HTTP status
@@ -18,9 +30,8 @@ All notable changes to this project are listed here. The format follows
 ### Fixed
 
 - The index parsers (Kp, Kp forecast, 1-minute Kp, Dst, F10.7) return their
-  values oldest first whatever the order of the file, and reject a time that
-  appears twice with `ParseError`. A file in reverse order used to give a
-  wrong `values[-1]` without any error.
+  values oldest first, one per time, whatever the order of the file. A file
+  in reverse order used to give a wrong `values[-1]` without any error.
 - The solar wind `data_time` is the time of the last *active* record (with
   none, the oldest record), so `max_age` rejects data whose active spacecraft
   stopped while a backup kept reporting.
@@ -32,10 +43,14 @@ All notable changes to this project are listed here. The format follows
 
 ### Changed
 
-- A field missing from the first record of a JSON product is
-  `UnexpectedContent` (not this product, or a format no parser knows), as the
-  parsers' docstrings say; missing from a later record it is still
-  `ParseError`.
+- A field missing from every record of a JSON product is `UnexpectedContent`
+  (not this product, or a format no parser knows), as the parsers' docstrings
+  say; missing from some records only, those records are skipped.
+- A time that appears twice in an index series skips the second record.
+- Quoted numbers must be plain decimals: `0_5`, `+5`, `nan` and `inf` are no
+  longer read as numbers.
+- The undocumented flags of the solar wind files may be absent: they are
+  then `None`.
 - `swpc_kit.client` imports httpx2 only to build a default transport: with a
   custom transport it works without the `client` extra, and without it
   `Client()` says to install `swpc-kit[client]`.

@@ -16,7 +16,7 @@ import re
 from collections.abc import Sequence
 from datetime import UTC, datetime
 
-from swpc_kit.errors import ParseError, UnexpectedContent
+from swpc_kit.errors import UnexpectedContent
 from swpc_kit.models.alerts import (
     AlertMessage,
     Alerts,
@@ -26,7 +26,8 @@ from swpc_kit.models.alerts import (
     ScaleCategory,
     field_key,
 )
-from swpc_kit.parse._common import Record, load_json
+from swpc_kit.models.records import SkippedRecord
+from swpc_kit.parse._common import Record, load_json, read_records
 
 ALERTS_URL = "https://services.swpc.noaa.gov/products/alerts.json"
 
@@ -229,13 +230,23 @@ def parse_alerts(raw: str | bytes, *, source_url: str = ALERTS_URL) -> Alerts:
         raise UnexpectedContent(
             f"expected a JSON array of messages, got {type(document).__name__}"
         )
-    messages = []
-    for index, item in enumerate(document):
-        if not isinstance(item, dict):
-            if index == 0:
-                raise UnexpectedContent(
-                    f"expected objects in the JSON array, got {type(item).__name__}"
-                )
-            raise ParseError("expected an object", index=index)
-        messages.append(_message(Record(index, item)))
-    return Alerts(messages=tuple(messages), source_url=source_url)
+    if document and not isinstance(document[0], dict):
+        raise UnexpectedContent(
+            f"expected objects in the JSON array, got {type(document[0]).__name__}"
+        )
+    not_objects = [
+        SkippedRecord(index=index, field=None, reason="expected an object")
+        for index, item in enumerate(document)
+        if not isinstance(item, dict)
+    ]
+    records = [
+        Record(index, item)
+        for index, item in enumerate(document)
+        if isinstance(item, dict)
+    ]
+    read, skipped = read_records(records, _message)
+    return Alerts(
+        messages=tuple(message for _, message in read),
+        source_url=source_url,
+        skipped=tuple(sorted([*skipped, *not_objects], key=lambda s: s.index)),
+    )

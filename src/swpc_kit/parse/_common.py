@@ -10,17 +10,20 @@ field at a time and raise :class:`ParseError` naming the field and record.
 import json
 import math
 import re
-from collections.abc import Mapping
+from collections.abc import Callable, Iterable, Mapping
 from datetime import UTC, datetime
 from typing import Any
 
-from swpc_kit.errors import ParseError, SourceNotReady, SwpcError, UnexpectedContent
+from swpc_kit.errors import ParseError, SourceNotReady, UnexpectedContent
+from swpc_kit.models.records import SkippedRecord
 
 _TIME = re.compile(
     r"\d{4}-\d{2}-\d{2}[T ]\d{2}:\d{2}(?::\d{2}(?:\.\d{1,6})?)?(?:Z|[+-]\d{2}:\d{2})?"
 )
 
 
+_DECIMAL = re.compile(r"-?\d+(?:\.\d+)?(?:[eE][+-]?\d+)?")
+_INTEGER = re.compile(r"-?\d+")
 _PARTIAL_NUMBER = re.compile(r"-?(?:\d+(?:\.\d*)?(?:[eE][+-]?\d*)?)?")
 _LITERALS = ("true", "false", "null")
 
@@ -124,20 +127,13 @@ class Record:
         """Return a :class:`ParseError` located at ``field`` of this record."""
         return ParseError(message, field=field, index=self.index)
 
-    def missing(self, field: str) -> SwpcError:
+    def missing(self, field: str) -> ParseError:
         """Return the error for ``field`` missing from this record.
 
-        Missing from the first record, the field is missing from the format:
-        the content is not this product, or a format no parser knows
-        (:class:`UnexpectedContent`). Missing from a later record, the file
-        is inconsistent (:class:`ParseError`).
+        :func:`read_records` tells a field missing from every record (a
+        format no parser knows) from one missing from some records only.
         """
-        if self.index == 0:
-            return UnexpectedContent(
-                f"field {field!r} missing from the first record:"
-                " not this product, or a format no parser knows"
-            )
-        return self.error("missing field", field)
+        return MissingField(field, self.index)
 
     def _get(self, field: str) -> Any:
         try:
@@ -175,13 +171,10 @@ class Record:
         """Return a number field (a JSON number or a quoted one)."""
         value = self._get(field)
         number: float | None = None
-        if isinstance(value, int | float) and not isinstance(value, bool):
+        if (isinstance(value, int | float) and not isinstance(value, bool)) or (
+            isinstance(value, str) and _DECIMAL.fullmatch(value.strip())
+        ):
             number = float(value)
-        elif isinstance(value, str):
-            try:
-                number = float(value)
-            except ValueError:
-                number = None
         if number is None or not math.isfinite(number):
             raise self.error(f"expected a number, got {value!r}", field)
         _check_range(self, field, number, minimum, maximum)
@@ -199,11 +192,8 @@ class Record:
         number: int | None = None
         if isinstance(value, int) and not isinstance(value, bool):
             number = value
-        elif isinstance(value, str):
-            try:
-                number = int(value)
-            except ValueError:
-                number = None
+        elif isinstance(value, str) and _INTEGER.fullmatch(value.strip()):
+            number = int(value)
         if number is None:
             raise self.error(f"expected an integer, got {value!r}", field)
         _check_range(self, field, number, minimum, maximum)
@@ -215,9 +205,14 @@ class Record:
         *,
         minimum: int | None = None,
         maximum: int | None = None,
+        may_be_absent: bool = False,
     ) -> int | None:
-        """Return an integer field that may be ``null``."""
-        if self._get(field) is None:
+        """Return an integer field that may be ``null``.
+
+        With ``may_be_absent``, a field missing from the record is ``None``
+        too: for undocumented flags that SWPC may drop without notice.
+        """
+        if (may_be_absent and field not in self.data) or self._get(field) is None:
             return None
         return self.get_int(field, minimum=minimum, maximum=maximum)
 
@@ -240,9 +235,11 @@ class Record:
             raise self.error(f"expected a boolean, got {value!r}", field)
         return value
 
-    def get_optional_bool(self, field: str) -> bool | None:
-        """Return a JSON boolean field that may be ``null``."""
-        if self._get(field) is None:
+    def get_optional_bool(
+        self, field: str, *, may_be_absent: bool = False
+    ) -> bool | None:
+        """Return a JSON boolean field that may be ``null`` (or absent)."""
+        if (may_be_absent and field not in self.data) or self._get(field) is None:
             return None
         return self.get_bool(field)
 
@@ -262,6 +259,50 @@ def _check_range(
             f"{maximum if maximum is not None else 'inf'}]",
             field,
         )
+
+
+class MissingField(ParseError):
+    """A field missing from one record (see :func:`read_records`)."""
+
+    def __init__(self, field: str, index: int | None) -> None:
+        super().__init__("missing field", field=field, index=index)
+
+
+def read_records[V](
+    records: Iterable[Record], build: Callable[[Record], V]
+) -> tuple[list[tuple[int, V]], list[SkippedRecord]]:
+    """Build one value per record, skipping the records that cannot be read.
+
+    Returns:
+        The values with the index of their record, and the records skipped.
+
+    Raises:
+        UnexpectedContent: If no record can be read because the same field
+            is missing from all of them: not this product, or a format no
+            parser knows.
+        ParseError: If no record can be read for any other reason (the
+            error of the first record).
+    """
+    good: list[tuple[int, V]] = []
+    failures: list[tuple[int, ParseError]] = []
+    for record in records:
+        try:
+            good.append((record.index, build(record)))
+        except ParseError as exc:
+            failures.append((record.index, exc))
+    if not good and failures:
+        fields = {exc.field for _, exc in failures if isinstance(exc, MissingField)}
+        if len(fields) == 1 and all(isinstance(e, MissingField) for _, e in failures):
+            raise UnexpectedContent(
+                f"field {fields.pop()!r} missing from every record:"
+                " not this product, or a format no parser knows"
+            )
+        raise failures[0][1]
+    skipped = [
+        SkippedRecord(index=index, field=exc.field, reason=exc.reason)
+        for index, exc in failures
+    ]
+    return good, skipped
 
 
 def json_records(raw: str | bytes) -> list[Record]:

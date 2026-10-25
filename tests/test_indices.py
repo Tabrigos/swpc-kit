@@ -105,18 +105,10 @@ def test_kp_3h_accepts_str() -> None:
             0,
         ),
         (
-            b'[{"time_tag":"2026-10-08T00:00:00","Kp":1,"a_running":4,'
-            b'"station_count":8},'
-            b'{"time_tag":"2026-10-08T03:00:00","a_running":4,"station_count":8}]',
-            "Kp",
-            1,
-        ),
-        (
             b'[["time_tag","Kp","a_running","station_count"],'
-            b'["2026-10-08 00:00:00","1.00","4","8"],'
             b'["2026-10-08 03:00:00","x","4","8"]]',
             "Kp",
-            2,
+            1,
         ),
         (b'[{"time_tag":"bad","Kp":1,"a_running":4,"station_count":8}]', "time_tag", 0),
         (
@@ -136,8 +128,31 @@ def test_kp_3h_inconsistent_values(raw: bytes, field: str, index: int) -> None:
 
 def test_kp_3h_field_missing_from_the_format_is_unexpected() -> None:
     raw = b'[{"time_tag":"2026-10-08T00:00:00","a_running":4,"station_count":8}]'
-    with pytest.raises(UnexpectedContent, match="'Kp' missing from the first"):
+    with pytest.raises(UnexpectedContent, match="'Kp' missing from every"):
         parse_planetary_k_index(raw)
+
+
+@pytest.mark.parametrize(
+    ("raw", "index"),
+    [
+        (
+            b'[{"time_tag":"2026-10-08T00:00:00","Kp":1,"a_running":4,'
+            b'"station_count":8},'
+            b'{"time_tag":"2026-10-08T03:00:00","a_running":4,"station_count":8}]',
+            1,
+        ),
+        (
+            b'[["time_tag","Kp","a_running","station_count"],'
+            b'["2026-10-08 00:00:00","1.00","4","8"],'
+            b'["2026-10-08 03:00:00","x","4","8"]]',
+            2,
+        ),
+    ],
+)
+def test_kp_3h_a_bad_record_among_good_ones_is_skipped(raw: bytes, index: int) -> None:
+    kp = parse_planetary_k_index(raw)
+    assert len(kp.values) == 1
+    assert [(s.index, s.field) for s in kp.skipped] == [(index, "Kp")]
 
 
 def test_kp_3h_truncated_is_not_ready() -> None:
@@ -412,13 +427,12 @@ def test_series_come_out_oldest_first_whatever_the_order(
 
 
 @pytest.mark.parametrize(("parse", "name"), SERIES)
-def test_series_reject_a_repeated_time(
-    parse: Callable[[bytes], Any], name: str
-) -> None:
+def test_series_skip_a_repeated_time(parse: Callable[[bytes], Any], name: str) -> None:
     header, records = _records(name)
     repeated = [*records, records[1]]
-    with pytest.raises(ParseError) as error:
-        parse(json.dumps(header + repeated).encode())
-    assert error.value.field == "time_tag"
-    assert error.value.index == len(records)
-    assert "twice" in str(error.value)
+    model = parse(json.dumps(header + repeated).encode())
+    assert model.values == parse(fixture(name)).values
+    [skipped] = model.skipped
+    assert skipped.field == "time_tag"
+    assert skipped.index == len(header) + len(records)
+    assert "twice" in skipped.reason

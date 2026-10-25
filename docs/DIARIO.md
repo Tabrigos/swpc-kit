@@ -4,20 +4,18 @@
 
 Riscritto da capo a ogni fine sessione, mai accodato.
 
-- **Stato**: T0–T11 e T13 fatte; versione **0.2.0** nel codice, mai
-  pubblicata né taggata. T11 è nella PR #2 (ramo `t11-skill-v2`); T13 sul
-  ramo `t13-niente-silenzi`, aperto da quello. Le voci nuove del CHANGELOG
-  stanno in Unreleased.
-- **Prossimo passo**: T14, che parte da una decisione del maintainer:
-  tolleranza per record o "tutto o niente" dichiarato (vedi la tappa). Poi
-  T15 e T16, quindi la prima pubblicazione (`AGENTS.md`, "Releases"): commit
-  `Version 0.3.0` con l'asserzione `__version__` di
+- **Stato**: T0–T11, T13 e T14 fatte; versione **0.2.0** nel codice, mai
+  pubblicata né taggata. Rami impilati: `t11-skill-v2` (PR #2) ←
+  `t13-niente-silenzi` (PR #3) ← `t14-tolleranza`. Le voci nuove del
+  CHANGELOG stanno in Unreleased.
+- **Prossimo passo**: T15 (serializzazione, cella più vicina, parse fuori
+  dall'event loop), poi T16 e la prima pubblicazione, 0.3.0 (`AGENTS.md`,
+  "Releases"): nel commit di versione anche l'asserzione `__version__` di
   `tests/test_public_api.py` e una sezione 0.3.0 del CHANGELOG che presenti
-  il pacchetto intero, perché 0.1.0 e 0.2.0 non sono mai uscite.
-- **Decisioni in sospeso**: la scelta di T14; quelle di T12 (parser dei
-  tempi testuali, stub di rasterio, supporto di Windows). Da concordare con
-  politefetch: retry e backoff, `Retry-After`, cache dell'ETag persistente,
-  la semantica del 429 (D-006) e il client HTTP (D-005).
+  il pacchetto intero, perché 0.1.0 e 0.2.0 non sono mai uscite. T17 (il
+  trasporto educato su politefetch) dopo la 0.3.0.
+- **Decisioni in sospeso**: quelle di T12 (parser dei tempi testuali, stub
+  di rasterio, supporto di Windows).
 - **Da sapere** (per chi scrive i prossimi parser):
   - `swpc_kit/parse/_common.py` è il kit comune: `load_json` classifica gli
     errori (vuoto o troncato → `SourceNotReady`; HTML o non JSON →
@@ -169,6 +167,19 @@ Riscritto da capo a ogni fine sessione, mai accodato.
     modulo per `HttpxTransport`/`AsyncHttpxTransport`): la fixture
     `swpc_from_fixtures` sostituisce i trasporti in
     `swpc_kit.client._httpx`, non più in `swpc_kit.client`.
+- **T14** (tolleranza):
+  - `parse/_common.py`: `read_records(records, build)` costruisce un valore
+    per record e mette gli altri in `SkippedRecord`; `MissingField` è il
+    `ParseError` di un campo assente, e se lo stesso campo manca da tutti i
+    record `read_records` dà `UnexpectedContent` (D-015, supera D-013).
+  - Indici: `_series()` in `parse/indices.py` (tolleranza, tempi ripetuti in
+    `skipped`, ordine). Vento solare, GOES, avvisi: `read_records`.
+  - Limiti in `docs/FONTI.md`, "Plausibility limits" (D-017); le costanti
+    stanno in testa ai parser.
+  - `get_optional_int` / `get_optional_bool` con `may_be_absent=True` per i
+    flag non documentati di RTSW.
+  - Logger `swpc_kit.client` in `client/_core.py` (`_log_skipped`, debug sui
+    `304`); i parser non scrivono log.
 - **Dubbi aperti**: le ipotesi rimaste in `docs/FONTI.md` (UTC dei
   `time_tag` senza `Z`, millisecondi del vecchio Dst e flusso, significato
   delle chiavi di `noaa-scales.json`, unità dei valori OVATION).
@@ -227,3 +238,9 @@ Una riga per sessione: data, tappa, cosa è entrato, cosa resta.
   `urls=`, errori del client con prodotto e URL, httpx2 caricata solo quando
   serve (D-011–D-014). Test visti rossi prima di ogni correzione: 49. Resta:
   T14 (decisione del maintainer), T15, T16, T12.
+- 2026-10-25 — T14: tolleranza per record (decisione del maintainer, D-015),
+  limiti di plausibilità (D-017), coerenza del Kp a 1 minuto, scala G nei
+  bollettini, logger del client. Roadmap fino alla 0.3.0 e T17 su
+  politefetch (D-016). Test visti rossi prima del codice: 67; difetti
+  iniettati nella logica nuova: 9 su 9 presi. Resta: T15, T16, T12, poi
+  0.3.0.

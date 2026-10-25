@@ -57,6 +57,7 @@ from swpc_kit.models.indices import (
     RadioBlackoutScale,
     SolarRadiationScale,
 )
+from swpc_kit.models.records import SkippedRecord
 from swpc_kit.models.solar_wind import (
     RtswMag1m,
     RtswMagSample,
@@ -104,6 +105,7 @@ __all__ = [
     "RtswWind1m",
     "RtswWindSample",
     "ScaleCategory",
+    "SkippedRecord",
     "SolarRadiationScale",
     "ThreeDayForecast",
     "TwentySevenDayOutlook",
