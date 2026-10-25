@@ -6,9 +6,11 @@ and quoted numbers). Both give the same model.
 """
 
 import re
-from typing import Any
+from collections.abc import Iterable
+from datetime import datetime
+from typing import Any, Protocol
 
-from swpc_kit.errors import ParseError, SourceNotReady, UnexpectedContent
+from swpc_kit.errors import ParseError, SourceNotReady, SwpcError, UnexpectedContent
 from swpc_kit.models.indices import (
     DstValue,
     F107Flux,
@@ -46,6 +48,31 @@ _KP_LABEL = re.compile(r"[0-9][ZPM]")
 _SCALE_DAY = re.compile(r"-?[0-9]+")
 
 
+class _Timed(Protocol):
+    @property
+    def time(self) -> datetime: ...
+
+
+def _in_time_order[V: _Timed](values: Iterable[V]) -> tuple[V, ...]:
+    """Sort the values oldest first; a time that appears twice is an error.
+
+    SWPC writes these series oldest first, but nothing guarantees it, and
+    callers read ``values[-1]`` as the latest value.
+    """
+    items = list(values)
+    seen: dict[datetime, int] = {}
+    for index, value in enumerate(items):
+        first = seen.setdefault(value.time, index)
+        if first != index:
+            raise ParseError(
+                f"time {value.time.isoformat()} appears twice"
+                f" (records {first} and {index})",
+                field="time_tag",
+                index=index,
+            )
+    return tuple(sorted(items, key=lambda v: v.time))
+
+
 def parse_planetary_k_index(
     raw: str | bytes, *, source_url: str = PLANETARY_K_INDEX_URL
 ) -> PlanetaryKIndex:
@@ -60,7 +87,7 @@ def parse_planetary_k_index(
         UnexpectedContent: If the content is not this product.
         ParseError: If a value is missing or inconsistent.
     """
-    values = tuple(
+    values = _in_time_order(
         KpValue(
             time=r.get_time("time_tag"),
             kp=r.get_float("Kp", minimum=0, maximum=9),
@@ -98,7 +125,7 @@ def parse_planetary_k_index_forecast(
         UnexpectedContent: If the content is not this product.
         ParseError: If a value is missing or inconsistent.
     """
-    values = tuple(
+    values = _in_time_order(
         KpForecastValue(
             time=r.get_time("time_tag"),
             kp=r.get_float("kp", minimum=0, maximum=9),
@@ -131,7 +158,7 @@ def parse_planetary_k_index_1m(
         UnexpectedContent: If the content is not this product.
         ParseError: If a value is missing or inconsistent.
     """
-    values = tuple(
+    values = _in_time_order(
         Kp1mValue(
             time=r.get_time("time_tag"),
             kp_index=r.get_int("kp_index", minimum=0, maximum=9),
@@ -155,7 +182,7 @@ def parse_kyoto_dst(raw: str | bytes, *, source_url: str = KYOTO_DST_URL) -> Kyo
         UnexpectedContent: If the content is not this product.
         ParseError: If a value is missing or inconsistent.
     """
-    values = tuple(
+    values = _in_time_order(
         DstValue(time=r.get_time("time_tag"), dst=r.get_int("dst"))
         for r in json_records(raw)
     )
@@ -176,7 +203,7 @@ def parse_f107_flux_30_day(
         UnexpectedContent: If the content is not this product.
         ParseError: If a value is missing or inconsistent.
     """
-    values = tuple(
+    values = _in_time_order(
         F107Value(time=r.get_time("time_tag"), flux=r.get_float("flux", minimum=0))
         for r in json_records(raw)
     )
@@ -201,6 +228,9 @@ class _ScalesRecord(Record):
 
     def error(self, message: str, field: str) -> ParseError:
         return ParseError(message, field=f"{self.prefix}{field}")
+
+    def missing(self, field: str) -> SwpcError:
+        return self.error("missing field", field)
 
 
 def _scales_day(day: str, entry: object) -> NoaaScalesDay:

@@ -195,6 +195,22 @@ async def main() -> None:
 asyncio.run(main())
 ```
 
+### When SWPC moves a product or changes a format
+
+- **A product that moved** answers `UnexpectedContent`, with `status` (301,
+  404…) and, for a redirect, `location`. The client never follows redirects.
+  Until a new version of swpc-kit knows the new address, give it to the
+  client: `Client(urls={"kyoto_dst": "https://..."})`. The parsers also work
+  on content you downloaded yourself, with `source_url=`.
+- **A format that changed** in a way no parser knows (a field that is gone
+  from the first record, HTML, an unknown shape) is `UnexpectedContent`:
+  stop and report it, a new version is needed. A known format with an
+  inconsistent value is `ParseError`, which names the field and the record or
+  line. Each parser reads every format of its product documented in
+  `docs/FONTI.md`, old and new.
+- Every error that goes through the client says which product and URL it
+  comes from, in the message and in its `product` and `url` attributes.
+
 ## For AI assistants
 
 The package ships an [Agent Skill](https://agentskills.io) for AI coding

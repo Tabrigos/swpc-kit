@@ -41,7 +41,7 @@ class PlanetaryKIndex:
     """The 3-hour planetary K index of the last days.
 
     Attributes:
-        values: The values, in source order (oldest first).
+        values: The values, oldest first, one per time.
         source_url: Where the content came from.
     """
 
@@ -97,7 +97,7 @@ class PlanetaryKIndexForecast:
     """Kp of the past week followed by the forecast for the next days.
 
     Attributes:
-        values: The values, in source order (oldest first).
+        values: The values, oldest first, one per time.
         source_url: Where the content came from.
     """
 
@@ -151,7 +151,7 @@ class PlanetaryKIndex1m:
     """The 1-minute planetary K index estimates of the last hours.
 
     Attributes:
-        values: The values, in source order (oldest first).
+        values: The values, oldest first, one per time.
         source_url: Where the content came from.
     """
 
@@ -191,7 +191,7 @@ class KyotoDst:
     """Hourly Kyoto Dst of the last week.
 
     Attributes:
-        values: The values, in source order (oldest first).
+        values: The values, oldest first, one per time.
         source_url: Where the content came from.
     """
 
@@ -231,7 +231,7 @@ class F107Flux:
     """Daily 10.7 cm solar radio flux of the last 30 days.
 
     Attributes:
-        values: The values, in source order (oldest first).
+        values: The values, oldest first, one per time.
         source_url: Where the content came from.
     """
 

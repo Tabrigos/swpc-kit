@@ -4,19 +4,20 @@
 
 Riscritto da capo a ogni fine sessione, mai accodato.
 
-- **Stato**: T0–T11 fatte; versione **0.2.0** nel codice, mai pubblicata
-  né taggata. La skill segue lo standard comune delle skill di libreria
-  (schema 1): niente più `sync` né entry point `agent_skills`. Le voci nuove
-  del CHANGELOG stanno in Unreleased.
-- **Prossimo passo**: la prima pubblicazione (`AGENTS.md`, "Releases"). Prova
-  su TestPyPI con l'avvio manuale del workflow `Release`, poi il commit
-  `Version 0.3.0` e il tag `v0.3.0`. Nel commit di versione vanno anche
-  l'asserzione `__version__ == "0.2.0"` di `tests/test_public_api.py` e la
-  sezione 0.3.0 del CHANGELOG, che deve presentare il pacchetto intero: 0.1.0
-  e 0.2.0 non sono mai uscite. Poi T12.
-- **Decisioni in sospeso**: quelle di T12 (parser dei tempi testuali, stub
-  di rasterio, supporto di Windows). Da concordare con politefetch: la
-  semantica del 429 (`docs/DECISIONI.md`, D-006) e il client HTTP (D-005).
+- **Stato**: T0–T11 e T13 fatte; versione **0.2.0** nel codice, mai
+  pubblicata né taggata. T11 è nella PR #2 (ramo `t11-skill-v2`); T13 sul
+  ramo `t13-niente-silenzi`, aperto da quello. Le voci nuove del CHANGELOG
+  stanno in Unreleased.
+- **Prossimo passo**: T14, che parte da una decisione del maintainer:
+  tolleranza per record o "tutto o niente" dichiarato (vedi la tappa). Poi
+  T15 e T16, quindi la prima pubblicazione (`AGENTS.md`, "Releases"): commit
+  `Version 0.3.0` con l'asserzione `__version__` di
+  `tests/test_public_api.py` e una sezione 0.3.0 del CHANGELOG che presenti
+  il pacchetto intero, perché 0.1.0 e 0.2.0 non sono mai uscite.
+- **Decisioni in sospeso**: la scelta di T14; quelle di T12 (parser dei
+  tempi testuali, stub di rasterio, supporto di Windows). Da concordare con
+  politefetch: retry e backoff, `Retry-After`, cache dell'ETag persistente,
+  la semantica del 429 (D-006) e il client HTTP (D-005).
 - **Da sapere** (per chi scrive i prossimi parser):
   - `swpc_kit/parse/_common.py` è il kit comune: `load_json` classifica gli
     errori (vuoto o troncato → `SourceNotReady`; HTML o non JSON →
@@ -151,6 +152,23 @@ Riscritto da capo a ogni fine sessione, mai accodato.
     citati nella SKILL.md, tutti verificati dai test dei nomi. SKILL.md 203
     righe, circa 2.400 token per attivazione; `api.md` 1008 righe, circa
     12.500 token, letto solo per sezione.
+- **T13** (niente silenzi):
+  - `parse/indices.py`: `_in_time_order` ordina e rifiuta i tempi ripetuti
+    (D-011). RTSW e GOES ordinavano già; i tempi ripetuti lì sono normali
+    (più sorgenti, più satelliti).
+  - `data_time` del vento solare = ultimo record attivo (D-012).
+  - `Record.missing()`: campo assente dal primo record →
+    `UnexpectedContent`, da un record successivo → `ParseError` (D-013).
+    `_ScalesRecord` lo ridefinisce (sempre `ParseError`).
+  - `load_json`: un taglio dentro un letterale o un numero è
+    `SourceNotReady` (`_cut_inside_a_token`); provato su 221.496 tagli di
+    sei fixture, tutti `SourceNotReady`.
+  - Client: `urls=` (D-014), `UnexpectedContent.status`/`.location`,
+    `SwpcError.product`/`.url` messi da `BaseClient.locate()` in `fetch`.
+    httpx2 caricata solo per il trasporto predefinito (`__getattr__` del
+    modulo per `HttpxTransport`/`AsyncHttpxTransport`): la fixture
+    `swpc_from_fixtures` sostituisce i trasporti in
+    `swpc_kit.client._httpx`, non più in `swpc_kit.client`.
 - **Dubbi aperti**: le ipotesi rimaste in `docs/FONTI.md` (UTC dei
   `time_tag` senza `Z`, millisecondi del vecchio Dst e flusso, significato
   delle chiavi di `noaa-scales.json`, unità dei valori OVATION).
@@ -202,3 +220,10 @@ Una riga per sessione: data, tappa, cosa è entrato, cosa resta.
   (D-001–D-010); T12 coi rinvii. Prova dei difetti iniettati: 26 su 26 presi
   (21 nella skill, 5 nel codice).
   Resta: prima pubblicazione, T12.
+- 2026-10-25 — Revisione scettica prima della pubblicazione (agente nuovo,
+  circa 70 varianti delle fixture): tappe T13–T16. T13: indici ordinati e
+  senza duplicati, freschezza del vento solare sulla sorgente attiva, campo
+  assente dal formato = `UnexpectedContent`, troncature dentro un token,
+  `urls=`, errori del client con prodotto e URL, httpx2 caricata solo quando
+  serve (D-011–D-014). Test visti rossi prima di ogni correzione: 49. Resta:
+  T14 (decisione del maintainer), T15, T16, T12.

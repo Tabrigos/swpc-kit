@@ -6,7 +6,39 @@ All notable changes to this project are listed here. The format follows
 
 ## [Unreleased]
 
+### Added
+
+- `Client(urls=...)` and `AsyncClient(urls=...)`: new URLs by product name,
+  for a product that SWPC moved before a new version knows the address.
+- `UnexpectedContent.status` and `UnexpectedContent.location` (the HTTP status
+  and the `Location` of a redirect), and `SwpcError.product` and
+  `SwpcError.url`, set for every error that goes through the client and shown
+  in its message.
+
+### Fixed
+
+- The index parsers (Kp, Kp forecast, 1-minute Kp, Dst, F10.7) return their
+  values oldest first whatever the order of the file, and reject a time that
+  appears twice with `ParseError`. A file in reverse order used to give a
+  wrong `values[-1]` without any error.
+- The solar wind `data_time` is the time of the last *active* record (with
+  none, the oldest record), so `max_age` rejects data whose active spacecraft
+  stopped while a backup kept reporting.
+- A JSON file cut inside a literal or a number (`nul`, `-1.`) is
+  `SourceNotReady`, like any other truncated file, instead of
+  `UnexpectedContent`.
+- Any httpx2 error of the default transports is `SourceNotReady`: a body that
+  did not decode (`httpx2.DecodingError`) used to escape `SwpcError`.
+
 ### Changed
+
+- A field missing from the first record of a JSON product is
+  `UnexpectedContent` (not this product, or a format no parser knows), as the
+  parsers' docstrings say; missing from a later record it is still
+  `ParseError`.
+- `swpc_kit.client` imports httpx2 only to build a default transport: with a
+  custom transport it works without the `client` extra, and without it
+  `Client()` says to install `swpc-kit[client]`.
 
 - The agent skill follows the shared standard for library skills (schema 1).
   `python -m swpc_kit.skill check` compares a project's copy with the

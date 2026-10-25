@@ -10,7 +10,25 @@ from datetime import datetime, timedelta
 
 
 class SwpcError(Exception):
-    """Base class for every error raised by swpc-kit."""
+    """Base class for every error raised by swpc-kit.
+
+    Attributes:
+        product: Name of the product being fetched, such as
+            ``"planetary_k_index"``, when the error went through the client;
+            ``None`` from a parser called directly.
+        url: The URL being fetched, under the same condition.
+    """
+
+    product: str | None = None
+    url: str | None = None
+
+    def __str__(self) -> str:
+        text = super().__str__()
+        if self.product is None or self.url is None:
+            return text
+        if self.url in text:
+            return f"{text} [{self.product}]"
+        return f"{text} [{self.product} at {self.url}]"
 
 
 class SourceNotReady(SwpcError):
@@ -27,7 +45,20 @@ class UnexpectedContent(SwpcError):
 
     For example an HTML page, a redirect to an announcement page, or a format
     that no parser knows.
+
+    Args:
+        message: What came instead of the product.
+        status: The HTTP status, when the client got one other than ``200``.
+        location: The ``Location`` header of a redirect: where the product
+            may have moved.
     """
+
+    def __init__(
+        self, message: str, *, status: int | None = None, location: str | None = None
+    ) -> None:
+        self.status = status
+        self.location = location
+        super().__init__(message)
 
 
 class ParseError(SwpcError):

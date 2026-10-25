@@ -186,12 +186,16 @@ class _RtswSeries[S: _Sample]:
 
     @property
     def data_time(self) -> datetime:
-        """Time of the most recent record, from any source.
+        """Time of the most recent active record.
 
-        The time of the most recent active record is
-        ``latest_active().time``.
+        Freshness follows the active source, the only one to read as "the
+        solar wind now": a backup that keeps running after the active source
+        stopped does not make the data look new. With no active record at
+        all, the time of the oldest record, since no time of the file has
+        active data.
         """
-        return max(v.time for v in self.values)
+        active = [v.time for v in self.values if v.active]
+        return max(active) if active else min(v.time for v in self.values)
 
     @property
     def sources(self) -> tuple[str, ...]:

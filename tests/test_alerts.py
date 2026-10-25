@@ -497,10 +497,21 @@ def test_broken_header_is_a_parse_error(message: str, field: str) -> None:
     ],
 )
 def test_broken_record_is_a_parse_error(record: dict[str, object], field: str) -> None:
+    good = {
+        "product_id": "K04W",
+        "issue_datetime": "2026-10-13 20:58:58.750",
+        "message": HEADER,
+    }
     with pytest.raises(ParseError) as info:
-        parse_alerts(json.dumps([record]))
+        parse_alerts(json.dumps([good, record]))
     assert info.value.field == field
-    assert info.value.index == 0
+    assert info.value.index == 1
+
+
+def test_field_missing_from_the_first_message_is_unexpected() -> None:
+    record = {"issue_datetime": "2026-10-13 20:58:58.750", "message": HEADER}
+    with pytest.raises(UnexpectedContent, match="'product_id' missing"):
+        parse_alerts(json.dumps([record]))
 
 
 def test_non_object_record_is_a_parse_error() -> None:
