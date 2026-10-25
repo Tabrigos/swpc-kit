@@ -59,6 +59,20 @@ path = "src/swpc_kit/__init__.py"
 [tool.hatch.build.targets.wheel]
 packages = ["src/swpc_kit"]
 
+# An explicit list, so that no local file ends up in the sdist.
+[tool.hatch.build.targets.sdist]
+only-include = [
+    "src",
+    "tests",
+    "tools",
+    "docs",
+    "AGENTS.md",
+    "CHANGELOG.md",
+    "LICENSE",
+    "README.md",
+    "SPEC.md",
+]
+
 [tool.ruff]
 line-length = 88
 target-version = "py312"
