@@ -63,7 +63,8 @@ def test_drap_raster(tmp_path: Path) -> None:
         # Row 0 is the northernmost latitude; the grid is stored south first.
         expected = np.flipud(np.array(product.grid.values, dtype=np.float32))
         np.testing.assert_array_equal(data, expected)
-        row, col = src.index(-142, 1)
+        # rasterio 1.4.0 gives the indices as floats.
+        row, col = map(int, src.index(-142, 1))
         assert data[row, col] == pytest.approx(product.grid.value_at(1, -142))
         assert src.xy(row, col) == (-142.0, 1.0)
 
@@ -100,7 +101,7 @@ def test_full_ovation_is_rotated_to_minus_180(tmp_path: Path) -> None:
         data = src.read(1)
         assert not np.isnan(data).any()
         for lon, lat in [(0, 0), (359, 45), (180, -90), (179, 90), (200, -60)]:
-            row, col = src.index(((lon + 180) % 360) - 180, lat)
+            row, col = map(int, src.index(((lon + 180) % 360) - 180, lat))
             assert data[row, col] == product.grid.value_at(lat, lon)
         assert data[0, 0] == product.grid.value_at(90, 180)
         assert data[-1, -1] == product.grid.value_at(-90, 179)

@@ -226,9 +226,11 @@ T13 ha la precedenza; T12 resta valida e può andare in parallelo.
 
 1. T14, poi T15, poi T16; T12 in parallelo (se Windows va supportato, il
    suo job di CI entra in T16).
-2. Prima versione pubblica, 0.3.0 (`AGENTS.md`, "Releases"), con il pending
+2. T18 (GeoTIFF senza rasterio): prima della 0.3.0, deciso dal maintainer
+   il 2026-10-25, così l'extra `geo` con rasterio non arriva mai su PyPI.
+3. Prima versione pubblica, 0.3.0 (`AGENTS.md`, "Releases"), con il pending
    publisher su pypi.org registrato dal maintainer.
-3. T17, il trasporto educato su politefetch, dopo che politefetch è su PyPI
+4. T17, il trasporto educato su politefetch, dopo che politefetch è su PyPI
    (D-016). Fino ad allora il README documenta un ciclo di retry.
 
 ## T13 — Niente dati sbagliati in silenzio, client senza buchi
@@ -325,20 +327,47 @@ tolleranza per record (D-015).
 
 ## T16 — Pulizia per il rilascio
 
-- [ ] Fatta
+- [x] Fatta
 
-- [ ] README: stato, installazione da PyPI, peso dell'extra `geo` (circa
+- [x] README: stato, installazione da PyPI, peso dell'extra `geo` (circa
   140 MB con numpy; ruote di rasterio solo per macOS 15 e glibc 2.28), cosa
   succede quando SWPC cambia URL o formato (da T13 e T14).
-- [ ] `SPEC.md`: l'esempio con `oval.to_geojson(threshold=10)`, che non
+- [x] `SPEC.md`: l'esempio con `oval.to_geojson(threshold=10)`, che non
   esiste.
-- [ ] Classifier "Development Status" adatto alla versione.
-- [ ] CI con le versioni minime delle dipendenze
+- [x] Classifier "Development Status" adatto alla versione.
+- [x] CI con le versioni minime delle dipendenze
   (`uv sync --resolution lowest-direct`), per provare `httpx2>=2.13`,
   `numpy>=2.0`, `rasterio>=1.4`.
-- [ ] Valutare un writer GeoTIFF senza rasterio (il raster è piccolo):
+- [x] Valutare un writer GeoTIFF senza rasterio (il raster è piccolo):
   solo valutazione, con la scelta in `docs/DECISIONI.md`.
-- [ ] Ricontrollare che `swpc-kit` sia libero su PyPI subito prima del tag.
+- [ ] Ricontrollare che `swpc-kit` sia libero su PyPI subito prima del tag
+  (libero il 2026-10-25: `https://pypi.org/pypi/swpc-kit/json` dà 404).
+- Esito (D-019, D-020):
+  - classifier "4 - Beta";
+  - job `lowest` nella CI;
+  - nel README l'installazione da PyPI, `--only-binary rasterio` per i
+    sistemi vecchi e un ciclo di retry;
+  - il writer GeoTIFF senza rasterio si può fare: è la tappa T18.
+
+  Le versioni minime hanno trovato due cose:
+  - rasterio 1.4.0 dà gli indici di `index()` come float, e i test li usavano
+    come interi;
+  - rasterio prima della 1.5.2, con affine 3, emette una
+    `PendingDeprecationWarning`, che nel job si ignora.
+
+## T18 — GeoTIFF senza rasterio
+
+- [ ] Fatta
+
+Quando: prima della 0.3.0, deciso dal maintainer il 2026-10-25 (D-019).
+
+- [ ] `write_geotiff` con la sola libreria standard (`struct`, `zlib`),
+  stesso file di oggi: float32, deflate, EPSG:4326, pixel-is-area, nodata,
+  tag di GDAL con i tempi, descrizione e unità della banda.
+- [ ] rasterio resta solo nei test, che rileggono il file con GDAL e lo
+  confrontano con quello di oggi.
+- [ ] L'extra `geo` diventa vuoto e resta, perché chi scrive
+  `swpc-kit[geo]` non trovi un errore.
 
 ## T17 — Trasporto educato su politefetch
 

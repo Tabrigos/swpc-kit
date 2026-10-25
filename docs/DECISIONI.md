@@ -334,3 +334,50 @@ scelte già prese e sparse fra `SPEC.md`, `docs/FONTI.md` e il diario; la data
     thread per richiesta).
 - **Conseguenze**: `value_at` resta com'era, per chi ha il centro esatto.
 
+## D-019 — Un writer GeoTIFF senza rasterio si può fare: tappa T18
+
+- **Data e tappa**: 2026-10-25, T16 (solo valutazione)
+- **Contesto**: l'extra `geo` pesa circa 140 MB (numpy e rasterio con GDAL
+  dentro le ruote). Le ruote dell'ultima rasterio (1.5.2) vogliono macOS 15
+  o glibc 2.28. Su un sistema più vecchio pip prova a compilare GDAL e
+  fallisce, salvo `--only-binary rasterio`. Il raster da scrivere è piccolo:
+  al massimo 360 per 181 celle, una banda.
+- **Valutazione**: un prototipo fuori dal repo, di circa 120 righe con
+  `struct` e `zlib`, scrive lo stesso file di oggi:
+  - TIFF little-endian, float32, deflate;
+  - tag GeoTIFF (scala, punto di aggancio, chiavi con EPSG:4326 e
+    pixel-is-area);
+  - tag di GDAL con i metadati e il nodata.
+
+  Riletti con rasterio, i file di D-RAP e OVATION ridotta danno gli stessi
+  CRS, trasformazione, valori, nodata, tag, descrizione e unità del file
+  scritto con rasterio.
+- **Scelta**: per ora resta rasterio. Il writer con la sola libreria
+  standard è una tappa sua, T18, con rasterio solo nei test, che rileggono
+  il file con GDAL. Il maintainer decide se viene prima o dopo la 0.3.0.
+- **Alternative scartate**: tifffile (toglie GDAL ma non numpy, e i tag
+  GeoTIFF vanno scritti a mano lo stesso); lasciare `geo` com'è senza
+  documentarlo (il README ora dice peso e piattaforme).
+- **Conseguenze**: se T18 arriva dopo la 0.3.0, l'extra `geo` resta, vuoto,
+  perché chi lo scrive non trovi un errore.
+
+## D-020 — "Beta", e le versioni minime provate dalla CI
+
+- **Data e tappa**: 2026-10-25, T16
+- **Contesto**: il classifier diceva "2 - Pre-Alpha". I minimi in
+  `pyproject.toml` (`httpx2>=2.13`, `numpy>=2.0`, `rasterio>=1.4`) non li
+  provava nessuno.
+- **Decisione**:
+  - "4 - Beta": la libreria fa ciò che dice `SPEC.md` ed è provata sui
+    formati registrati, ma l'API può ancora cambiare prima della 1.0;
+  - un job `lowest` nella CI (`UV_RESOLUTION=lowest-direct`, Python 3.12)
+    fa girare i test con i minimi. La `PendingDeprecationWarning` di affine
+    3 con rasterio prima della 1.5.2 si ignora solo lì: per chi usa la
+    libreria è un avviso, non un errore.
+- **Alternative scartate**: "3 - Alpha" (troppo prudente per un'API
+  documentata e provata); alzare il minimo a rasterio 1.5.2 (toglierebbe le
+  ruote per macOS prima della 15 e per glibc prima della 2.28).
+- **Conseguenze**: un minimo che smette di funzionare si vede nella CI. Il
+  job non è fra i controlli richiesti di `main` finché il maintainer non lo
+  aggiunge.
+
