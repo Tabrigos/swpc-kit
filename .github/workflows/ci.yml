@@ -29,3 +29,19 @@ jobs:
       - run: uv run ruff check .
       - run: uv run ruff format --check .
       - run: uv run mypy
+
+  # The lowest versions that pyproject.toml allows for the direct
+  # dependencies (httpx2, numpy, rasterio), so that the minimums stay true.
+  lowest:
+    runs-on: ubuntu-latest
+    env:
+      UV_PYTHON: "3.12"
+      UV_RESOLUTION: lowest-direct
+    steps:
+      - uses: actions/checkout@v5
+      - uses: astral-sh/setup-uv@v6
+      - run: uv sync --all-extras
+      # rasterio before 1.5.2 multiplies affine transforms with `*`, which
+      # affine 3 deprecates: a warning for users, an error under the test
+      # settings (filterwarnings = error).
+      - run: uv run pytest -W "ignore:Use:PendingDeprecationWarning"
