@@ -8,12 +8,12 @@ parsing, and the ``max_age`` check.
 """
 
 from collections.abc import Callable, Mapping
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from datetime import UTC, datetime, timedelta
 from typing import Any, Protocol
 
 from swpc_kit import __version__
-from swpc_kit.errors import SourceNotReady, StaleData, UnexpectedContent
+from swpc_kit.errors import SourceNotReady, StaleData, SwpcError, UnexpectedContent
 
 DEFAULT_TIMEOUT = 30.0
 """Default timeout for one request, in seconds."""
@@ -123,9 +123,12 @@ class BaseClient:
             previous reply for the same URL carried ``ETag`` /
             ``Last-Modified``, and reuse that reply's model on ``304``.
         clock: Returns the current time, as an aware UTC datetime.
+        urls: URLs that replace the canonical ones, by product name, for a
+            product that SWPC moved before a new version of swpc-kit knows.
 
     Raises:
-        ValueError: If ``timeout`` is not positive.
+        ValueError: If ``timeout`` is not positive, or ``urls`` names a
+            product that does not exist.
     """
 
     def __init__(
@@ -136,15 +139,34 @@ class BaseClient:
         max_age: timedelta | None,
         conditional: bool,
         clock: Callable[[], datetime],
+        urls: Mapping[str, str] | None = None,
     ) -> None:
+        from swpc_kit.client._products import PRODUCTS
+
         if timeout <= 0:
             raise ValueError(f"timeout must be positive, got {timeout}")
+        self.urls: dict[str, str] = dict(urls or {})
+        unknown = sorted(set(self.urls) - {product.name for product in PRODUCTS})
+        if unknown:
+            raise ValueError(f"no such product in urls: {', '.join(unknown)}")
         self.user_agent = user_agent
         self.timeout = timeout
         self.max_age = max_age
         self.conditional = conditional
         self._clock = clock
         self._cache: dict[str, _Cached] = {}
+
+    def resolve[M: _Timed](self, product: Product[M]) -> Product[M]:
+        """Return ``product`` with the URL that ``urls`` gives it, if any."""
+        url = self.urls.get(product.name)
+        return product if url is None else replace(product, url=url)
+
+    @staticmethod
+    def locate(error: SwpcError, product: Product[Any]) -> None:
+        """Record in ``error`` which product and URL it comes from."""
+        if error.product is None:
+            error.product = product.name
+            error.url = product.url
 
     def request_headers(self, product: Product[Any]) -> dict[str, str]:
         """Return the headers for a request of ``product``."""
@@ -192,10 +214,15 @@ class BaseClient:
             if status in _TRANSIENT_STATUSES or 500 <= status <= 599:
                 raise SourceNotReady(f"HTTP {status} from {url}; try again later")
             if 300 <= status <= 399:
-                target = response.header("Location") or "an unknown place"
-                raise UnexpectedContent(f"HTTP {status} from {url}: moved to {target}")
+                location = response.header("Location")
+                target = location or "an unknown place"
+                raise UnexpectedContent(
+                    f"HTTP {status} from {url}: moved to {target}",
+                    status=status,
+                    location=location,
+                )
             if status != 200:
-                raise UnexpectedContent(f"HTTP {status} from {url}")
+                raise UnexpectedContent(f"HTTP {status} from {url}", status=status)
             content_type = response.header("Content-Type") or ""
             if "html" in content_type.lower():
                 raise UnexpectedContent(f"got HTML ({content_type}) from {url}")

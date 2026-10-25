@@ -24,15 +24,24 @@ Requests are conditional: once a URL answered with ``ETag`` or
 ``Last-Modified``, the next request sends them back, and a ``304 Not
 Modified`` reuses the previous model (``max_age`` is still checked).
 
+If SWPC moves a product before a new version of swpc-kit knows the new
+address, ``urls`` points the client there::
+
+    Client(urls={"kyoto_dst": "https://services.swpc.noaa.gov/new/dst.json"})
+
+Every error that goes through the client says which product and URL it comes
+from (``product`` and ``url`` attributes, and in the message).
+
 The HTTP library (httpx2) is used only by the default transports
-(:class:`HttpxTransport`, :class:`AsyncHttpxTransport`); any object with the
-:class:`Transport` or :class:`AsyncTransport` interface can replace them.
+(:class:`HttpxTransport`, :class:`AsyncHttpxTransport`) and imported only
+when one is needed; any object with the :class:`Transport` or
+:class:`AsyncTransport` interface can replace them.
 """
 
-from collections.abc import Callable
+from collections.abc import Callable, Mapping
 from datetime import datetime, timedelta
 from types import TracebackType
-from typing import Self
+from typing import TYPE_CHECKING, Any, Self
 
 from swpc_kit.client import _products as p
 from swpc_kit.client._core import (
@@ -46,8 +55,8 @@ from swpc_kit.client._core import (
     _Timed,
     _utc_now,
 )
-from swpc_kit.client._httpx import AsyncHttpxTransport, HttpxTransport
 from swpc_kit.client._products import PRODUCTS
+from swpc_kit.errors import SwpcError
 from swpc_kit.models.alerts import (
     Alerts,
 )
@@ -77,6 +86,9 @@ from swpc_kit.models.solar_wind import (
     RtswWind1m,
 )
 
+if TYPE_CHECKING:
+    from swpc_kit.client._httpx import AsyncHttpxTransport, HttpxTransport
+
 __all__ = [
     "DEFAULT_TIMEOUT",
     "DEFAULT_USER_AGENT",
@@ -90,6 +102,16 @@ __all__ = [
     "Product",
     "Transport",
 ]
+
+
+def __getattr__(name: str) -> Any:
+    # The httpx2 transports load on first use: a custom transport needs no
+    # httpx2, and without the extra the import error says what to install.
+    if name in ("HttpxTransport", "AsyncHttpxTransport"):
+        from swpc_kit.client import _httpx
+
+        return getattr(_httpx, name)
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
 
 
 class Client(BaseClient):
@@ -107,9 +129,14 @@ class Client(BaseClient):
         conditional: Use ``ETag``/``Last-Modified`` conditional requests.
         clock: Returns the current time as an aware UTC datetime (for
             ``max_age``).
+        urls: URLs that replace the canonical ones, by method name, for a
+            product that SWPC moved: ``{"kyoto_dst": "https://..."}``.
 
     Raises:
-        ValueError: If ``timeout`` is not positive.
+        ValueError: If ``timeout`` is not positive, or ``urls`` names a
+            method that does not exist.
+        ImportError: If no ``transport`` is given and httpx2 (the
+            ``client`` extra) is not installed.
     """
 
     def __init__(
@@ -121,6 +148,7 @@ class Client(BaseClient):
         max_age: timedelta | None = None,
         conditional: bool = True,
         clock: Callable[[], datetime] = _utc_now,
+        urls: Mapping[str, str] | None = None,
     ) -> None:
         super().__init__(
             user_agent=user_agent,
@@ -128,10 +156,13 @@ class Client(BaseClient):
             max_age=max_age,
             conditional=conditional,
             clock=clock,
+            urls=urls,
         )
-        self.transport: Transport = (
-            transport if transport is not None else HttpxTransport()
-        )
+        if transport is None:
+            from swpc_kit.client._httpx import HttpxTransport
+
+            transport = HttpxTransport()
+        self.transport: Transport = transport
 
     def fetch[M: _Timed](
         self, product: Product[M], *, max_age: timedelta | None = None
@@ -145,10 +176,17 @@ class Client(BaseClient):
         Returns:
             The parsed model.
         """
-        response = self.transport.get(
-            product.url, headers=self.request_headers(product), timeout=self.timeout
-        )
-        return self.handle(product, response, max_age)
+        product = self.resolve(product)
+        try:
+            response = self.transport.get(
+                product.url,
+                headers=self.request_headers(product),
+                timeout=self.timeout,
+            )
+            return self.handle(product, response, max_age)
+        except SwpcError as error:
+            self.locate(error, product)
+            raise
 
     def close(self) -> None:
         """Close the transport."""
@@ -259,9 +297,14 @@ class AsyncClient(BaseClient):
         conditional: Use ``ETag``/``Last-Modified`` conditional requests.
         clock: Returns the current time as an aware UTC datetime (for
             ``max_age``).
+        urls: URLs that replace the canonical ones, by method name, for a
+            product that SWPC moved: ``{"kyoto_dst": "https://..."}``.
 
     Raises:
-        ValueError: If ``timeout`` is not positive.
+        ValueError: If ``timeout`` is not positive, or ``urls`` names a
+            method that does not exist.
+        ImportError: If no ``transport`` is given and httpx2 (the
+            ``client`` extra) is not installed.
     """
 
     def __init__(
@@ -273,6 +316,7 @@ class AsyncClient(BaseClient):
         max_age: timedelta | None = None,
         conditional: bool = True,
         clock: Callable[[], datetime] = _utc_now,
+        urls: Mapping[str, str] | None = None,
     ) -> None:
         super().__init__(
             user_agent=user_agent,
@@ -280,10 +324,13 @@ class AsyncClient(BaseClient):
             max_age=max_age,
             conditional=conditional,
             clock=clock,
+            urls=urls,
         )
-        self.transport: AsyncTransport = (
-            transport if transport is not None else AsyncHttpxTransport()
-        )
+        if transport is None:
+            from swpc_kit.client._httpx import AsyncHttpxTransport
+
+            transport = AsyncHttpxTransport()
+        self.transport: AsyncTransport = transport
 
     async def fetch[M: _Timed](
         self, product: Product[M], *, max_age: timedelta | None = None
@@ -297,10 +344,17 @@ class AsyncClient(BaseClient):
         Returns:
             The parsed model.
         """
-        response = await self.transport.get(
-            product.url, headers=self.request_headers(product), timeout=self.timeout
-        )
-        return self.handle(product, response, max_age)
+        product = self.resolve(product)
+        try:
+            response = await self.transport.get(
+                product.url,
+                headers=self.request_headers(product),
+                timeout=self.timeout,
+            )
+            return self.handle(product, response, max_age)
+        except SwpcError as error:
+            self.locate(error, product)
+            raise
 
     async def aclose(self) -> None:
         """Close the transport."""

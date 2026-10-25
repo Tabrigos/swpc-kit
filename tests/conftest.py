@@ -65,7 +65,7 @@ def swpc_from_fixtures(monkeypatch: pytest.MonkeyPatch) -> None:
     """Make ``Client()`` and ``AsyncClient()`` read the fixtures, not SWPC."""
     import httpx2
 
-    import swpc_kit.client
+    import swpc_kit.client._httpx as transports
     from swpc_kit.client import PRODUCTS, AsyncHttpxTransport, HttpxTransport
 
     bodies: dict[str, Callable[[], bytes]] = {
@@ -81,13 +81,14 @@ def swpc_from_fixtures(monkeypatch: pytest.MonkeyPatch) -> None:
             return httpx2.Response(404)
         return httpx2.Response(200, content=body())
 
+    # The clients build their default transport from swpc_kit.client._httpx.
     monkeypatch.setattr(
-        swpc_kit.client,
+        transports,
         "HttpxTransport",
         lambda: HttpxTransport(httpx2.Client(transport=httpx2.MockTransport(serve))),
     )
     monkeypatch.setattr(
-        swpc_kit.client,
+        transports,
         "AsyncHttpxTransport",
         lambda: AsyncHttpxTransport(
             httpx2.AsyncClient(transport=httpx2.MockTransport(serve))

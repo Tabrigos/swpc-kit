@@ -1,6 +1,8 @@
 import asyncio
+import importlib
 import json
 import re
+import sys
 from collections.abc import Callable, Mapping
 from dataclasses import dataclass, field
 from datetime import UTC, datetime, timedelta
@@ -351,8 +353,10 @@ def test_transient_statuses_are_not_ready(status: int) -> None:
 @pytest.mark.parametrize("status", [400, 403, 404, 410])
 def test_client_errors_are_unexpected(status: int) -> None:
     transport = FakeTransport([HttpResponse(status=status, headers={}, content=b"")])
-    with pytest.raises(UnexpectedContent, match=str(status)):
+    with pytest.raises(UnexpectedContent, match=str(status)) as info:
         Client(transport=transport).planetary_k_index()
+    assert info.value.status == status
+    assert info.value.location is None
 
 
 @pytest.mark.parametrize("status", [301, 302, 307, 308])
@@ -362,8 +366,10 @@ def test_redirects_are_not_followed(status: int) -> None:
         headers={"Location": "https://www.weather.gov/notification/"},
         content=b"",
     )
-    with pytest.raises(UnexpectedContent, match=r"weather\.gov/notification"):
+    with pytest.raises(UnexpectedContent, match=r"weather\.gov/notification") as info:
         Client(transport=FakeTransport([response])).planetary_k_index()
+    assert info.value.status == status
+    assert info.value.location == "https://www.weather.gov/notification/"
 
 
 def test_html_page_is_unexpected() -> None:
@@ -390,6 +396,98 @@ def test_transport_errors_pass_through() -> None:
     transport = FakeTransport([SourceNotReady("timed out")])
     with pytest.raises(SourceNotReady, match="timed out"):
         Client(transport=transport).planetary_k_index()
+
+
+def _error_through_the_client(response: HttpResponse | Exception) -> SwpcError:
+    with pytest.raises(SwpcError) as info:
+        Client(transport=FakeTransport([response])).planetary_k_index()
+    return info.value
+
+
+@pytest.mark.parametrize(
+    "response",
+    [
+        ok(
+            b'[{"time_tag":"2026-10-08T00:00:00","Kp":12,"a_running":4,'
+            b'"station_count":8}]'
+        ),
+        ok(b"<html>"),
+        ok(b'[{"time_tag":"2026-10-08T00:00:00","Kp":'),
+        HttpResponse(status=404, headers={}, content=b""),
+        SourceNotReady("timed out"),
+    ],
+)
+def test_errors_through_the_client_name_product_and_url(
+    response: HttpResponse | Exception,
+) -> None:
+    error = _error_through_the_client(response)
+    assert error.product == "planetary_k_index"
+    assert error.url == KP_URL
+    assert "planetary_k_index" in str(error)
+    assert KP_URL in str(error)
+
+
+def test_errors_raised_by_a_parser_name_neither_product_nor_url() -> None:
+    with pytest.raises(SwpcError) as info:
+        parse_planetary_k_index(b"<html>")
+    assert info.value.product is None
+    assert info.value.url is None
+    assert str(info.value) == "got HTML or XML instead of JSON"
+
+
+# --- a product that moved -----------------------------------------------------
+
+
+def test_urls_replace_the_url_of_a_product() -> None:
+    moved = "https://services.swpc.noaa.gov/products/new/kp.json"
+    transport = FakeTransport([ok(fixture(KP_FIXTURE))])
+    client = Client(transport=transport, urls={"planetary_k_index": moved})
+    kp = client.planetary_k_index()
+    assert [call.url for call in transport.calls] == [moved]
+    assert kp.source_url == moved
+    assert kp == parse_planetary_k_index(fixture(KP_FIXTURE), source_url=moved)
+
+
+def test_urls_leave_the_other_products_alone() -> None:
+    transport = FakeTransport([ok(fixture("dst/2026-10-15.json"))])
+    client = Client(transport=transport, urls={"planetary_k_index": "https://x/kp"})
+    client.kyoto_dst()
+    assert transport.calls[0].url == f"{BASE}/products/kyoto-dst.json"
+
+
+def test_urls_must_name_known_products() -> None:
+    with pytest.raises(ValueError, match="kp_index"):
+        Client(transport=FakeTransport(), urls={"kp_index": "https://x/kp"})
+
+
+def test_async_client_takes_urls_too() -> None:
+    moved = "https://services.swpc.noaa.gov/products/new/kp.json"
+    transport = AsyncFakeTransport(FakeTransport([ok(fixture(KP_FIXTURE))]))
+    client = AsyncClient(transport=transport, urls={"planetary_k_index": moved})
+    kp = asyncio.run(client.planetary_k_index())
+    assert transport.sync.calls[0].url == moved
+    assert kp.source_url == moved
+
+
+# --- without the client extra -------------------------------------------------
+
+
+def test_custom_transport_works_without_httpx2(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    import swpc_kit
+
+    # The import below also rebinds swpc_kit.client: restore it afterwards.
+    monkeypatch.setattr(swpc_kit, "client", sys.modules["swpc_kit.client"])
+    monkeypatch.setitem(sys.modules, "httpx2", None)
+    monkeypatch.delitem(sys.modules, "swpc_kit.client._httpx")
+    monkeypatch.delitem(sys.modules, "swpc_kit.client")
+    client_module = importlib.import_module("swpc_kit.client")
+    transport = FakeTransport([ok(fixture(KP_FIXTURE))])
+    kp = client_module.Client(transport=transport).planetary_k_index()
+    assert kp.data_time == KP_DATA_TIME
+    with pytest.raises(ImportError, match=r"pip install 'swpc-kit\[client\]'"):
+        client_module.Client()
 
 
 # --- max_age ----------------------------------------------------------------
@@ -566,6 +664,7 @@ def test_httpx_transport_does_not_follow_redirects() -> None:
         httpx2.ReadTimeout("slow"),
         httpx2.ConnectError("refused"),
         httpx2.RemoteProtocolError("cut"),
+        httpx2.DecodingError("corrupt gzip"),
     ],
 )
 def test_httpx_transport_errors_are_not_ready(error: Exception) -> None:
