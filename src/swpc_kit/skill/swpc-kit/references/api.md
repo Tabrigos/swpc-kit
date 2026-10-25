@@ -5,7 +5,7 @@
 
 Read only the section you need.
 
-Modules: `swpc_kit` · `swpc_kit.client` · `swpc_kit.models` · `swpc_kit.models.indices` · `swpc_kit.models.solar_wind` · `swpc_kit.models.goes` · `swpc_kit.models.alerts` · `swpc_kit.models.bulletins` · `swpc_kit.models.grids` · `swpc_kit.models.records` · `swpc_kit.parse` · `swpc_kit.parse.indices` · `swpc_kit.parse.solar_wind` · `swpc_kit.parse.goes` · `swpc_kit.parse.alerts` · `swpc_kit.parse.bulletins` · `swpc_kit.parse.grids` · `swpc_kit.errors` · `swpc_kit.export` · `swpc_kit.export.geojson` · `swpc_kit.export.geotiff` · `swpc_kit.codes`
+Modules: `swpc_kit` · `swpc_kit.client` · `swpc_kit.models` · `swpc_kit.models.indices` · `swpc_kit.models.solar_wind` · `swpc_kit.models.goes` · `swpc_kit.models.alerts` · `swpc_kit.models.bulletins` · `swpc_kit.models.grids` · `swpc_kit.models.records` · `swpc_kit.parse` · `swpc_kit.parse.indices` · `swpc_kit.parse.solar_wind` · `swpc_kit.parse.goes` · `swpc_kit.parse.alerts` · `swpc_kit.parse.bulletins` · `swpc_kit.parse.grids` · `swpc_kit.errors` · `swpc_kit.export` · `swpc_kit.export.data` · `swpc_kit.export.geojson` · `swpc_kit.export.geotiff` · `swpc_kit.codes`
 
 ## `swpc_kit`
 
@@ -782,6 +782,7 @@ Values on a regular latitude/longitude grid, at cell centres.
 - `.shape` (property): Number of latitudes and of longitudes.
 - `.is_contiguous` (property): Whether both axes have no gaps between their first and last value.
 - `.value_at(latitude: float, longitude: float) -> float`: Return the value of the cell centred at `latitude`, `longitude`.
+- `.value_near(latitude: float, longitude: float) -> float | None`: Return the value of the cell that holds the point, or `None`.
 - `.cells() -> Iterator[tuple[float, float, float]]`: Yield `(latitude, longitude, value)` for every cell, row by row.
 - `.wrapped() -> Grid`: Return the same grid with longitudes in [-180, 180).
 
@@ -981,9 +982,21 @@ The data is older than the maximum age the caller accepts.
 
 ## `swpc_kit.export`
 
-Exports of the gridded products (OVATION, D-RAP).
+Exports of the models: plain data, and the gridded products as maps.
 
-Re-exports: `to_geojson` (swpc_kit.export.geojson).
+Re-exports: `to_dict` (swpc_kit.export.data), `to_geojson` (swpc_kit.export.geojson), `to_records` (swpc_kit.export.data).
+
+## `swpc_kit.export.data`
+
+Plain data from the models (standard library only).
+
+### `to_dict(model: object) -> dict[str, Any]`
+
+Return a model as plain data, ready for `dumps`.
+
+### `to_records(data: object) -> list[dict[str, Any]]`
+
+Return the records of a product as flat rows.
 
 ## `swpc_kit.export.geojson`
 

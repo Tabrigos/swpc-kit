@@ -10,6 +10,7 @@ because the shared test has no SWPC to talk to.
 
 import dataclasses
 import inspect
+import json
 import re
 import shutil
 from datetime import UTC, datetime
@@ -111,6 +112,11 @@ def test_python_examples_run_against_the_fixtures(
     raw = (FIXTURES / "ovation-aurora" / "2026-10-15.json").read_bytes()
     oval = swpc_kit.parse.parse_ovation_aurora(raw, partial=True)
     assert namespace["aurora_geojson"](oval)["type"] == "FeatureCollection"
+    assert json.loads(namespace["dst_json"](namespace["dst"]))["values"]
+    raw = (FIXTURES / "rtsw-wind-1m" / "2026-10-15.json").read_bytes()
+    rows = namespace["solar_wind_rows"](swpc_kit.parse.parse_rtsw_wind_1m(raw))
+    assert rows
+    assert all(row["active"] for row in rows)
     printed = capsys.readouterr().out.splitlines()
     assert printed[0] == "2026-10-15 12:00:00+00:00 2.67", printed
     assert printed[1].startswith("2026-10-15 "), printed
