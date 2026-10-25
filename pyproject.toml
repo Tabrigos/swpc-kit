@@ -3,6 +3,9 @@ name = "swpc-kit"
 dynamic = ["version"]
 description = "Typed readers for NOAA SWPC space weather data products, with GeoJSON and GeoTIFF export."
 readme = "README.md"
+license = "MIT"
+license-files = ["LICENSE"]
+authors = [{ name = "Sidereus Team", email = "sidereus.team@gmail.com" }]
 requires-python = ">=3.12"
 dependencies = []
 keywords = ["space weather", "noaa", "swpc", "aurora", "kp index", "geojson"]
@@ -16,9 +19,14 @@ classifiers = [
     "Typing :: Typed",
 ]
 
+[project.urls]
+Homepage = "https://github.com/Tabrigos/swpc-kit"
+Issues = "https://github.com/Tabrigos/swpc-kit/issues"
+Changelog = "https://github.com/Tabrigos/swpc-kit/blob/main/CHANGELOG.md"
+
 [project.optional-dependencies]
 # HTTP client (swpc_kit.client): httpx2, the maintained continuation of
-# httpx (see docs/FONTI.md, "Client HTTP").
+# httpx (see docs/FONTI.md, "HTTP client").
 client = [
     "httpx2>=2.13",
 ]

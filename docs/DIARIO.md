@@ -9,9 +9,9 @@ Riscritto da capo a ogni fine sessione, mai accodato.
   e GeoTIFF, client sincrono e asincrono, README con esempi verificati da
   `tests/test_readme.py`, `CHANGELOG.md`, skill per gli assistenti AI
   dentro il pacchetto, sincronizzata nei progetti da `sync`.
-- **Prossimo passo**: nessuna tappa aperta. Da decidere: pubblicazione su
-  PyPI (nome `swpc-kit` libero al 2026-10-15, da ricontrollare), licenza
-  (`SPEC.md`: "da decidere quando il repo diventa pubblico"), tag `v0.2.0`.
+- **Prossimo passo**: nessuna tappa aperta. Repository pronto per diventare
+  pubblico (licenza MIT, autore Sidereus Team). Da decidere: pubblicazione su
+  PyPI (nome `swpc-kit` libero al 2026-10-15, da ricontrollare), tag `v0.2.0`.
 - **Decisioni in sospeso**: override mypy per rasterio o stub
   `types-rasterio` (T6); `alerts.json` vuoto = elenco vuoto con
   `data_time` `None` (T4; il client non lo considera mai vecchio); unire il

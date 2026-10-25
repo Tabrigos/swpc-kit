@@ -263,7 +263,16 @@ uv run mypy
 Tests never use the network: they read the files in `tests/fixtures/`
 (recorded from SWPC, see `tests/fixtures/README.md`).
 
+`SPEC.md`, `AGENTS.md` and `docs/FONTI.md` are in English. The development
+history (`docs/TAPPE.md`, `docs/DIARIO.md`) is in Italian.
+
 ## Data and attribution
 
 Data comes from NOAA SWPC (https://www.swpc.noaa.gov). This project is not
 affiliated with or endorsed by NOAA.
+
+## License
+
+The code is MIT, see `LICENSE`. The SWPC data, including the fixtures
+recorded in `tests/fixtures/`, are public NOAA products and are not covered
+by this license.
