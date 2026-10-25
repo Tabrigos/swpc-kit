@@ -5,7 +5,7 @@ such as ``K04W``, and a long code in its first line
 (``Space Weather Message Code: WARK04``), the one SWPC uses in its table of
 products (https://www.spaceweather.gov/content/subscription-services).
 
-Every entry says how it is known (see ``docs/FONTI.md``, section "Avvisi"):
+Every entry says how it is known (see ``docs/FONTI.md``, section "Alerts"):
 
 - :attr:`Verification.VERIFIED`: everything in the entry is confirmed,
   either by the text of the messages of the recorded fixture (the pair of

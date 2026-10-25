@@ -1,120 +1,121 @@
-# swpc-kit — specifica
+# swpc-kit — specification
 
-## Obiettivo
+## Goal
 
-Una libreria Python che trasforma i prodotti pubblici di NOAA SWPC
-(`services.swpc.noaa.gov`) in modelli tipizzati, affidabili quando la fonte
-cambia formato, si ferma o risponde male, e che esporta le griglie (OVATION,
-D-RAP) in GeoJSON e GeoTIFF.
+A Python library that turns the public products of NOAA SWPC
+(`services.swpc.noaa.gov`) into typed models, reliable when the source changes
+format, stops or responds badly, and that exports the grids (OVATION, D-RAP)
+to GeoJSON and GeoTIFF.
 
-Chi la usa: un backend che ingerisce dati di meteo spaziale (per esempio un
-servizio FastAPI), uno script di analisi, un notebook.
+Who uses it: a backend that ingests space weather data (for example a FastAPI
+service), an analysis script, a notebook.
 
-## Cosa non fa
+## What it does not do
 
-- Niente grafici, niente interfaccia, niente database o cache su disco.
-- Niente modelli fisici o previsioni proprie: legge quello che pubblica SWPC.
-- Niente prodotti di altri enti (NASA DONKI, iSWA, GFZ) nella prima versione.
-- Niente immagini (coronografi, SUVI, animazioni).
+- No charts, no interface, no database or on-disk cache.
+- No physical models or forecasts of its own: it reads what SWPC publishes.
+- No products from other agencies (NASA DONKI, iSWA, GFZ) in the first version.
+- No images (coronagraphs, SUVI, animations).
 
-## Architettura
+## Architecture
 
-Tre strati, ognuno usabile da solo, più la skill che li descrive:
+Three layers, each usable on its own, plus the skill that describes them:
 
-1. **Parser** (`swpc_kit.parse.*`): funzioni pure, `str | bytes` → modello.
-   Solo libreria standard.
-2. **Modelli** (`swpc_kit.models.*`): dataclass congelate, tipizzate, con
-   `datetime` UTC. Ogni prodotto ha un modello con `issued` / `observed` /
-   `valid_from` / `valid_to` dove la fonte li dà, e `source_url`.
-3. **Uscite**:
-   - `swpc_kit.export.geojson` (libreria standard);
-   - `swpc_kit.export.geotiff` (extra `geo`, con `numpy` e `rasterio`);
-   - `swpc_kit.client` (extra `client`, con `httpx2`, la continuazione
-     mantenuta di httpx: vedi `docs/FONTI.md`): scarica, riconosce gli
-     errori della fonte, chiama il parser.
-4. **Skill per gli assistenti AI** (`swpc_kit/skill/`): istruzioni in formato
-   Agent Skills (`SKILL.md` scritto a mano, `references/api.md` generato dal
-   codice), versionate con il pacchetto; i test le tengono allineate all'API.
-   Segue lo schema comune "skill dei pacchetti" v1, uguale negli altri
-   pacchetti dello stesso autore (per esempio politefetch):
-   - entry point `agent_skills` (`swpc-kit = "swpc_kit.skill"`): il modulo
-     espone `bundled()`, la cartella della skill. È l'unico contratto fra
-     pacchetti;
-   - `python -m swpc_kit.skill sync [--root DIR]` porta in
-     `<root>/.claude/skills/<nome>/` le skill di tutti i pacchetti installati
-     (aggiunge, aggiorna se la versione cambia, rimuove quelle dei pacchetti
-     spariti), stampa una riga ed esce sempre con 0. Pensato per un hook
-     `SessionStart` del progetto che usa i pacchetti (README);
-   - ogni copia scritta da `install` o `sync` ha il marcatore
-     `.package-skill`; `sync` tocca solo le cartelle marcate. Le cartelle
-     create da `sync` hanno un `.gitignore` con `*`; `install` non lo scrive;
-   - le skill stanno solo nei progetti, mai in `~/.claude/skills`.
+1. **Parsers** (`swpc_kit.parse.*`): pure functions, `str | bytes` → model.
+   Standard library only.
+2. **Models** (`swpc_kit.models.*`): frozen, typed dataclasses, with UTC
+   `datetime`. Each product has a model with `issued` / `observed` /
+   `valid_from` / `valid_to` where the source provides them, and `source_url`.
+3. **Outputs**:
+   - `swpc_kit.export.geojson` (standard library);
+   - `swpc_kit.export.geotiff` (`geo` extra, with `numpy` and `rasterio`);
+   - `swpc_kit.client` (`client` extra, with `httpx2`, the maintained
+     continuation of httpx: see `docs/FONTI.md`): downloads, recognizes the
+     source's errors, calls the parser.
+4. **Skill for AI assistants** (`swpc_kit/skill/`): instructions in the Agent
+   Skills format (`SKILL.md` written by hand, `references/api.md` generated
+   from the code), versioned with the package; the tests keep them aligned with
+   the API. It follows the shared "package skills" scheme v1, the same in the
+   other packages by the same author (for example politefetch):
+   - entry point `agent_skills` (`swpc-kit = "swpc_kit.skill"`): the module
+     exposes `bundled()`, the skill's folder. It is the only contract between
+     packages;
+   - `python -m swpc_kit.skill sync [--root DIR]` brings into
+     `<root>/.claude/skills/<name>/` the skills of all the installed packages
+     (adds, updates if the version changes, removes those of packages that are
+     gone), prints one line and always exits with 0. Meant for a
+     `SessionStart` hook of the project that uses the packages (README);
+   - every copy written by `install` or `sync` has the `.package-skill`
+     marker; `sync` touches only the marked folders. The folders created by
+     `sync` have a `.gitignore` with `*`; `install` does not write it;
+   - skills live only in projects, never in `~/.claude/skills`.
 
 ```python
 from swpc_kit.parse import parse_planetary_k_index
 from swpc_kit.client import Client
 
-kp = parse_planetary_k_index(raw_bytes)  # senza rete
+kp = parse_planetary_k_index(raw_bytes)  # no network
 with Client() as c:
-    kp = c.planetary_k_index()  # con rete
+    kp = c.planetary_k_index()  # network
     oval = c.ovation_aurora()
     oval.to_geojson(threshold=10)
 ```
 
-I nomi esatti si decidono nelle tappe; questo è l'impianto.
+The exact names are decided in the stages; this is the framework.
 
-## Prodotti della prima versione
+## Products in the first version
 
-| Gruppo | Prodotti | Tappa |
+| Group | Products | Stage |
 |---|---|---|
-| Indici | Kp 3 ore e previsione, Kp 1 minuto, F10.7, Dst di Kyoto, scale NOAA (`noaa-scales.json`) | T2 |
-| Vento solare | RTSW mag e plasma 1 minuto (SOLAR-1, ACE), con scelta della fonte attiva | T3 |
-| GOES | flusso X (con classe del brillamento A/B/C/M/X), protoni integrali | T3 |
-| Avvisi | `alerts.json`, parsing del testo dei messaggi, catalogo dei codici | T4 |
-| Bollettini | 3-day forecast, geomagnetic forecast, 27-day outlook | T5 |
-| Griglie | OVATION aurora, D-RAP | T6 |
+| Indices | 3-hour Kp and forecast, 1-minute Kp, F10.7, Kyoto Dst, NOAA scales (`noaa-scales.json`) | T2 |
+| Solar wind | 1-minute RTSW mag and plasma (SOLAR-1, ACE), with choice of the active source | T3 |
+| GOES | X-ray flux (with flare class A/B/C/M/X), integral protons | T3 |
+| Alerts | `alerts.json`, parsing of the message text, code catalog | T4 |
+| Bulletins | 3-day forecast, geomagnetic forecast, 27-day outlook | T5 |
+| Grids | OVATION aurora, D-RAP | T6 |
 
-## Errori
+## Errors
 
-Una gerarchia sotto `SwpcError`:
+A hierarchy under `SwpcError`:
 
-- `SourceNotReady`: dato troncato o vuoto (JSON non chiuso, file a metà).
-  Succede davvero: SWPC a volte serve un file mentre lo riscrive. È uno stato
-  transitorio, non un bug: chi chiama riprova più tardi.
-- `UnexpectedContent`: la fonte risponde con altro (una pagina HTML, un
-  redirect verso una pagina di annunci, un formato che nessun parser conosce).
-- `ParseError`: il formato è quello atteso ma un campo è incoerente. Il
-  messaggio dice quale campo e quale riga.
-- `StaleData` (solo nel client, e solo se chi chiama passa un'età massima):
-  il dato è più vecchio del previsto.
+- `SourceNotReady`: truncated or empty data (unclosed JSON, half-written file).
+  It really happens: SWPC sometimes serves a file while rewriting it. It is a
+  transient state, not a bug: the caller retries later.
+- `UnexpectedContent`: the source responds with something else (an HTML page,
+  a redirect to an announcements page, a format that no parser knows).
+- `ParseError`: the format is the expected one but a field is inconsistent. The
+  message says which field and which line.
+- `StaleData` (only in the client, and only if the caller passes a maximum
+  age): the data is older than expected.
 
-## Freschezza
+## Freshness
 
-L'età del dato si misura **sul tempo che dichiara il contenuto** (`Observation
-Time`, `:Issued:`, l'ultimo `time_tag`), mai sull'esito HTTP: un `304 Not
-Modified` o una data di modifica recente non dicono che il dato è nuovo. Ogni
-modello espone `data_time` (il tempo più recente del contenuto), e il client
-accetta `max_age`.
+The age of the data is measured **on the time the content declares**
+(`Observation Time`, `:Issued:`, the last `time_tag`), never on the HTTP
+outcome: a `304 Not Modified` or a recent modification date does not say that
+the data is new. Every model exposes `data_time` (the most recent time in the
+content), and the client accepts `max_age`.
 
-## Formati che cambiano
+## Changing formats
 
-SWPC cambia i formati con preavviso (le SCN, *Service Change Notices*). Nel
-2026 il Kp a 3 ore e altri prodotti sono passati da "array di array con la
-riga d'intestazione" a "array di oggetti", con i numeri non più tra
-virgolette. Un parser riconosce **tutti** i formati documentati in
-`docs/FONTI.md` e restituisce lo stesso modello.
+SWPC changes its formats with advance notice (the SCNs, *Service Change
+Notices*). In 2026 the 3-hour Kp and other products moved from "array of arrays
+with the header row" to "array of objects", with the numbers no longer in
+quotes. A parser recognizes **all** the formats documented in `docs/FONTI.md`
+and returns the same model.
 
-## Qualità
+## Quality
 
-- Python 3.12 o successivo; `uv` per ambiente e build (`hatchling`).
-- `mypy --strict`, `ruff check`, `ruff format`, `pytest` puliti; CI su GitHub
-  Actions che esegue gli stessi comandi.
-- Ogni parser ha test su fixture reali e su casi limite costruiti a mano
-  (campo mancante, troncato, valori fuori scala, fonte inattiva).
-- API pubblica documentata nelle docstring; README con esempi eseguibili;
-  skill per gli assistenti AI con esempi eseguiti dai test.
+- Python 3.12 or later; `uv` for environment and build (`hatchling`).
+- `mypy --strict`, `ruff check`, `ruff format`, `pytest` clean; CI on GitHub
+  Actions that runs the same commands.
+- Every parser has tests on real fixtures and on hand-built edge cases (missing
+  field, truncated, out-of-range values, inactive source).
+- Public API documented in the docstrings; README with runnable examples; skill
+  for AI assistants with examples run by the tests.
 
-## Licenza
+## License
 
-Da decidere quando il repo diventa pubblico. I dati SWPC sono pubblici; NOAA
-chiede l'attribuzione e di non implicare un suo avallo: il README lo dirà.
+MIT (`LICENSE`), copyright Sidereus Team. SWPC data is public and is not
+covered by the license; NOAA asks for attribution and not to imply its
+endorsement: the README says so.

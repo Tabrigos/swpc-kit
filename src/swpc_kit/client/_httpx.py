@@ -1,7 +1,7 @@
 """Transports built on httpx2, the only module that knows the HTTP library.
 
 httpx2 is the maintained continuation of httpx (see ``docs/FONTI.md``,
-section "Client HTTP"). Switching library means rewriting this module only:
+section "HTTP client"). Switching library means rewriting this module only:
 the clients depend on the :class:`~swpc_kit.client.Transport` protocol.
 """
 

@@ -1,231 +1,237 @@
-# Fonti e formati
+# Sources and formats
 
-Ricognizione del 2026-10-15, fatta leggendo gli elenchi delle cartelle e alcuni
-file di `services.swpc.noaa.gov`, e le pagine ufficiali di SWPC. In T1 (stesso
-giorno) le affermazioni sono state controllate sui file scaricati per intero e
-sulle fixture in `tests/fixtures/`: dove c'è scritto **verificato**, il riferimento
-è la fixture indicata. Dove una riga dice ancora **ipotesi**, va verificata
-prima di scriverci codice sopra. Quando una tappa verifica o smentisce
-qualcosa, aggiorna questo file.
+Survey of 2026-10-15, done by reading the directory listings and some files
+of `services.swpc.noaa.gov`, and the official SWPC pages. In T1 (same day)
+the claims were checked against the fully downloaded files and against the
+fixtures in `tests/fixtures/`: where it says **verified**, the reference is
+the fixture named. Where a line still says **hypothesis**, it must be
+verified before writing code on top of it. When a stage verifies or
+disproves something, update this file.
 
-## Cartelle
+## Directories
 
-- `https://services.swpc.noaa.gov/json/`: tra gli altri `planetary_k_index_1m.json`,
+- `https://services.swpc.noaa.gov/json/`: among others `planetary_k_index_1m.json`,
   `ovation_aurora_latest.json`, `solar_regions.json`, `f107_cm_flux.json`,
-  `icao-space-weather-advisories.json`; sottocartelle `rtsw/`, `goes/`, `ace/`,
+  `icao-space-weather-advisories.json`; subdirectories `rtsw/`, `goes/`, `ace/`,
   `geospace/`, `lists/`, `solar-cycle/`, `stereo/`.
 - `https://services.swpc.noaa.gov/products/`: `alerts.json`,
   `noaa-planetary-k-index.json`, `noaa-planetary-k-index-forecast.json`,
-  `kyoto-dst.json`, `noaa-scales.json`, `10cm-flux-30-day.json`; sottocartella
+  `kyoto-dst.json`, `noaa-scales.json`, `10cm-flux-30-day.json`; subdirectory
   `summary/` (`10cm-flux.json`, `solar-wind-mag-field.json`,
   `solar-wind-speed.json`).
 - `https://services.swpc.noaa.gov/text/`: `3-day-forecast.txt`,
   `3-day-geomag-forecast.txt`, `27-day-outlook.txt`,
-  `drap_global_frequencies.txt`, `srs.txt`, `discussion.txt`, e altri.
-- `https://services.swpc.noaa.gov/text/scn/` contiene **file di esempio
-  ufficiali** allegati alle SCN, non i testi delle SCN:
-  - `fy22-kp/` (2022-09-22): esempi del **vecchio formato** di Kp 3 ore e
-    previsione, più Kp 1 minuto, 3-day forecast e altri testi. Copiati in
-    `tests/fixtures/` quelli utili (vedi il README delle fixture).
-  - `fy26-03/` (2026-02-27): esempi del **nuovo formato** (array di oggetti)
-    di Kp 3 ore e previsione, Dst, `10cm-flux-30-day`, `10cm-flux` e dei due
-    riepiloghi del vento solare. Stesso formato delle fixture registrate: non
-    copiati.
+  `drap_global_frequencies.txt`, `srs.txt`, `discussion.txt`, and others.
+- `https://services.swpc.noaa.gov/text/scn/` contains **official sample
+  files** attached to the SCNs, not the texts of the SCNs:
+  - `fy22-kp/` (2022-09-22): samples of the **old format** of 3-hour Kp and
+    forecast, plus 1-minute Kp, 3-day forecast and other texts. The useful
+    ones are copied into `tests/fixtures/` (see the fixtures README).
+  - `fy26-03/` (2026-02-27): samples of the **new format** (array of objects)
+    of 3-hour Kp and forecast, Dst, `10cm-flux-30-day`, `10cm-flux` and the
+    two solar wind summaries. Same format as the recorded fixtures: not
+    copied.
 
-Tutti i file registrati il 2026-10-15 sono UTF-8 senza BOM, con righe chiuse
-da `\n`; i JSON sono su una sola riga, senza `\n` finale; i testi finiscono
-con `\n`. Il server dà `Last-Modified`, `ETag` e `Cache-Control: max-age=60`.
+All files recorded on 2026-10-15 are UTF-8 without BOM, with lines ended
+by `\n`; the JSON files are on a single line, with no trailing `\n`; the
+texts end with `\n`. The server sends `Last-Modified`, `ETag` and
+`Cache-Control: max-age=60`.
 
-## Indici
+## Indices
 
-- **Kp 3 ore** (`/products/noaa-planetary-k-index.json`, fixture
-  `kp-3h/2026-10-15.json`), **verificato**: array di 61 oggetti, ordine
-  crescente, 7 giorni e mezzo a passo di 3 ore. Formato compatto, numeri con
-  due decimali (`"Kp":1.00`):
+- **3-hour Kp** (`/products/noaa-planetary-k-index.json`, fixture
+  `kp-3h/2026-10-15.json`), **verified**: array of 61 objects, ascending
+  order, 7 and a half days at a 3-hour step. Compact format, numbers with
+  two decimals (`"Kp":1.00`):
   `{"time_tag":"2026-10-08T00:00:00","Kp":1.00,"a_running":4,"station_count":8}`.
-  `time_tag` senza `Z`: va inteso UTC (**ipotesi** ragionevole, da scrivere
-  nella docstring).
-- **Previsione del Kp** (`noaa-planetary-k-index-forecast.json`),
-  **verificato**: 81 oggetti `{time_tag, kp, observed, noaa_scale}`, da 7
-  giorni prima a 3 giorni dopo. `observed` vale `"observed"` (61),
-  `"estimated"` (3) o `"predicted"` (17); `noaa_scale` è `null` o una
-  stringa come `"G1"`, `"G3"`. Attenzione: qui la chiave è `kp`, nel Kp 3 ore
-  è `Kp`.
-  Le voci `estimated` possono stare **nel futuro**: registrando alle 17:57 UTC
-  c'erano già quelle delle 18:00 e delle 21:00. Per questo il `data_time` della
-  previsione è l'ultima voce `observed`.
-- **Formato precedente** (fino a circa il 2026-03-31, SCN 26-21),
-  **verificato** sugli esempi ufficiali del 2022 (`kp-3h/2022-09-22-sample.json`,
-  `kp-forecast/2022-09-22-sample.json`): array di array, prima riga con i nomi
-  delle colonne (gli stessi del formato nuovo), poi una riga per record con
-  i numeri tra virgolette e `null` senza virgolette. Formato compatto.
-  `time_tag` con lo spazio al posto della `T`: nel Kp 3 ore con i millisecondi
-  (`"2022-09-15 00:00:00.000"`), nella previsione senza
-  (`"2022-07-27 00:00:00"`). Riguardava anche Dst, `10cm-flux-30-day` e i
-  riepiloghi del vento solare: per Dst e flusso non c'è un esempio reale, le
-  fixture `*-built.json` sono costruite da quelle registrate. Che il loro
-  `time_tag` non avesse i millisecondi è **ipotesi**: il parser deve
-  accettare entrambe le forme.
-- **Kp 1 minuto** (`/json/planetary_k_index_1m.json`, fixture
-  `kp-1m/2026-10-15.json`), **verificato**: 358 oggetti in ordine crescente,
-  circa 6 ore. `{"time_tag":"2026-10-15T11:51:00","kp_index":3,"estimated_kp":3.00,"kp":"3Z"}`.
-  Il suffisso di `kp` indica il terzo: `Z` intero, `P` più un terzo, `M` meno
-  un terzo (0.33 → `"0P"`, 0.67 → `"1M"`, 2.67 → `"3M"`, 3.00 → `"3Z"`), e
-  `kp_index` è la cifra di `kp`. L'esempio ufficiale del 2022
-  (`fy22-kp/10-102_planetary_k_index_1m_sample.json`) **non è usabile**: ha un
-  BOM UTF-8 e un a capo `\r\n` ogni ~2 KB anche a metà parola, quindi non è
-  JSON valido.
-- **Dst** (`kyoto-dst.json`), **verificato**: 168 oggetti orari
-  `{"time_tag":"2026-10-08T18:00:00","dst":-17}`, 7 giorni.
-- **F10.7 30 giorni** (`10cm-flux-30-day.json`), **verificato**: 30 oggetti
-  `{"time_tag":"2026-09-15T20:00:00","flux":107}`, uno al giorno alle 20 UTC,
-  flusso intero.
-- **Scale NOAA** (`noaa-scales.json`, fixture `noaa-scales/2026-10-15.json`),
-  **verificato** nella forma: un oggetto con chiavi `"-1"`, `"0"`, `"1"`, `"2"`,
-  `"3"`, ognuna con `DateStamp` (`"2026-10-15"`), `TimeStamp` (`"17:50:00"`) e
-  i gruppi `R` (`Scale`, `Text`, `MinorProb`, `MajorProb`), `S` (`Scale`,
-  `Text`, `Prob`), `G` (`Scale`, `Text`). Tutti i valori sono stringhe o
-  `null` (`"Scale": "0"`, `"MinorProb": "20"`). **Ipotesi** dal confronto
-  delle date: `-1` sono le scale osservate nelle 24 ore precedenti, `0` quelle
-  attuali, `1`–`3` la previsione per oggi e i due giorni seguenti (con le
-  probabilità e senza `Scale` per R e S). `DateStamp`/`TimeStamp` sono letti come UTC:
-  nella fixture la voce `0` dice `17:54:00` ed è stata registrata alle 17:57
-  UTC (indizio, non documentazione).
+  `time_tag` without `Z`: to be read as UTC (reasonable **hypothesis**, to
+  be stated in the docstring).
+- **Kp forecast** (`noaa-planetary-k-index-forecast.json`),
+  **verified**: 81 objects `{time_tag, kp, observed, noaa_scale}`, from 7
+  days before to 3 days after. `observed` is `"observed"` (61),
+  `"estimated"` (3) or `"predicted"` (17); `noaa_scale` is `null` or a
+  string such as `"G1"`, `"G3"`. Careful: here the key is `kp`, in the
+  3-hour Kp it is `Kp`.
+  The `estimated` entries can be **in the future**: when recording at
+  17:57 UTC, the 18:00 and 21:00 entries were already there. This is why
+  the `data_time` of the forecast is the last `observed` entry.
+- **Previous format** (until about 2026-03-31, SCN 26-21),
+  **verified** on the official 2022 samples (`kp-3h/2022-09-22-sample.json`,
+  `kp-forecast/2022-09-22-sample.json`): array of arrays, first row with the
+  column names (the same as in the new format), then one row per record
+  with the numbers in quotes and `null` without quotes. Compact format.
+  `time_tag` with a space instead of the `T`: in the 3-hour Kp with
+  milliseconds (`"2022-09-15 00:00:00.000"`), in the forecast without
+  (`"2022-07-27 00:00:00"`). It also applied to Dst, `10cm-flux-30-day` and
+  the solar wind summaries: for Dst and flux there is no real sample, and
+  the `*-built.json` fixtures are built from the recorded ones. That their
+  `time_tag` had no milliseconds is a **hypothesis**: the parser must
+  accept both forms.
+- **1-minute Kp** (`/json/planetary_k_index_1m.json`, fixture
+  `kp-1m/2026-10-15.json`), **verified**: 358 objects in ascending order,
+  about 6 hours. `{"time_tag":"2026-10-15T11:51:00","kp_index":3,"estimated_kp":3.00,"kp":"3Z"}`.
+  The suffix of `kp` encodes the third: `Z` whole, `P` plus a third, `M`
+  minus a third (0.33 → `"0P"`, 0.67 → `"1M"`, 2.67 → `"3M"`, 3.00 →
+  `"3Z"`), and `kp_index` is the digit of `kp`. The official 2022 sample
+  (`fy22-kp/10-102_planetary_k_index_1m_sample.json`) **is not usable**: it
+  has a UTF-8 BOM and a `\r\n` line break every ~2 KB, even mid-word, so it
+  is not valid JSON.
+- **Dst** (`kyoto-dst.json`), **verified**: 168 hourly objects
+  `{"time_tag":"2026-10-08T18:00:00","dst":-17}`, 7 days.
+- **30-day F10.7** (`10cm-flux-30-day.json`), **verified**: 30 objects
+  `{"time_tag":"2026-09-15T20:00:00","flux":107}`, one per day at 20 UTC,
+  integer flux.
+- **NOAA scales** (`noaa-scales.json`, fixture `noaa-scales/2026-10-15.json`),
+  **verified** in form: one object with keys `"-1"`, `"0"`, `"1"`, `"2"`,
+  `"3"`, each with `DateStamp` (`"2026-10-15"`), `TimeStamp` (`"17:50:00"`)
+  and the groups `R` (`Scale`, `Text`, `MinorProb`, `MajorProb`), `S`
+  (`Scale`, `Text`, `Prob`), `G` (`Scale`, `Text`). All values are strings
+  or `null` (`"Scale": "0"`, `"MinorProb": "20"`). **Hypothesis** from
+  comparing the dates: `-1` is the scales observed in the previous 24
+  hours, `0` the current ones, `1`–`3` the forecast for today and the next
+  two days (with the probabilities and without `Scale` for R and S).
+  `DateStamp`/`TimeStamp` are read as UTC: in the fixture, entry `0` says
+  `17:54:00` and was recorded at 17:57 UTC (a clue, not documentation).
 
-## Vento solare (RTSW)
+## Solar wind (RTSW)
 
-- `/json/rtsw/rtsw_mag_1m.json` (~1,4 MB) e `/json/rtsw/rtsw_wind_1m.json`
-  (~2,4 MB), fixture ridotte `rtsw-*-1m/2026-10-15.json`, **verificato**:
-  array di oggetti in ordine **decrescente** (il più recente per primo),
-  **24 ore**. Campi del mag: `time_tag`, `active`, `source`, `range`, `scale`,
-  `sensitivity`, `manual_mode`, `sample_size`, `bt`, `b{x,y,z}_{gse,gsm}`,
-  `theta_*`, `phi_*`, `max_telemetry_flag`, `max_data_flag`,
-  `overall_quality`. Del plasma: `proton_*` e `alpha_*` (velocità, densità,
-  temperatura, componenti in GSE e GSM, `*_sample_size`), sette flag `max_*`,
-  `overall_quality`. Molti campi possono essere `null` (le componenti della
-  velocità di ACE, tutti gli `alpha_*`); `max_data_flag` può valere `-9999`.
-- Formato JSON di Python (separatori `", "` e `": "`).
-- **Fonti** il 2026-10-15: `SOLAR1` (sempre `active: true`), `ACE` e `IMAP`
-  (sempre `active: false`). Per istante ci sono uno o due record: di solito
-  SOLAR1 e ACE insieme. Ci sono minuti con **solo record inattivi** (ACE da
-  solo, 15 nel mag e 223 nel plasma), quindi "il record attivo per istante"
-  può mancare.
-- **IMAP** ha `time_tag` non allineati al minuto (quasi sempre a `:01`
-  secondi, a volte altri), quindi non condivide mai l'istante con le altre
-  fonti; nel giorno registrato copre circa dalle 20:27 alle 15:54.
-- Dal 2026-06-30 la fonte primaria è **SOLAR-1** (SWFO-L1), con ACE di
-  riserva; DSCOVR non è più elaborato.
-- **Verificato in T3** sulle fixture ridotte (223 record mag, 220 plasma):
-  - i secondi di IMAP dipendono dal file: nel mag `:01` (21 record) e `:09`
-    (uno), nel plasma sempre `:03` (28 record);
-  - nessun istante ha due record attivi; nel mag 23 istanti su 137 non hanno
-    il record attivo (22 di solo IMAP, uno di solo ACE alle 21:01 del
-    14), nel plasma 41 su 134 (28 di solo IMAP, 13 di solo ACE);
-  - `max_data_flag` vale `-9999` per SOLAR1 e ACE nel mag, `0` per IMAP; nel
-    plasma è sempre `0`. Che `-9999` sia un valore di riempimento
-    ("flag non disponibile") è **ipotesi**: il parser lo tiene com'è;
-  - `range`, `scale` e `sensitivity` del mag sono sempre `null`: il tipo
-    non si può dedurre e il parser non li legge;
-  - ACE e IMAP non danno le componenti della velocità (`proton_v*` a
-    `null`); gli `alpha_*` sono `null` per tutte le fonti;
-  - nei campi fisici non compare mai `-9999`: che un valore mancante sia
-    sempre `null` è **ipotesi**. Il parser rifiuta (`ParseError`) valori
-    impossibili: `bt`, velocità, densità e temperatura negative, `theta_*`
-    fuori da -90…90, `phi_*` fuori da 0…360 (nella fixture `phi` va da 4,0 a
-    359,8);
-  - `overall_quality`, `max_telemetry_flag` e `sample_size` (60 nel mag, 1
-    nel plasma) hanno sempre lo stesso valore: il significato dei flag non è
-    documentato.
-- **Scelte del modello** (T3): i record sono riordinati dal più vecchio,
-  tenendo l'ordine del file fra quelli dello stesso istante; il record
-  attivo di un istante è quello con `active: true` (se fossero due, vince il
-  primo nel file); un istante senza record attivo resta senza, non si
-  ripiega su un'altra fonte. Le fonti sconosciute restano stringhe.
-  `data_time` è l'ultimo `time_tag` di qualunque fonte; la freschezza della
-  sola fonte attiva è `latest_active().time`.
+- `/json/rtsw/rtsw_mag_1m.json` (~1.4 MB) and `/json/rtsw/rtsw_wind_1m.json`
+  (~2.4 MB), reduced fixtures `rtsw-*-1m/2026-10-15.json`, **verified**:
+  arrays of objects in **descending** order (most recent first),
+  **24 hours**. Mag fields: `time_tag`, `active`, `source`, `range`,
+  `scale`, `sensitivity`, `manual_mode`, `sample_size`, `bt`,
+  `b{x,y,z}_{gse,gsm}`, `theta_*`, `phi_*`, `max_telemetry_flag`,
+  `max_data_flag`, `overall_quality`. Plasma fields: `proton_*` and
+  `alpha_*` (speed, density, temperature, GSE and GSM components,
+  `*_sample_size`), seven `max_*` flags, `overall_quality`. Many fields can
+  be `null` (ACE's velocity components, all the `alpha_*`);
+  `max_data_flag` can be `-9999`.
+- Python JSON format (separators `", "` and `": "`).
+- **Sources** on 2026-10-15: `SOLAR1` (always `active: true`), `ACE` and
+  `IMAP` (always `active: false`). Each instant has one or two records:
+  usually SOLAR1 and ACE together. There are minutes with **only inactive
+  records** (ACE alone, 15 in mag and 223 in plasma), so "the active record
+  for an instant" can be missing.
+- **IMAP** has `time_tag` values not aligned to the minute (almost always at
+  `:01` seconds, sometimes others), so it never shares an instant with the
+  other sources; on the recorded day it covers roughly from 20:27 to 15:54.
+- Since 2026-06-30 the primary source is **SOLAR-1** (SWFO-L1), with ACE as
+  backup; DSCOVR is no longer processed.
+- **Verified in T3** on the reduced fixtures (223 mag records, 220 plasma):
+  - IMAP's seconds depend on the file: in mag `:01` (21 records) and `:09`
+    (one), in plasma always `:03` (28 records);
+  - no instant has two active records; in mag 23 instants out of 137 lack
+    the active record (22 IMAP only, one ACE only at 21:01 on the
+    14th), in plasma 41 out of 134 (28 IMAP only, 13 ACE only);
+  - `max_data_flag` is `-9999` for SOLAR1 and ACE in mag, `0` for IMAP; in
+    plasma it is always `0`. That `-9999` is a fill value
+    ("flag not available") is a **hypothesis**: the parser keeps it as is;
+  - `range`, `scale` and `sensitivity` in mag are always `null`: their type
+    cannot be inferred and the parser does not read them;
+  - ACE and IMAP do not give the velocity components (`proton_v*` set to
+    `null`); the `alpha_*` are `null` for all sources;
+  - `-9999` never appears in the physical fields: that a missing value is
+    always `null` is a **hypothesis**. The parser rejects (`ParseError`)
+    impossible values: negative `bt`, speed, density and temperature,
+    `theta_*` outside -90…90, `phi_*` outside 0…360 (in the fixture `phi`
+    goes from 4.0 to 359.8);
+  - `overall_quality`, `max_telemetry_flag` and `sample_size` (60 in mag, 1
+    in plasma) always have the same value: the meaning of the flags is not
+    documented.
+- **Model choices** (T3): records are reordered oldest first, keeping the
+  file order among those of the same instant; the active record of an
+  instant is the one with `active: true` (if there were two, the first in
+  the file wins); an instant with no active record stays without one, with
+  no fallback to another source. Unknown sources stay strings.
+  `data_time` is the last `time_tag` of any source; the freshness of the
+  active source alone is `latest_active().time`.
 
 ## GOES
 
-- `/json/goes/primary/` e `/secondary/`, file `*-6-hour`, `*-1-day`,
+- `/json/goes/primary/` and `/secondary/`, files `*-6-hour`, `*-1-day`,
   `*-3-day`, `*-7-day`.
-- `xrays-1-day.json` (fixture ridotta `goes-xrays-1-day/2026-10-15.json`),
-  **verificato**: ordine crescente, un minuto di passo, due record per
-  istante, uno per banda (`energy`: `"0.05-0.4nm"` e `"0.1-0.8nm"`). Campi:
-  `time_tag` (con `Z`), `satellite` (18), `flux`, `observed_flux`,
-  `electron_correction`, `electron_contaminaton` (scritto così nella fonte:
-  il refuso è il nome vero del campo). Formato JSON di Python.
-- La classe del brillamento (A/B/C/M/X) si calcola dal flusso della banda
-  0.1–0.8 nm: A < 1e-7, B < 1e-6, C < 1e-5, M < 1e-4, X ≥ 1e-4 W/m², con il
-  moltiplicatore (M2.5 = 2,5e-5). Il massimo del giorno registrato è circa
-  C5.0 alle 15:55 (non tenuto dalla riduzione; nella fixture il massimo è
-  circa C3.9).
-- `integral-protons-1-day.json` (fixture ridotta), **verificato**:
-  `{"time_tag":…,"satellite":18,"flux":5.38,"energy":">=1 MeV"}`, ordine
-  crescente, passo di 5 minuti (qualche istante manca), otto energie per
-  istante: `>=1`, `>=5`, `>=10`, `>=30`, `>=50`, `>=60`, `>=100`,
+- `xrays-1-day.json` (reduced fixture `goes-xrays-1-day/2026-10-15.json`),
+  **verified**: ascending order, one-minute step, two records per
+  instant, one per band (`energy`: `"0.05-0.4nm"` and `"0.1-0.8nm"`).
+  Fields: `time_tag` (with `Z`), `satellite` (18), `flux`, `observed_flux`,
+  `electron_correction`, `electron_contaminaton` (spelled that way in the
+  source: the typo is the real field name). Python JSON format.
+- The flare class (A/B/C/M/X) is computed from the flux of the 0.1–0.8 nm
+  band: A < 1e-7, B < 1e-6, C < 1e-5, M < 1e-4, X ≥ 1e-4 W/m², with the
+  multiplier (M2.5 = 2.5e-5). The maximum of the recorded day is about
+  C5.0 at 15:55 (not kept by the reduction; in the fixture the maximum is
+  about C3.9).
+- `integral-protons-1-day.json` (reduced fixture), **verified**:
+  `{"time_tag":…,"satellite":18,"flux":5.38,"energy":">=1 MeV"}`, ascending
+  order, 5-minute step (a few instants are missing), eight energies per
+  instant: `>=1`, `>=5`, `>=10`, `>=30`, `>=50`, `>=60`, `>=100`,
   `>=500 MeV`.
-- **Verificato in T3** sulle fixture:
-  - nei raggi X `flux` = `observed_flux` − `electron_correction`, ma con un
-    **minimo** di 1e-9 (scritto `9.999999717180685e-10`, cioè 1e-9 in
-    precisione singola): nei 6 record in cui la differenza è più bassa, o
-    negativa, `flux` vale quel minimo. Succede solo nella banda
-    0,05–0,4 nm, sempre con `electron_contaminaton: true`. Che il minimo
-    valga sempre è **ipotesi**: il parser non controlla il segno del flusso,
-    e la classe del brillamento esce `None` per un flusso nullo o negativo;
-  - `electron_contaminaton` è `true` solo nella banda corta (100 record su
-    129), mai nella lunga;
-  - nei protoni le otto energie di un istante sono in ordine di stringa
-    (`>=1`, `>=10`, `>=100`, `>=30`, `>=5`, `>=50`, `>=500`, `>=60`), non di
-    soglia: il parser ricava la soglia in MeV dall'etichetta `>=N MeV` e
-    rifiuta (`ParseError`) un'etichetta di altra forma.
-- **Ipotesi**: i file `*-6-hour`, `*-3-day`, `*-7-day` e la cartella
-  `secondary/` hanno lo stesso formato dei file di un giorno del primario
-  (gli unici registrati); i parser li accettano con `source_url=`.
-- **Verificato** sulle pagine SWPC (lette il 2026-10-16):
-  - `products/goes-proton-flux`: i file `integral-protons` danno flussi
-    integrali mediati su 5 minuti in protoni/(cm² s sr) (= pfu) per le
-    soglie ≥1, 5, 10, 30, 50, 60, 100 e 500 MeV, le stesse delle fixture;
-    soglie degli avvisi 10…100 000 pfu a ≥10 MeV e 1 pfu a ≥100 MeV;
-  - `products/goes-x-ray-flux`: medie di 1 minuto nelle bande 0,1–0,8 nm e
-    0,05–0,4 nm, dati del satellite primario e secondario; massimo di un
-    evento = minuto del picco;
-  - `phenomena/solar-flares-radio-blackouts`: la classe si definisce sul
-    picco della banda 0,1–0,8 nm, in W/m², con A da 10⁻⁸, B da 10⁻⁷, C da
-    10⁻⁶, M da 10⁻⁵, X da 10⁻⁴.
-- **Classe del brillamento** (T3): il moltiplicatore è **troncato** a un
-  decimale (3,95e-6 → C3.9; 9,99e-6 → C9.9, mai C10.0), calcolato sulla forma
-  decimale più corta del flusso, così 2,3e-5 dà M2.3. Che SWPC tronchi invece
-  di arrotondare resta **ipotesi** (le pagine SWPC non lo dicono): il
-  troncamento è scelto perché tiene la
-  lettera coerente con le soglie. La classe si calcola solo sulla banda
-  0,1–0,8 nm; X non ha tetto (1,2e-3 → X12.0).
+- **Verified in T3** on the fixtures:
+  - in the X-rays `flux` = `observed_flux` − `electron_correction`, but with
+    a **floor** of 1e-9 (written `9.999999717180685e-10`, i.e. 1e-9 in
+    single precision): in the 6 records where the difference is lower, or
+    negative, `flux` equals that floor. It happens only in the
+    0.05–0.4 nm band, always with `electron_contaminaton: true`. That the
+    floor always applies is a **hypothesis**: the parser does not check the
+    sign of the flux, and the flare class comes out `None` for a zero or
+    negative flux;
+  - `electron_contaminaton` is `true` only in the short band (100 records
+    out of 129), never in the long one;
+  - in the protons the eight energies of an instant are in string order
+    (`>=1`, `>=10`, `>=100`, `>=30`, `>=5`, `>=50`, `>=500`, `>=60`), not
+    in threshold order: the parser derives the threshold in MeV from the
+    `>=N MeV` label and rejects (`ParseError`) a label of any other form.
+- **Hypothesis**: the `*-6-hour`, `*-3-day`, `*-7-day` files and the
+  `secondary/` directory have the same format as the primary's one-day
+  files (the only ones recorded); the parsers accept them with
+  `source_url=`.
+- **Verified** on the SWPC pages (read on 2026-10-16):
+  - `products/goes-proton-flux`: the `integral-protons` files give integral
+    fluxes averaged over 5 minutes in protons/(cm² s sr) (= pfu) for the
+    thresholds ≥1, 5, 10, 30, 50, 60, 100 and 500 MeV, the same as in the
+    fixtures; alert thresholds 10…100 000 pfu at ≥10 MeV and 1 pfu at
+    ≥100 MeV;
+  - `products/goes-x-ray-flux`: 1-minute averages in the 0.1–0.8 nm and
+    0.05–0.4 nm bands, data from the primary and the secondary satellite;
+    maximum of an event = minute of the peak;
+  - `phenomena/solar-flares-radio-blackouts`: the class is defined on the
+    peak of the 0.1–0.8 nm band, in W/m², with A from 10⁻⁸, B from 10⁻⁷, C
+    from 10⁻⁶, M from 10⁻⁵, X from 10⁻⁴.
+- **Flare class** (T3): the multiplier is **truncated** to one decimal
+  (3.95e-6 → C3.9; 9.99e-6 → C9.9, never C10.0), computed on the shortest
+  decimal form of the flux, so 2.3e-5 gives M2.3. That SWPC truncates
+  instead of rounding remains a **hypothesis** (the SWPC pages do not say):
+  truncation is chosen because it keeps the letter consistent with the
+  thresholds. The class is computed only on the 0.1–0.8 nm band; X has no
+  ceiling (1.2e-3 → X12.0).
 
-## Avvisi
+## Alerts
 
-- `/products/alerts.json` (fixture `alerts/2026-10-15.json`), **verificato**:
-  81 oggetti `{product_id, issue_datetime, message}`, ordine decrescente,
-  circa 30 giorni. `issue_datetime` nel formato `YYYY-MM-DD HH:MM:SS.mmm`.
-- `message` mescola gli a capo: in **ogni** messaggio le prime righe
-  (intestazione e riga vuota) finiscono con `\r\n`, il resto anche con `\n`.
-  Il parser deve accettare entrambi.
-- Prime tre righe sempre presenti: `Space Weather Message Code: WARK04`,
-  `Serial Number: 5435`, `Issue Time: 2026 Oct 13 2058 UTC`. Poi il titolo
+- `/products/alerts.json` (fixture `alerts/2026-10-15.json`), **verified**:
+  81 objects `{product_id, issue_datetime, message}`, descending order,
+  about 30 days. `issue_datetime` in the format `YYYY-MM-DD HH:MM:SS.mmm`.
+- `message` mixes line breaks: in **every** message the first lines
+  (header and blank line) end with `\r\n`, the rest can also end with `\n`.
+  The parser must accept both.
+- First three lines always present: `Space Weather Message Code: WARK04`,
+  `Serial Number: 5435`, `Issue Time: 2026 Oct 13 2058 UTC`. Then the title
   (`ALERT:`, `WARNING:`, `EXTENDED WARNING:`, `WATCH:`, `CONTINUED ALERT:`,
-  `CANCEL WATCH:`, `SUMMARY:`) e campi come `Valid From:`, `Valid To:`,
-  `Now Valid Until:`, `Threshold Reached:`, `Synoptic Period:`,
-  `Active Warning:`, `Begin Time:`, `End Time:`, `Maximum Time:`,
-  `Extension to Serial Number:`, `Continuation of Serial Number:`,
-  `Cancel Serial Number:`, `Comment:`, `Potential Impacts:`.
-- **Varianti da gestire**: `NOAA Scale:` (26 volte) e `Noaa Scale:` (25);
-  `Warning Condition:` e `Warning Conditions:`; `Estimate Velocity:` (non
+  `CANCEL WATCH:`, `SUMMARY:`) and fields such as `Valid From:`,
+  `Valid To:`, `Now Valid Until:`, `Threshold Reached:`,
+  `Synoptic Period:`, `Active Warning:`, `Begin Time:`, `End Time:`,
+  `Maximum Time:`, `Extension to Serial Number:`,
+  `Continuation of Serial Number:`, `Cancel Serial Number:`, `Comment:`,
+  `Potential Impacts:`.
+- **Variants to handle**: `NOAA Scale:` (26 times) and `Noaa Scale:` (25);
+  `Warning Condition:` and `Warning Conditions:`; `Estimate Velocity:` (not
   "Estimated").
-- **Due famiglie di codici.** La tabella ufficiale
-  (`https://www.spaceweather.gov/content/subscription-services`) usa codici
-  lunghi come `ALTK05`, `WARK04`, `WATA20`; i `product_id` di `alerts.json`
-  sono corti. **Corrispondenza verificata** sul testo dei 81 messaggi (ogni
-  codice corto ha sempre lo stesso codice lungo):
+- **Two families of codes.** The official table
+  (`https://www.spaceweather.gov/content/subscription-services`) uses long
+  codes such as `ALTK05`, `WARK04`, `WATA20`; the `product_id` values in
+  `alerts.json` are short. **Mapping verified** on the text of the 81
+  messages (each short code always has the same long code):
 
-  | Corto | Lungo | Corto | Lungo |
+  | Short | Long | Short | Long |
   |---|---|---|---|
   | `K04W`…`K07W` | `WARK04`…`WARK07` | `TIIA` | `ALTTP2` |
   | `K04A`…`K07A` | `ALTK04`…`ALTK07` | `TIVA` | `ALTTP4` |
@@ -234,291 +240,309 @@ con `\n`. Il server dà `Last-Modified`, `ETag` e `Cache-Control: max-age=60`.
   | `EF3A` | `ALTEF3` | `SGIW` | `WARSUD` |
   | `MSIS` | `SUMSUD` | `BHIS` | `SUM10R` |
 
-  Nella tabella ufficiale `ATLK04` compare scritto così (probabile refuso per
-  `ALTK04`). Gli esempi del 2022 dentro `swpclib` (`A20F`, `K05W`, `K05A`)
-  sono coerenti.
+  In the official table `ATLK04` appears spelled that way (probable typo
+  for `ALTK04`). The 2022 samples inside `swpclib` (`A20F`, `K05W`, `K05A`)
+  are consistent.
 
-Verificato in T4 sulla stessa fixture:
+Verified in T4 on the same fixture:
 
-- `issue_datetime` cade sempre nello stesso minuto di `Issue Time:` (da 0 a
-  59 secondi dopo): il primo è il tempo preciso, il secondo è al minuto.
-- Il **numero di serie non è univoco**: tre `CONTINUED ALERT` di `ALTEF3`
-  (emessi il 6, 7 e 8 ottobre) hanno tutti `Serial Number: 3752`; gli ultimi
-  due finiscono con una riga `CORRECTED` e hanno
-  `Continuation of Serial Number: 3752`, uguale al proprio.
-- **Tempi nel testo**: tutti nella forma `2026 Oct 13 2058 UTC` (`Valid From`,
-  `Valid To`, `Now Valid Until`, `Threshold Reached`, `Begin Time`,
-  `Maximum Time`, `End Time`, `Observed`, `Original Issue Time`, `Max time`),
-  tranne `Ip Shock: 2026-10-10 14:43` (in `WARSUD`, senza `UTC`).
-  `Valid To` usa `2359`, mai `2400`; `2400` compare solo in
-  `Synoptic Period: 2100-2400`, che è un intervallo.
-- `Max time:` (con la t minuscola) compare in 5 `CONTINUED ALERT` di `ALTEF3`,
-  accanto a `Yesterday Maximum 2MeV Flux:`; nei riepiloghi c'è
+- `issue_datetime` always falls in the same minute as `Issue Time:` (from 0
+  to 59 seconds later): the first is the precise time, the second is to the
+  minute.
+- The **serial number is not unique**: three `CONTINUED ALERT` of `ALTEF3`
+  (issued on 6, 7 and 8 October) all have `Serial Number: 3752`; the last
+  two end with a `CORRECTED` line and have
+  `Continuation of Serial Number: 3752`, equal to their own.
+- **Times in the text**: all in the form `2026 Oct 13 2058 UTC`
+  (`Valid From`, `Valid To`, `Now Valid Until`, `Threshold Reached`,
+  `Begin Time`, `Maximum Time`, `End Time`, `Observed`,
+  `Original Issue Time`, `Max time`), except `Ip Shock: 2026-10-10 14:43`
+  (in `WARSUD`, without `UTC`). `Valid To` uses `2359`, never `2400`;
+  `2400` appears only in `Synoptic Period: 2100-2400`, which is an
+  interval.
+- `Max time:` (with a lowercase t) appears in 5 `CONTINUED ALERT` of
+  `ALTEF3`, next to `Yesterday Maximum 2MeV Flux:`; the summaries have
   `Maximum Time:`.
-- **Scala NOAA** in 26 messaggi. Quando ci sono entrambe le grafie
-  (`Noaa Scale:` fra i campi, `NOAA Scale:` dopo una riga vuota) il valore è
-  lo stesso; un `EXTENDED WARNING` di `WARK05` ha solo `NOAA Scale:`. Valori:
-  `G1 - Minor`, `G2 - Moderate`, `G3 - Strong` (`ALTK07`), `G3 - Greater`
-  (`WARK07`, "K-index of 7 or greater"), `R2 - Moderate`. Le **watch non hanno
-  la riga della scala**: il livello sta nel titolo
-  (`Geomagnetic Storm Category G1 Predicted`) e dopo
-  `Highest Storm Level Predicted by Day:` in una riga come
-  `Oct 12:  None (Below G1)   Oct 13:  G1 (Minor)` (nella `CANCEL WATCH`:
-  `Oct 11  : None (Below G1)`). Il parser non tratta queste righe come campi.
-- Altri campi visti: `Original Issue Time:`, `Cancelled Level Predicted:`,
+- **NOAA scale** in 26 messages. When both spellings are present
+  (`Noaa Scale:` among the fields, `NOAA Scale:` after a blank line) the
+  value is the same; an `EXTENDED WARNING` of `WARK05` has only
+  `NOAA Scale:`. Values: `G1 - Minor`, `G2 - Moderate`, `G3 - Strong`
+  (`ALTK07`), `G3 - Greater` (`WARK07`, "K-index of 7 or greater"),
+  `R2 - Moderate`. **Watches have no scale line**: the level is in the
+  title (`Geomagnetic Storm Category G1 Predicted`) and after
+  `Highest Storm Level Predicted by Day:` in a line such as
+  `Oct 12:  None (Below G1)   Oct 13:  G1 (Minor)` (in the `CANCEL WATCH`:
+  `Oct 11  : None (Below G1)`). The parser does not treat these lines as
+  fields.
+- Other fields seen: `Original Issue Time:`, `Cancelled Level Predicted:`,
   `Observed:`, `Deviation:`, `Station:`, `Peak Flux:`, `Duration:`,
-  `Latest Penticton Noon Flux:`, `Xray Class:`, `Optical Class:` (anche
-  vuoto), `Location:`, `Yesterday Maximum 2MeV Flux:`, `Ip Shock:`. Ci sono
-  righe senza `Nome:` (`THIS SUPERSEDES ANY/ALL PRIOR WATCHES IN EFFECT`,
-  `CORRECTED`, frasi libere, il seguito di `Potential Impacts:`), e
-  `Comment:` può contenere lunghe file di spazi.
-- **Ipotesi**: un array vuoto `[]` non è mai stato visto; il parser lo legge
-  come "nessun messaggio" (non come `SourceNotReady`), perché un periodo
-  senza avvisi è uno stato legittimo.
-- **Ipotesi** (fonte non ufficiale): negli esempi del 2022 dentro `swpclib`
-  tutte le righe finiscono con `\r\n`, `Active Warning: Yes`,
-  `Synoptic Period: 0000-0300 UTC` e `NOAA Scale:` compare una volta sola. Il
-  parser accetta anche questa forma (test con dati costruiti).
-- **Catalogo dei codici** (`swpc_kit/codes.py`): le 18 coppie della tabella
-  sopra sono **verificate** sul testo dei messaggi, con significato (dal
-  titolo) e scala (dalla riga `NOAA Scale:` o, per le watch, dal titolo).
-- **Tabella ufficiale**, riletta il 2026-10-16
-  (`https://www.spaceweather.gov/content/subscription-services`), colonne
-  codice, titolo, intestazione WMO (`WOXX..`), scala, impatti. Contiene 39
-  codici lunghi, ora tutti nel catalogo (un test lo controlla):
+  `Latest Penticton Noon Flux:`, `Xray Class:`, `Optical Class:` (also
+  empty), `Location:`, `Yesterday Maximum 2MeV Flux:`, `Ip Shock:`. There
+  are lines without `Name:` (`THIS SUPERSEDES ANY/ALL PRIOR WATCHES IN EFFECT`,
+  `CORRECTED`, free sentences, the continuation of `Potential Impacts:`),
+  and `Comment:` can contain long runs of spaces.
+- **Hypothesis**: an empty array `[]` has never been seen; the parser reads
+  it as "no messages" (not as `SourceNotReady`), because a period without
+  alerts is a legitimate state.
+- **Hypothesis** (unofficial source): in the 2022 samples inside `swpclib`
+  all lines end with `\r\n`, they have `Active Warning: Yes` and
+  `Synoptic Period: 0000-0300 UTC`, and `NOAA Scale:` appears only once.
+  The parser also accepts this form (tested with built data).
+- **Code catalog** (`swpc_kit/codes.py`): the 18 pairs in the table above
+  are **verified** on the text of the messages, with meaning (from the
+  title) and scale (from the `NOAA Scale:` line or, for watches, from the
+  title).
+- **Official table**, re-read on 2026-10-16
+  (`https://www.spaceweather.gov/content/subscription-services`), columns
+  code, title, WMO header (`WOXX..`), scale, impacts. It contains 39 long
+  codes, now all in the catalog (a test checks this):
   - K-index: `ALTK04`…`ALTK09` (`ALTK08` = "Geomagnetic K-index of 8", G4;
-    `ALTK09` G5), `WARK04`…`WARK07`; watch `WATA20`, `WATA30`, `WATA50` (G3),
-    `WATA99` ("G4 or greater"); `SUMSUD`, `WARSUD`; `ALTEF3`;
-  - protoni ≥10 MeV: `ALTPX1`…`ALTPX5` e `SUMPX1`…`SUMPX5` (10, 100, 1 000,
-    10 000, 100 000 pfu = S1…S5), `WARPX1` ("S1 or Greater"); ≥100 MeV:
-    `ALTPC0`, `SUMPC0`, `WARPC0` (1 pfu, senza scala);
-  - raggi X: `ALTXMF`, `SUMXM5` (R2), `SUMX01` (R3), `SUMX10` (R4),
+    `ALTK09` G5), `WARK04`…`WARK07`; watches `WATA20`, `WATA30`, `WATA50`
+    (G3), `WATA99` ("G4 or greater"); `SUMSUD`, `WARSUD`; `ALTEF3`;
+  - protons ≥10 MeV: `ALTPX1`…`ALTPX5` and `SUMPX1`…`SUMPX5` (10, 100,
+    1 000, 10 000, 100 000 pfu = S1…S5), `WARPX1` ("S1 or Greater");
+    ≥100 MeV: `ALTPC0`, `SUMPC0`, `WARPC0` (1 pfu, no scale);
+  - X-rays: `ALTXMF`, `SUMXM5` (R2), `SUMX01` (R3), `SUMX10` (R4),
     `SUMX20` (R5); radio: `ALTTP2`, `ALTTP4`, `SUM10R`.
-  - `ATLK04` è scritto così nella tabella (refuso per `ALTK04`, confermato
-    dai messaggi). La riga del riepilogo a 245 MHz ha `245MHz` al posto del
-    codice: non è nel catalogo.
-- Per le voci viste solo nella tabella, codice lungo, significato e scala sono
-  **verificati**. Restano **dedotti** solo i codici corti `K08A`, `K09A`,
-  `A50F`, `A99F`, che seguono lo schema di quelli visti; per protoni e raggi X
-  lo schema non si indovina e il codice corto resta `None`.
+  - `ATLK04` is spelled that way in the table (typo for `ALTK04`, confirmed
+    by the messages). The row of the 245 MHz summary has `245MHz` in place
+    of the code: it is not in the catalog.
+- For the entries seen only in the table, long code, meaning and scale are
+  **verified**. Only the short codes `K08A`, `K09A`, `A50F`, `A99F` remain
+  **inferred**, following the pattern of the ones seen; for protons and
+  X-rays the pattern cannot be guessed and the short code stays `None`.
 
-## Bollettini testuali
+## Text bulletins
 
-Fixture `3-day-forecast/`, `geomag-forecast/`, `27-day-outlook/`,
-**verificato**:
+Fixtures `3-day-forecast/`, `geomag-forecast/`, `27-day-outlook/`,
+**verified**:
 
-- Intestazione comune: `:Product: …` e `:Issued: 2026 Oct 15 1230 UTC`, poi
-  commenti con `#`. Il nome del prodotto cambia da file a file:
-  `3-Day Forecast`, `Geomagnetic Forecast` (per `3-day-geomag-forecast.txt`),
+- Common header: `:Product: …` and `:Issued: 2026 Oct 15 1230 UTC`, then
+  comments with `#`. The product name changes from file to file:
+  `3-Day Forecast`, `Geomagnetic Forecast` (for `3-day-geomag-forecast.txt`),
   `27-day Space Weather Outlook Table 27DO.txt`.
-- Le tabelle hanno **spazi in coda** alle righe.
-- `3-day-forecast.txt`: sezioni `A.` (frase sul Kp massimo osservato e
-  previsto, poi `NOAA Kp index breakdown Oct 15-Oct 17 2026` con otto righe
-  `00-03UT` … `21-00UT` e tre colonne di Kp), `B.` (riga `S1 or greater` con
-  tre percentuali) e `C.` (righe `R1-R2` e `R3 or greater`). Ogni sezione ha
-  un `Rationale:` su più righe. Il Kp massimo osservato può essere scritto
-  intero (`was 3 (below NOAA`), con la frase spezzata su due righe. Nell'esempio
-  del 2022 (`3-day-forecast/2022-09-22-sample.txt`) una cella della tabella è
-  `5.33 (G1)`: la scala NOAA si aggiunge accanto al valore.
+- The tables have **trailing spaces** on their lines.
+- `3-day-forecast.txt`: sections `A.` (sentence on the maximum observed and
+  predicted Kp, then `NOAA Kp index breakdown Oct 15-Oct 17 2026` with
+  eight rows `00-03UT` … `21-00UT` and three columns of Kp), `B.` (row
+  `S1 or greater` with three percentages) and `C.` (rows `R1-R2` and
+  `R3 or greater`). Each section has a multi-line `Rationale:`. The maximum
+  observed Kp can be written as an integer (`was 3 (below NOAA`), with the
+  sentence split over two lines. In the 2022 sample
+  (`3-day-forecast/2022-09-22-sample.txt`) a table cell is `5.33 (G1)`: the
+  NOAA scale is added next to the value.
 - `3-day-geomag-forecast.txt`: `Observed Ap 13 Oct 013`, `Estimated Ap 14 Oct 011`,
-  `Predicted Ap 15 Oct-17 Oct 010-008-005`, probabilità come `Active 25/20/15`
-  (attiva, tempesta minore, moderata, forte-estrema), poi la tabella dei Kp
-  con lo stesso schema di righe del 3-day forecast.
-- `27-day-outlook.txt`: dopo i commenti, 27 righe a larghezza fissa,
-  `2026 Oct 12     120          16          4` = data, flusso a 10,7 cm, Ap,
-  Kp massimo; l'emissione del 2026-10-12 parte dal giorno stesso.
+  `Predicted Ap 15 Oct-17 Oct 010-008-005`, probabilities such as
+  `Active 25/20/15` (active, minor storm, moderate, strong-extreme), then
+  the Kp table with the same row layout as the 3-day forecast.
+- `27-day-outlook.txt`: after the comments, 27 fixed-width rows,
+  `2026 Oct 12     120          16          4` = date, 10.7 cm flux, Ap,
+  maximum Kp; the issue of 2026-10-12 starts from the same day.
 
-Verificato in T5 sulle stesse fixture, e usato dai parser
+Verified in T5 on the same fixtures, and used by the parsers
 (`swpc_kit/parse/bulletins.py`):
 
-- Le celle delle tabelle dei Kp hanno **sempre due decimali** (`2.00`,
-  `0.67`), in terzi interi, in tutte e tre le fixture (2022 e 2026); il parser
-  lo pretende, così un valore tagliato (`1.6`, `1`) non passa per buono. Il Kp
-  delle frasi può invece essere intero (`was 3`).
-- Le colonne dei giorni sono scritte `Oct 15` (mese giorno) nelle tabelle e
-  `13 Oct` (giorno mese) nelle righe dell'Ap e nei titoli del geomagnetic
-  forecast, senza anno: il parser sceglie l'anno che mette la data più vicina
-  all'`:Issued:`. Come SWPC scriva il titolo `NOAA Kp index breakdown …` a
-  cavallo dell'anno (forse `Dec 31-Jan 02 2027`) è **ipotesi**: il parser non
-  lo legge.
-- Le sezioni del 3-day forecast iniziano con `A. `, `B. `, `C. `; le frasi sul
-  Kp massimo vanno lette dopo aver riunito le righe spezzate.
-- Nel geomagnetic forecast del 2026-10-14 l'Ap osservato è del giorno prima
-  dell'emissione, quello stimato del giorno stesso, la previsione dei tre
-  giorni seguenti; il parser controlla solo che previsione dell'Ap,
-  probabilità e tabella dei Kp abbiano gli stessi giorni.
-- I tre file finiscono con `\n`: un contenuto che non finisce con un a capo e
-  ha un errore sull'ultima riga è trattato come troncato (`SourceNotReady`).
+- The cells of the Kp tables **always have two decimals** (`2.00`,
+  `0.67`), in whole thirds, in all three fixtures (2022 and 2026); the
+  parser requires it, so a cut-off value (`1.6`, `1`) is not taken as
+  valid. The Kp in the sentences, instead, can be an integer (`was 3`).
+- The day columns are written `Oct 15` (month day) in the tables and
+  `13 Oct` (day month) in the Ap rows and in the titles of the geomagnetic
+  forecast, without a year: the parser picks the year that puts the date
+  closest to the `:Issued:`. How SWPC writes the title
+  `NOAA Kp index breakdown …` across the year boundary (perhaps
+  `Dec 31-Jan 02 2027`) is a **hypothesis**: the parser does not read it.
+- The sections of the 3-day forecast start with `A. `, `B. `, `C. `; the
+  sentences on the maximum Kp must be read after joining the split lines.
+- In the geomagnetic forecast of 2026-10-14 the observed Ap is for the day
+  before the issue, the estimated one for the same day, the forecast for
+  the next three days; the parser only checks that the Ap forecast, the
+  probabilities and the Kp table have the same days.
+- The three files end with `\n`: content that does not end with a line
+  break and has an error on the last line is treated as truncated
+  (`SourceNotReady`).
 
-**Ipotesi** (una sola fixture o nessuna, da ricontrollare quando capita):
+**Hypotheses** (one fixture or none, to be rechecked when the chance
+comes):
 
-- Che le annotazioni nelle celle siano solo `(G1)`…`(G5)`: visto solo `(G1)`.
-- Che il `Rationale:` possa avere più paragrafi: non visto; il parser li tiene
-  separati da una riga vuota.
-- Che il 27-day outlook abbia sempre **27** righe: lo dice il nome e la
-  fixture; il parser ne pretende 27 (meno = troncato, di più = `ParseError`).
-- Per i tre bollettini non si conoscono formati precedenti né SCN che li
-  cambino: il parser accetta solo quello delle fixture.
+- That the annotations in the cells are only `(G1)`…`(G5)`: only `(G1)`
+  seen.
+- That `Rationale:` can have several paragraphs: not seen; the parser keeps
+  them separated by a blank line.
+- That the 27-day outlook always has **27** rows: the name and the fixture
+  say so; the parser requires 27 (fewer = truncated, more = `ParseError`).
+- For the three bulletins no earlier formats are known, nor SCNs that
+  change them: the parser accepts only the one in the fixtures.
 
-## Griglie
+## Grids
 
-- **OVATION** (`/json/ovation_aurora_latest.json`, ~0,9 MB, fixture ridotta
-  `ovation-aurora/2026-10-15.json`), **verificato** sul file intero: chiavi
-  `Observation Time`, `Forecast Time` (con `Z`), `Data Format`
-  (`"[Longitude, Latitude, Aurora]"`), `coordinates`, più `"type": "MultiPoint"`
-  (verificato in T6 sulla fixture; il parser la ignora). Formato JSON di Python
-  (separatori `", "` e `": "`). `coordinates` ha 65 160 terne di interi:
-  longitudine 0–359 come ciclo esterno, latitudine -90…90 come ciclo interno,
-  passo 1 (360×181). Valori 0–35 il giorno registrato (0–33 nella fixture). Che il
-  valore sia la probabilità di aurora in percento resta **ipotesi**: il file non
-  lo dice; il modello usa comunque `units = "%"` e lo scrive nella docstring.
-  La pagina del prodotto
-  (`https://www.spaceweather.gov/products/aurora-30-minute-forecast`, letta il
-  2026-10-16) dice che il modello calcola l'intensità dell'aurora e che la
-  "aurora viewing probability" se ne ricava con una relazione lineare, ma non
-  dà l'unità dei valori del JSON (che chiama "auroral data in grid format"):
-  l'ipotesi è plausibile, non verificata.
-  La fixture tiene 15 longitudini intere (0, 1, 30, 60, … 330, 358, 359), quindi
-  **non** è una griglia completa: il parser la legge solo con `partial=True`, e
-  i test della griglia intera la costruiscono nel codice.
-- Il parser OVATION (T6) non dipende dall'ordine delle terne, ma vuole ogni
-  punto una volta sola e ogni longitudine presente con tutte le 181
-  latitudini. Accetta `Data Format` con spazi o maiuscole diversi; un ordine
-  diverso dei tre campi è `UnexpectedContent`. Che i valori possano essere non
-  interi è previsto ma non visto: il parser li accetta (≥ 0), senza tetto a 100
-  finché l'unità è un'ipotesi.
-- **D-RAP** (`/text/drap_global_frequencies.txt`, fixture `drap/2026-10-15.txt`
-  intera), **verificato**: prima riga `# DRAP Tabular Values`, poi commenti `#`
-  con `Product Valid At : 2026-10-15 17:54 UTC`, `Estimated Recovery Time : No Estimate`,
-  `X-RAY Message :`, `X-RAY Warning :`, `Proton Message :`, `Proton Warning :`
-  (gli avvisi possono essere vuoti, anche con spazi in coda), e
-  `# Frequency (MHz) as a function of Latitude and Longitude`; poi una riga di
-  intestazione con 90 longitudini da -178 a 178 passo 4, una riga tratteggiata
-  e 90 righe di latitudine da 89 a -89 passo 2, nella forma
-  ` 89 |  0.0  0.0 …` (latitudine su 3 caratteri, valori su 5), frequenze in
-  MHz con un decimale (0,0–9,4 il giorno registrato). 111 righe chiuse da `\n`.
-- **Significato, verificato** sulla documentazione ufficiale
+- **OVATION** (`/json/ovation_aurora_latest.json`, ~0.9 MB, reduced fixture
+  `ovation-aurora/2026-10-15.json`), **verified** on the full file: keys
+  `Observation Time`, `Forecast Time` (with `Z`), `Data Format`
+  (`"[Longitude, Latitude, Aurora]"`), `coordinates`, plus
+  `"type": "MultiPoint"` (verified in T6 on the fixture; the parser ignores
+  it). Python JSON format (separators `", "` and `": "`). `coordinates` has
+  65 160 triples of integers: longitude 0–359 as the outer loop, latitude
+  -90…90 as the inner loop, step 1 (360×181). Values 0–35 on the recorded
+  day (0–33 in the fixture). That the value is the aurora probability in
+  percent remains a **hypothesis**: the file does not say so; the model
+  uses `units = "%"` anyway and states it in the docstring.
+  The product page
+  (`https://www.spaceweather.gov/products/aurora-30-minute-forecast`, read
+  on 2026-10-16) says that the model computes the aurora intensity and that
+  the "aurora viewing probability" is derived from it with a linear
+  relation, but does not give the unit of the JSON values (which it calls
+  "auroral data in grid format"): the hypothesis is plausible, not
+  verified.
+  The fixture keeps 15 integer longitudes (0, 1, 30, 60, … 330, 358, 359),
+  so it is **not** a complete grid: the parser reads it only with
+  `partial=True`, and the full-grid tests build the grid in code.
+- The OVATION parser (T6) does not depend on the order of the triples, but
+  wants each point exactly once and each longitude present with all 181
+  latitudes. It accepts `Data Format` with different spacing or case; a
+  different order of the three fields is `UnexpectedContent`. Non-integer
+  values are anticipated but not seen: the parser accepts them (≥ 0), with
+  no ceiling at 100 while the unit is a hypothesis.
+- **D-RAP** (`/text/drap_global_frequencies.txt`, full fixture
+  `drap/2026-10-15.txt`), **verified**: first line `# DRAP Tabular Values`,
+  then `#` comments with `Product Valid At : 2026-10-15 17:54 UTC`,
+  `Estimated Recovery Time : No Estimate`, `X-RAY Message :`,
+  `X-RAY Warning :`, `Proton Message :`, `Proton Warning :` (the warnings
+  can be empty, even with trailing spaces), and
+  `# Frequency (MHz) as a function of Latitude and Longitude`; then a
+  header row with 90 longitudes from -178 to 178 in steps of 4, a dashed
+  row and 90 latitude rows from 89 to -89 in steps of 2, in the form
+  ` 89 |  0.0  0.0 …` (latitude in 3 characters, values in 5), frequencies
+  in MHz with one decimal (0.0–9.4 on the recorded day). 111 lines ended by
+  `\n`.
+- **Meaning, verified** on the official documentation
   (`https://www.spaceweather.gov/content/global-d-region-absorption-prediction-documentation`,
-  letta il 2026-10-16): la mappa globale dà la **Highest Affected Frequency**
-  (HAF), cioè la frequenza che perde 1 dB in propagazione verticale dal suolo
-  alla ionosfera e ritorno; le frequenze più basse perdono di più. Le mappe
-  polari usano 10 dB, ma non sono in questo file. Il modello usa
-  `quantity = "highest affected frequency"`, in MHz.
-- La stessa pagina dice che i "Tabular Values" sono a passi di 5° di
-  latitudine e 15° di longitudine: il file del 2026-10-15 è invece a 2° × 4°.
-  La documentazione è più vecchia del file; il parser non fissa i passi.
-- **Messaggi, verificati** sulla stessa pagina: `X-RAY Message` vale
+  read on 2026-10-16): the global map gives the **Highest Affected
+  Frequency** (HAF), i.e. the frequency that loses 1 dB in vertical
+  propagation from the ground to the ionosphere and back; lower frequencies
+  lose more. The polar maps use 10 dB, but they are not in this file. The
+  model uses `quantity = "highest affected frequency"`, in MHz.
+- The same page says that the "Tabular Values" are at steps of 5° of
+  latitude and 15° of longitude: the 2026-10-15 file is instead at
+  2° × 4°. The documentation is older than the file; the parser does not
+  fix the steps.
+- **Messages, verified** on the same page: `X-RAY Message` is
   `Normal x-ray background`, `Elevated x-ray flux`, `Moderate x-ray flux`
-  (M1–M5), `Strong x-ray flux` (M5–X1), `Severe x-ray flux` (X1–X20) o
-  `Extreme x-ray flux`; `Proton Message` vale `Normal proton background`,
-  `Minor`/`Moderate`/`Strong`/`Severe`/`Extreme proton flux` (soglie 10, 100,
-  1 000, 10 000, 100 000 pfu a ≥10 MeV). Il modello li tiene come testo.
-- `Estimated Recovery Time`: la pagina descrive un orologio in minuti
-  (calcolato dopo il picco di un brillamento oltre M1 o da un evento
-  protonico), ma non il testo del file quando c'è una stima: il formato resta
-  **ipotesi** (visto solo `No Estimate`) e il modello lo tiene come testo.
-- Il parser D-RAP (T6) vuole una tabella che copra il globo: longitudini
-  regolari da -180 + passo/2 a 180 - passo/2, latitudini regolari da un polo
-  all'altro. Una tabella che si ferma prima del polo opposto, o un'ultima riga
-  corta in un testo senza `\n` finale, è `SourceNotReady`; una riga corta o
-  sbagliata in mezzo è `ParseError` con la riga.
-- Per il GeoTIFF: le coordinate sono centri di cella su griglia regolare
-  lat/lon (EPSG:4326). La longitudine di OVATION (0–359) va ruotata a
-  -180…180 per l'uso su mappa: l'export lo fa, il modello conserva i dati
-  come arrivano. Con i centri a ±90 e a -180, i bordi delle celle OVATION
-  escono di mezzo grado (raster da -180,5 a 179,5 e da -90,5 a 90,5); il
-  GeoJSON invece taglia i poligoni a ±90 e divide in due quelli a cavallo
-  dell'antimeridiano.
+  (M1–M5), `Strong x-ray flux` (M5–X1), `Severe x-ray flux` (X1–X20) or
+  `Extreme x-ray flux`; `Proton Message` is `Normal proton background`,
+  `Minor`/`Moderate`/`Strong`/`Severe`/`Extreme proton flux` (thresholds
+  10, 100, 1 000, 10 000, 100 000 pfu at ≥10 MeV). The model keeps them as
+  text.
+- `Estimated Recovery Time`: the page describes a clock in minutes
+  (computed after the peak of a flare above M1 or from a proton event), but
+  not the text of the file when there is an estimate: the format remains a
+  **hypothesis** (only `No Estimate` seen) and the model keeps it as text.
+- The D-RAP parser (T6) wants a table that covers the globe: regular
+  longitudes from -180 + step/2 to 180 - step/2, regular latitudes from one
+  pole to the other. A table that stops before the opposite pole, or a
+  short last line in a text without a trailing `\n`, is `SourceNotReady`; a
+  short or malformed line in the middle is `ParseError` with the line.
+- For the GeoTIFF: the coordinates are cell centers on a regular lat/lon
+  grid (EPSG:4326). The OVATION longitude (0–359) must be rotated to
+  -180…180 for use on a map: the export does this, the model keeps the data
+  as it arrives. With the centers at ±90 and at -180, the OVATION cell
+  edges extend half a degree beyond (raster from -180.5 to 179.5 and from
+  -90.5 to 90.5); the GeoJSON instead clips the polygons at ±90 and splits
+  in two those that straddle the antimeridian.
 
-## Client HTTP (T7, 2026-10-16)
+## HTTP client (T7, 2026-10-16)
 
-- **Stato di httpx, verificato su PyPI** (API JSON di `pypi.org`, 2026-10-16):
-  `httpx` ha come ultima versione stabile la **0.28.1 del 2024-12-06**; dopo
-  ci sono solo versioni di sviluppo `1.0.dev2`…`1.0.dev6` (l'ultima il
-  2026-08-31). `httpcore` è fermo alla 1.0.9 del 2025-04-24.
+- **State of httpx, verified on PyPI** (JSON API of `pypi.org`,
+  2026-10-16): the latest stable release of `httpx` is **0.28.1 of
+  2024-12-06**; after it there are only development releases
+  `1.0.dev2`…`1.0.dev6` (the last on 2026-08-31). `httpcore` is stuck at
+  1.0.9 of 2025-04-24.
 - **`httpx2`** (`https://github.com/pydantic/httpx2`, BSD-3-Clause, Python
-  ≥ 3.10): 2.13.1 del 2026-09-23, rilasci ogni poche settimane. La sua
-  descrizione su PyPI dice che è la continuazione di httpx, presa in carico
-  da Pydantic "so that users have a reliably maintained path forward -
-  including timely security updates". Stessa API (`httpx2.Client`,
-  `AsyncClient`, `MockTransport`, eccezioni `TransportError`/`TimeoutException`),
-  modulo `httpx2`, marcatore `py.typed`. Dipende da `httpcore2` (versione
-  bloccata uguale), `anyio`, `idna`, `truststore` (usa i certificati del
-  sistema).
-- **Scelta**: l'extra `client` usa `httpx2>=2.13`. Solo
-  `swpc_kit/client/_httpx.py` importa la libreria; i client dipendono dal
-  protocollo `Transport`/`AsyncTransport`, quindi tornare a `httpx` (o usare
-  altro) tocca un modulo solo. Alternative guardate: `niquests` (attivo, API
-  requests), `aiohttp` (solo asincrono), `requests` (solo sincrono).
-- **Verificato dal vivo** il 2026-10-16 (prova manuale, non un test): il
-  client scarica e legge tutti i 16 prodotti del giorno; SWPC manda `ETag`
-  **deboli** (`W/"12c4-…"`) e `Last-Modified`, e risponde `304 Not Modified`
-  alla richiesta condizionale con `If-None-Match`.
+  ≥ 3.10): 2.13.1 of 2026-09-23, releases every few weeks. Its description
+  on PyPI says that it is the continuation of httpx, taken over by Pydantic
+  "so that users have a reliably maintained path forward -
+  including timely security updates". Same API (`httpx2.Client`,
+  `AsyncClient`, `MockTransport`, exceptions
+  `TransportError`/`TimeoutException`), module `httpx2`, `py.typed`
+  marker. Depends on `httpcore2` (pinned to the same version), `anyio`,
+  `idna`, `truststore` (uses the system certificates).
+- **Choice**: the `client` extra uses `httpx2>=2.13`. Only
+  `swpc_kit/client/_httpx.py` imports the library; the clients depend on
+  the `Transport`/`AsyncTransport` protocol, so going back to `httpx` (or
+  using something else) touches a single module. Alternatives considered:
+  `niquests` (active, requests API), `aiohttp` (async only), `requests`
+  (sync only).
+- **Verified live** on 2026-10-16 (manual check, not a test): the client
+  downloads and parses all 16 products of the day; SWPC sends **weak**
+  `ETag`s (`W/"12c4-…"`) and `Last-Modified`, and answers
+  `304 Not Modified` to the conditional request with `If-None-Match`.
 
-## Cambiamenti noti (SCN)
+## Known changes (SCN)
 
-- **SCN 26-21** (2026-03-02): nuovi formati JSON dal 2026-03-31 circa, vecchi
-  deprecati dal 2026-04-30.
-- **Vento solare** (2026-06-30): fine di DSCOVR, SOLAR-1 primario, ACE di
-  riserva; IMAP in arrivo. Il 2026-10-15 i record IMAP sono già nei file
-  RTSW, inattivi.
-- **SCN 26-39**: chiusura di GeoAlert (`geoalert.txt`) prevista il 2026-05-19,
-  ma il file era ancora presente il 2026-10-15. Fuori dalla prima versione.
-- **SCN 26-35**: chiusura del modello TEC CTIPe, sostituito da GloTEC.
-- Le pagine di contenuto di `swpc.noaa.gov` rimandano a `www.spaceweather.gov`;
-  `services.swpc.noaa.gov` risponde ancora. Avvisi e archivio:
+- **SCN 26-21** (2026-03-02): new JSON formats from about 2026-03-31, old
+  ones deprecated from 2026-04-30.
+- **Solar wind** (2026-06-30): end of DSCOVR, SOLAR-1 primary, ACE as
+  backup; IMAP on its way. On 2026-10-15 the IMAP records are already in
+  the RTSW files, inactive.
+- **SCN 26-39**: shutdown of GeoAlert (`geoalert.txt`) planned for
+  2026-05-19, but the file was still present on 2026-10-15. Out of scope
+  for the first version.
+- **SCN 26-35**: shutdown of the CTIPe TEC model, replaced by GloTEC.
+- The content pages of `swpc.noaa.gov` redirect to `www.spaceweather.gov`;
+  `services.swpc.noaa.gov` still responds. Notices and archive:
   `https://www.weather.gov/notification/`; `services.swpc.noaa.gov/text/scn/`
-  contiene i file di esempio delle SCN (vedi "Cartelle").
+  contains the SCN sample files (see "Directories").
 
-## Lezioni da chi usa già questi dati
+## Lessons from those already using this data
 
-- SWPC a volte serve un JSON **troncato** mentre lo riscrive: è
-  `SourceNotReady`, non un errore del parser.
-- Una fonte NOAA spostata può rispondere con un redirect verso una pagina
-  HTML: chi segue i redirect riceve HTML al posto dei dati
+- SWPC sometimes serves a **truncated** JSON while rewriting it: that is
+  `SourceNotReady`, not a parser error.
+- A NOAA source that has moved can answer with a redirect to an HTML page:
+  a client that follows redirects gets HTML instead of the data
   (`UnexpectedContent`).
-- La data di modifica di un file non dice l'età del contenuto: si guarda il
-  tempo scritto dentro.
+- The modification date of a file does not tell the age of its content:
+  look at the time written inside.
 
-## Librerie esistenti (2026-10-15)
+## Existing libraries (2026-10-15)
 
-Non ne abbiamo trovata una che copra tutto con modelli tipizzati, parsing dei
-messaggi e dei bollettini, ed export delle griglie. Frammenti:
+We did not find one that covers everything with typed models, parsing of
+messages and bulletins, and export of the grids. Fragments:
 
-- `sunpy`: solo le previsioni del ciclo solare (macchie, F10.7).
-- `swvo` (GFZ, Apache-2.0): da SWPC solo Kp e F10.7.
-- `spaceweather` (pyspaceweather): indici da Celestrak, GFZ, OMNI; non SWPC.
-- `solar-mcp`, `spaceweather-mcp`: server MCP, non librerie.
+- `sunpy`: only the solar cycle predictions (sunspots, F10.7).
+- `swvo` (GFZ, Apache-2.0): from SWPC only Kp and F10.7.
+- `spaceweather` (pyspaceweather): indices from Celestrak, GFZ, OMNI; not
+  SWPC.
+- `solar-mcp`, `spaceweather-mcp`: MCP servers, not libraries.
 
-### `swpclib` e `nws-aurora` (misurate in T0, 2026-10-15)
+### `swpclib` and `nws-aurora` (assessed in T0, 2026-10-15)
 
-Lette dai sorgenti su PyPI. Nessuna delle due copre una parte rilevante di
-`SPEC.md`: si va avanti.
+Read from their sources on PyPI. Neither of the two covers a relevant part
+of `SPEC.md`: the project goes ahead.
 
-- **`swpclib` 4.3.7** (MIT, 2024-04-18, dipende da `aiohttp`, `pillow`,
-  `click`; il README dice "Features: TODO"). Una classe `Runner` asincrona
-  che scarica e restituisce **dizionari** senza tipi: F10.7
-  (`/json/f107_cm_flux.json`), K di Boulder, A di Fredericksburg previsto,
-  macchie solari osservate, Kp 1 minuto, `solar_probabilities.json`,
-  `alerts.json`, e animazioni GIF (SUVI, OVATION, LASCO, D-RAP) montate con
-  Pillow. Gli errori sono **ingoiati**: `print(repr(e))` e un valore `None`.
-  Le date dei messaggi restano senza fuso (`datetime.now()` confrontato con
-  orari UTC). Non tocca Kp 3 ore, Dst, scale, RTSW, GOES, bollettini,
-  griglie, né i formati nuovi del 2026. Un solo test.
-- **`nws-aurora` 0.0.6** (MIT, 2024-09-18, dipende da `requests`, `bs4`,
-  `geojson`, `pytz`, `click`). Solo aurora: elenco delle immagini OVATION
-  (raschiando l'indice HTML della cartella), griglia OVATION come
-  `FeatureCollection` di **punti** con longitudine 0–359 così com'è, e
-  `aurora-nowcast-hemi-power.txt` letto saltando 16 righe fisse. Nessun tipo,
-  nessuna gestione degli errori.
-- **Nome**: `swpc-kit` (e `swpc_kit`, `swpckit`) libero su PyPI il
-  2026-10-15 (risposta 404 dell'API JSON). PyPI può comunque rifiutare un
-  nome alla prima pubblicazione: si ricontrolla prima di pubblicare.
+- **`swpclib` 4.3.7** (MIT, 2024-04-18, depends on `aiohttp`, `pillow`,
+  `click`; the README says "Features: TODO"). An asynchronous `Runner`
+  class that downloads and returns untyped **dictionaries**: F10.7
+  (`/json/f107_cm_flux.json`), Boulder K, predicted Fredericksburg A,
+  observed sunspots, 1-minute Kp, `solar_probabilities.json`,
+  `alerts.json`, and GIF animations (SUVI, OVATION, LASCO, D-RAP) assembled
+  with Pillow. Errors are **swallowed**: `print(repr(e))` and a `None`
+  value. Message dates stay without a time zone (`datetime.now()` compared
+  with UTC times). It does not cover 3-hour Kp, Dst, scales, RTSW, GOES,
+  bulletins, grids, nor the new 2026 formats. A single test.
+- **`nws-aurora` 0.0.6** (MIT, 2024-09-18, depends on `requests`, `bs4`,
+  `geojson`, `pytz`, `click`). Aurora only: list of the OVATION images (by
+  scraping the HTML index of the directory), OVATION grid as a
+  `FeatureCollection` of **points** with longitude 0–359 as is, and
+  `aurora-nowcast-hemi-power.txt` read by skipping 16 fixed lines. No
+  types, no error handling.
+- **Name**: `swpc-kit` (and `swpc_kit`, `swpckit`) free on PyPI on
+  2026-10-15 (404 response from the JSON API). PyPI can still reject a name
+  at first publication: recheck before publishing.
 
-Due cose utili lette nei loro sorgenti, da fonti **non ufficiali**:
+Two useful things read in their sources, from **unofficial** sources:
 
-- `swpclib` contiene tre esempi di `alerts.json` del 2022-09-27, citati in
-  "Avvisi" sopra.
-- `nws-aurora` contiene una griglia OVATION del 2024-09-18 già convertita:
-  65 160 punti, longitudine 0–359 (360 valori), latitudine -90…90 (181
-  valori). Coerente con la griglia verificata in T1.
+- `swpclib` contains three `alerts.json` samples from 2022-09-27, cited in
+  "Alerts" above.
+- `nws-aurora` contains an OVATION grid from 2024-09-18, already converted:
+  65 160 points, longitude 0–359 (360 values), latitude -90…90 (181
+  values). Consistent with the grid verified in T1.
