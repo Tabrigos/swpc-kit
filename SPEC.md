@@ -53,14 +53,15 @@ Three layers, each usable on its own, plus the skill that describes them:
    - skills live only in projects, never in `~/.claude/skills`.
 
 ```python
-from swpc_kit.parse import parse_planetary_k_index
 from swpc_kit.client import Client
+from swpc_kit.export import to_geojson
+from swpc_kit.parse import parse_planetary_k_index
 
 kp = parse_planetary_k_index(raw_bytes)  # no network
 with Client() as c:
     kp = c.planetary_k_index()  # network
     oval = c.ovation_aurora()
-    oval.to_geojson(threshold=10)
+    to_geojson(oval, threshold=10)
 ```
 
 The exact names are decided in the stages; this is the framework.
