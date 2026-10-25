@@ -211,6 +211,17 @@ asyncio.run(main())
 - Every error that goes through the client says which product and URL it
   comes from, in the message and in its `product` and `url` attributes.
 
+### Records that could not be read
+
+The products made of records (indices, solar wind, GOES, alerts) are read
+record by record: one record with an impossible value, a repeated time or a
+missing field goes to the model's `skipped` (index, field, reason) and the
+others are read, so one bad record does not hide the whole file for the
+hours or days it stays there. The product fails only when no record can be
+read. The client logs a warning on the `swpc_kit.client` logger for each
+product with skipped records. Bulletins and grids stay strict. The limits of
+what is plausible are in `docs/FONTI.md`, "Plausibility limits".
+
 ## For AI assistants
 
 The package ships an [Agent Skill](https://agentskills.io) for AI coding
