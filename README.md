@@ -4,21 +4,27 @@ Typed Python readers for the public data products of NOAA's Space Weather
 Prediction Center: indices, solar wind, GOES, alerts, text bulletins, and the
 OVATION and D-RAP grids, with GeoJSON and GeoTIFF export.
 
-**Status: 0.2.0, not published on PyPI.** See `CHANGELOG.md`, `SPEC.md` for
-what the library does and does not do, and `docs/FONTI.md` for what is known
-about each SWPC format.
+**Status: beta.** 0.3.0 is the first version published on PyPI; the API
+may still change before 1.0, and every change is in `CHANGELOG.md`. See
+`SPEC.md` for what the library does and does not do, and `docs/FONTI.md`
+for what is known about each SWPC format.
 
 ## Install
 
-Requires Python 3.12 or later. From a checkout or straight from GitHub:
+Requires Python 3.12 or later.
 
 ```bash
-pip install "swpc-kit[client,geo] @ git+https://github.com/Tabrigos/swpc-kit"
+pip install swpc-kit                  # parsers, models, JSON, GeoJSON
+pip install "swpc-kit[client]"        # plus the HTTP client (httpx2)
+pip install "swpc-kit[client,geo]"    # plus the GeoTIFF export
 ```
 
-The core (parsers, models, GeoJSON) uses only the standard library. The
-extras add the HTTP client (`client`: httpx2) and the GeoTIFF export (`geo`:
-numpy, rasterio).
+The core uses only the standard library, and the `client` extra adds only
+httpx2. The `geo` extra brings numpy and rasterio, which ships GDAL inside
+its wheels: about 140 MB once installed. The wheels of the latest rasterio
+need macOS 15 or Linux with glibc 2.28 or later. On older systems pip would
+try to build GDAL from source: add `--only-binary rasterio` and pip takes
+the newest rasterio with a wheel for your system (1.4.0 or later is enough).
 
 ## Products
 
@@ -234,6 +240,41 @@ reply. It is not a limit on the whole call. For one, wrap an `AsyncClient`
 call in `asyncio.timeout()`. The arguments of both clients are checked
 when the client is built: `timeout="30"` is a `TypeError` that says what it
 wants.
+
+### Trying again
+
+`SourceNotReady` is the only error worth retrying: SWPC is busy (`429`,
+`5xx`), the network failed, or the file was caught while SWPC was rewriting
+it. Wait, and wait longer each time; give up after a few attempts.
+
+```python
+import time
+
+from swpc_kit import SourceNotReady
+from swpc_kit.client import Client
+
+
+def fetch_with_retry(fetch, attempts=4, wait=30.0):
+    """Call fetch(); on SourceNotReady wait and try again, doubling the wait."""
+    for attempt in range(attempts):
+        try:
+            return fetch()
+        except SourceNotReady:
+            if attempt == attempts - 1:
+                raise
+            time.sleep(wait * 2**attempt)
+
+
+with Client() as client:
+    dst = fetch_with_retry(client.kyoto_dst)
+    print(dst.values[-1].dst)
+```
+
+Do not retry `UnexpectedContent` or `ParseError` in a loop: the answer will
+be the same until SWPC or swpc-kit changes. `StaleData` means SWPC has not
+updated the product yet: try at the next run of your job, not within
+seconds. The client does not read `Retry-After` and keeps its `ETag`s in
+memory only, so keep one `Client` for the life of your program.
 
 ### When SWPC moves a product or changes a format
 
