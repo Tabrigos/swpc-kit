@@ -118,18 +118,30 @@ All errors are `SwpcError`. React to the class, not to the message text:
 | Error | Meaning | Whose fault | What to do |
 |---|---|---|---|
 | `SourceNotReady` | Timeout, network failure, HTTP 408/425/429/5xx, or a truncated file (SWPC rewrites files in place) | Nobody: a transient state of SWPC or of the network | Retry after a short wait |
-| `UnexpectedContent` | Redirect, other HTTP status, HTML page, unknown format | SWPC moved or changed the product, or the URL is wrong | Do not retry in a loop; report it |
+| `UnexpectedContent` | Redirect, other HTTP status (`status`, `location`), HTML page, unknown format, a field missing from the first record (a new format) | SWPC moved or changed the product, or the URL is wrong | Do not retry in a loop; report it. If the product moved, see below |
 | `ParseError` | Known format, inconsistent value; `field`, `line` or `index` say where | The data SWPC served, or a format change the library does not know yet | Report it; do not patch the value |
 | `StaleData` | Content older than `max_age`; has `data_time`, `max_age`, `age` | Nobody: SWPC has not updated the product | Use it with a warning, or wait |
+
+Errors that go through the client also carry `product` (the method name) and
+`url`, and say both in the message.
+
+**A product that moved.** SWPC sometimes moves a file: the client then raises
+`UnexpectedContent` with `status` 301 or 404 (and `location` for a redirect).
+Until a new version of swpc-kit knows the new address, pass it with
+`Client(urls={"kyoto_dst": "https://..."})`; the method, the parser and
+`max_age` stay the same.
 
 ## Time and freshness
 
 - Every time is an aware UTC `datetime`. Convert for display only.
 - `data_time` is the most recent time the content declares. For the Kp
   forecast it is the last *observed* value, because estimated and predicted
-  values lie in the future. For the bulletins it is the issue time.
-- Value tuples are oldest first, except `Alerts.messages`, which is newest
-  first like the source.
+  values lie in the future. For the bulletins it is the issue time. For the
+  solar wind it is the last *active* record: a backup spacecraft that keeps
+  reporting does not make the data look fresh.
+- Value tuples are oldest first, one value per time, whatever the order of
+  the file, except `Alerts.messages`, which is newest first like the
+  source.
 - An empty `alerts.json` is valid (no recent alerts): `messages` is empty and
   `data_time` is `None`, so `max_age` never rejects it.
 
@@ -175,7 +187,8 @@ GeoTIFF with the times in its tags; it needs the `geo` extra.
   fails on any change. Send the fix to the library instead.
 - Do not download a product with your own HTTP code and then parse it to get
   around an error: the client's error classes are the information
-  (`SourceNotReady` means wait, `UnexpectedContent` means stop).
+  (`SourceNotReady` means wait, `UnexpectedContent` means stop). For a
+  product that moved, give the client its new URL with `urls=`.
 - Do not poll faster than once a minute, nor create a `Client` per request:
   keep one, so unchanged products cost a `304 Not Modified`.
 - Do not compare times as strings or convert them to local time before
@@ -186,8 +199,9 @@ GeoTIFF with the times in its tags; it needs the `geo` extra.
 ## Not covered
 
 Images (coronagraphs, SUVI), other agencies (NASA DONKI, GFZ), and SWPC
-products not in the table above. For those, fetch the file yourself; the
-library offers no generic downloader.
+products not in the table above. For those, fetch the file yourself: the
+client fetches only the products it has a parser for (`urls=` changes where
+they come from, not what they are).
 
 ## Keeping this skill current
 

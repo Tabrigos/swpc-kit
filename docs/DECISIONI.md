@@ -176,3 +176,68 @@ scelte già prese e sparse fra `SPEC.md`, `docs/FONTI.md` e il diario; la data
 - **Conseguenze**: via `sync`, l'entry point e `--force` prima della prima
   pubblicazione. Il progetto che usa swpc-kit tiene la copia in git e lancia
   `check` in CI. politefetch deve passare allo stesso modello.
+
+## D-011 — Le serie degli indici sono ordinate e senza tempi ripetuti
+
+- **Data e tappa**: 2026-10-25, T13
+- **Contesto**: README e SKILL insegnano `values[-1]` come valore più recente,
+  ma i parser degli indici tenevano l'ordine del file: un file in ordine
+  inverso dava un valore vecchio senza errore. RTSW e GOES già ordinavano.
+- **Decisione**: i parser di Kp, previsione del Kp, Kp a 1 minuto, Dst e
+  F10.7 ordinano per tempo; un tempo ripetuto è `ParseError` con
+  `field="time_tag"` e l'indice del secondo record.
+- **Alternative scartate**: tenere il primo dei duplicati (nasconde un file
+  incoerente); solo controllare l'ordine e sollevare (rifiuterebbe un file
+  valido scritto in un altro ordine).
+- **Conseguenze**: `values` è "dal più vecchio, un valore per tempo" per
+  tutte le serie degli indici.
+
+## D-012 — La freschezza del vento solare segue la sorgente attiva
+
+- **Data e tappa**: 2026-10-25, T13
+- **Contesto**: `data_time` delle serie RTSW era il record più recente di
+  qualunque sorgente. Con SOLAR1 (attiva) ferma e ACE (riserva) che
+  continua, `max_age` accettava come recente un Bz vecchio di ore.
+- **Decisione**: `data_time` è il tempo dell'ultimo record attivo; senza
+  record attivi, quello del record più vecchio (nessun tempo del file ha dati
+  attivi).
+- **Alternative scartate**: un `active_data_time` a parte, usato dal client
+  (due tempi da spiegare, e chi controlla a mano `data_time` sbaglierebbe
+  ancora); `data_time` `None` senza record attivi (`max_age` non lo
+  rifiuterebbe mai, come gli avvisi vuoti).
+- **Conseguenze**: per il vento solare `data_time` può essere più vecchio
+  del record più recente del file.
+
+## D-013 — Un campo assente dal primo record è un formato nuovo
+
+- **Data e tappa**: 2026-10-25, T13
+- **Contesto**: i docstring dei parser promettono `UnexpectedContent` per
+  "content is not this product", ma un campo rinominato o un prodotto
+  sbagliato davano `ParseError`. Chi distingue "SWPC ha cambiato formato"
+  (aggiornare la libreria) da "un valore è incoerente" li confondeva.
+- **Decisione**: un campo che manca dal primo record di un prodotto JSON è
+  `UnexpectedContent`; se manca da un record successivo, il formato è quello
+  noto e il file è incoerente: `ParseError` con campo e indice. In
+  `noaa-scales.json`, dove i gruppi non sono record di un elenco, resta
+  `ParseError`.
+- **Alternative scartate**: cambiare solo i docstring (lascia la confusione
+  a chi chiama); controllare l'intestazione dei campi in `json_records`
+  (ogni parser dovrebbe dichiarare i suoi campi).
+- **Conseguenze**: un rinomina di SWPC dà `UnexpectedContent`, con il nome
+  del campo nel messaggio.
+
+## D-014 — Un prodotto spostato si raggiunge con `urls=`
+
+- **Data e tappa**: 2026-10-25, T13
+- **Contesto**: se SWPC sposta un file, il client dà `UnexpectedContent`
+  (301 o 404) e non segue i redirect (D-006). Rimediare voleva
+  `dataclasses.replace` su un `Product`, non documentato.
+- **Decisione**: `Client(urls={nome: url})` e lo stesso per `AsyncClient`;
+  una chiave che non è un prodotto è `ValueError`. `UnexpectedContent` porta
+  `status` e `location`; ogni errore che passa dal client porta `product` e
+  `url`, anche nel messaggio.
+- **Alternative scartate**: seguire i redirect (D-006); un `url=` per ogni
+  chiamata (andrebbe ripetuto in ogni punto del programma).
+- **Conseguenze**: il nuovo indirizzo si mette in un solo posto finché una
+  versione nuova non lo conosce.
+

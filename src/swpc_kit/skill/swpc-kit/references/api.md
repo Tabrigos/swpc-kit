@@ -35,7 +35,7 @@ HTTP client for SWPC products (`client` extra).
 
 ### `AsyncClient`
 
-`AsyncClient(*, transport: AsyncTransport | None = None, user_agent: str = 'swpc-kit/0.2.0 (+https://github.com/Tabrigos/swpc-kit)', timeout: float = 30.0, max_age: timedelta | None = None, conditional: bool = True, clock: Callable[[], datetime] = _utc_now)` (subclass of `BaseClient`)
+`AsyncClient(*, transport: AsyncTransport | None = None, user_agent: str = 'swpc-kit/0.2.0 (+https://github.com/Tabrigos/swpc-kit)', timeout: float = 30.0, max_age: timedelta | None = None, conditional: bool = True, clock: Callable[[], datetime] = _utc_now, urls: Mapping[str, str] | None = None)` (subclass of `BaseClient`)
 
 Asynchronous client for SWPC products.
 
@@ -76,7 +76,7 @@ Protocol. Fetches a URL asynchronously; same contract as `Transport`.
 
 ### `Client`
 
-`Client(*, transport: Transport | None = None, user_agent: str = 'swpc-kit/0.2.0 (+https://github.com/Tabrigos/swpc-kit)', timeout: float = 30.0, max_age: timedelta | None = None, conditional: bool = True, clock: Callable[[], datetime] = _utc_now)` (subclass of `BaseClient`)
+`Client(*, transport: Transport | None = None, user_agent: str = 'swpc-kit/0.2.0 (+https://github.com/Tabrigos/swpc-kit)', timeout: float = 30.0, max_age: timedelta | None = None, conditional: bool = True, clock: Callable[[], datetime] = _utc_now, urls: Mapping[str, str] | None = None)` (subclass of `BaseClient`)
 
 Synchronous client for SWPC products.
 
@@ -172,7 +172,7 @@ The 3-hour planetary K index of the last days.
 
 | Field | Type | Meaning |
 |---|---|---|
-| `values` | `tuple[KpValue, ...]` | The values, in source order (oldest first). |
+| `values` | `tuple[KpValue, ...]` | The values, oldest first, one per time. |
 | `source_url` | `str` | Where the content came from. |
 
 - `.data_time` (property): Start of the most recent 3-hour interval.
@@ -206,7 +206,7 @@ Kp of the past week followed by the forecast for the next days.
 
 | Field | Type | Meaning |
 |---|---|---|
-| `values` | `tuple[KpForecastValue, ...]` | The values, in source order (oldest first). |
+| `values` | `tuple[KpForecastValue, ...]` | The values, oldest first, one per time. |
 | `source_url` | `str` | Where the content came from. |
 
 - `.data_time` (property): Start of the most recent observed interval.
@@ -232,7 +232,7 @@ The 1-minute planetary K index estimates of the last hours.
 
 | Field | Type | Meaning |
 |---|---|---|
-| `values` | `tuple[Kp1mValue, ...]` | The values, in source order (oldest first). |
+| `values` | `tuple[Kp1mValue, ...]` | The values, oldest first, one per time. |
 | `source_url` | `str` | Where the content came from. |
 
 - `.data_time` (property): Time of the most recent estimate.
@@ -256,7 +256,7 @@ Hourly Kyoto Dst of the last week.
 
 | Field | Type | Meaning |
 |---|---|---|
-| `values` | `tuple[DstValue, ...]` | The values, in source order (oldest first). |
+| `values` | `tuple[DstValue, ...]` | The values, oldest first, one per time. |
 | `source_url` | `str` | Where the content came from. |
 
 - `.data_time` (property): Time of the most recent value.
@@ -280,7 +280,7 @@ Daily 10.7 cm solar radio flux of the last 30 days.
 
 | Field | Type | Meaning |
 |---|---|---|
-| `values` | `tuple[F107Value, ...]` | The values, in source order (oldest first). |
+| `values` | `tuple[F107Value, ...]` | The values, oldest first, one per time. |
 | `source_url` | `str` | Where the content came from. |
 
 - `.data_time` (property): Time of the most recent value.
@@ -924,6 +924,11 @@ Typed errors raised by swpc-kit.
 
 Base class for every error raised by swpc-kit.
 
+| Field | Type | Meaning |
+|---|---|---|
+| `product` | `str \| None` | Name of the product being fetched, such as `"planetary_k_index"`, when the error went through the client; `None` from a parser called directly. |
+| `url` | `str \| None` | The URL being fetched, under the same condition. |
+
 ### `SourceNotReady`
 
 `SourceNotReady` (subclass of `SwpcError`)
@@ -932,7 +937,7 @@ The data is truncated or empty.
 
 ### `UnexpectedContent`
 
-`UnexpectedContent` (subclass of `SwpcError`)
+`UnexpectedContent(message: str, *, status: int | None = None, location: str | None = None)` (subclass of `SwpcError`)
 
 The source answered with something other than the expected product.
 
