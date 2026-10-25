@@ -62,6 +62,25 @@ def _find(axis: tuple[float, ...], value: float) -> int | None:
     return None
 
 
+def _holding(
+    axis: tuple[float, ...], step: float, values: tuple[float, ...]
+) -> int | None:
+    """Index of the cell of ``axis`` whose span holds one of ``values``.
+
+    ``values`` are the same point written in different conventions. On a
+    border the cell after it wins, then the one before: so the last edge of
+    the axis still belongs to its last cell.
+    """
+    lattice = {round((item - axis[0]) / step): i for i, item in enumerate(axis)}
+    for after in (True, False):
+        for value in values:
+            position = (value - axis[0]) / step
+            offset = math.floor(position + 0.5) if after else math.ceil(position - 0.5)
+            if offset in lattice:
+                return lattice[offset]
+    return None
+
+
 @dataclass(frozen=True, slots=True)
 class Grid:
     """Values on a regular latitude/longitude grid, at cell centres.
@@ -146,6 +165,38 @@ class Grid:
             column = _find(self.longitudes, longitude + 360.0)
         if row is None or column is None:
             raise KeyError((latitude, longitude))
+        return self.values[row][column]
+
+    def value_near(self, latitude: float, longitude: float) -> float | None:
+        """Return the value of the cell that holds the point, or ``None``.
+
+        A cell spans half a step on each side of its centre. A point on the
+        border between two cells takes the cell to its north or east; the
+        outer edges of the grid belong to its outer cells. The longitude may
+        be given in either convention (-180 to 180 or 0 to 360).
+
+        Returns:
+            The value, or ``None`` if no cell holds the point: outside the
+            grid, or in a gap of a reduced grid.
+
+        Raises:
+            ValueError: If the latitude is not within [-90, 90] or the
+                longitude not within [-180, 360].
+        """
+        if not (math.isfinite(latitude) and -90 <= latitude <= 90):
+            raise ValueError(f"latitude must lie within [-90, 90], got {latitude!r}")
+        if not (math.isfinite(longitude) and -180 <= longitude <= 360):
+            raise ValueError(
+                f"longitude must lie within [-180, 360], got {longitude!r}"
+            )
+        row = _holding(self.latitudes, self.latitude_step, (latitude,))
+        column = _holding(
+            self.longitudes,
+            self.longitude_step,
+            (longitude, longitude - 360.0, longitude + 360.0),
+        )
+        if row is None or column is None:
+            return None
         return self.values[row][column]
 
     def cells(self) -> Iterator[tuple[float, float, float]]:
