@@ -8,6 +8,7 @@ parsing, and the ``max_age`` check.
 """
 
 import logging
+import math
 from collections.abc import Callable, Mapping
 from dataclasses import dataclass, replace
 from datetime import UTC, datetime, timedelta
@@ -17,7 +18,7 @@ from swpc_kit import __version__
 from swpc_kit.errors import SourceNotReady, StaleData, SwpcError, UnexpectedContent
 
 DEFAULT_TIMEOUT = 30.0
-"""Default timeout for one request, in seconds."""
+"""Default timeout, in seconds, for each phase of a request (see ``timeout``)."""
 
 DEFAULT_USER_AGENT = f"swpc-kit/{__version__} (+https://github.com/Tabrigos/swpc-kit)"
 """Default ``User-Agent`` header."""
@@ -134,12 +135,75 @@ def _utc_now() -> datetime:
     return datetime.now(UTC)
 
 
+def _check_arguments(
+    *,
+    user_agent: object,
+    timeout: object,
+    max_age: object,
+    conditional: object,
+    clock: object,
+    urls: object,
+) -> None:
+    """Raise a clear error for an argument of the wrong type or value."""
+    if isinstance(timeout, bool) or not isinstance(timeout, int | float):
+        raise TypeError(f"timeout must be a number of seconds, got {timeout!r}")
+    if not timeout > 0:
+        raise ValueError(f"timeout must be positive, got {timeout}")
+    if not math.isfinite(timeout):
+        raise ValueError(f"timeout must be finite, got {timeout}")
+    if max_age is not None:
+        if not isinstance(max_age, timedelta):
+            raise TypeError(f"max_age must be a timedelta or None, got {max_age!r}")
+        if max_age <= timedelta(0):
+            raise ValueError(f"max_age must be positive, got {max_age}")
+    if not isinstance(user_agent, str):
+        raise TypeError(f"user_agent must be a string, got {user_agent!r}")
+    if not user_agent.strip():
+        raise ValueError("user_agent must not be empty")
+    if "\r" in user_agent or "\n" in user_agent:
+        raise ValueError(f"user_agent must be one line, got {user_agent!r}")
+    if not isinstance(conditional, bool):
+        raise TypeError(f"conditional must be True or False, got {conditional!r}")
+    if not callable(clock):
+        raise TypeError(f"clock must be callable, got {clock!r}")
+    if urls is None:
+        return
+    if not isinstance(urls, Mapping):
+        raise TypeError(f"urls must be a mapping of product to URL, got {urls!r}")
+    for name, url in urls.items():
+        if not isinstance(url, str):
+            raise TypeError(f"URL of {name} must be a string, got {url!r}")
+        if not url.startswith(("https://", "http://")):
+            raise ValueError(
+                f"URL of {name} must start with https:// or http://, got {url!r}"
+            )
+
+
+def check_transport(client: str, transport: object, *methods: str) -> None:
+    """Raise :class:`TypeError` if ``transport`` lacks one of ``methods``.
+
+    Args:
+        client: Name of the client class, for the message.
+        transport: The transport given to the client.
+        methods: The methods the client needs: ``get`` and ``close`` or
+            ``aclose``.
+    """
+    if all(callable(getattr(transport, method, None)) for method in methods):
+        return
+    wanted = "a Transport" if client == "Client" else "an AsyncTransport"
+    raise TypeError(
+        f"{client} needs {wanted} (with {' and '.join(methods)}),"
+        f" got {type(transport).__name__}"
+    )
+
+
 class BaseClient:
     """State and logic shared by :class:`Client` and :class:`AsyncClient`.
 
     Args:
         user_agent: ``User-Agent`` header sent with every request.
-        timeout: Timeout for one request, in seconds.
+        timeout: Timeout in seconds for each phase of a request, handed to
+            the transport (see :class:`~swpc_kit.client.Client`).
         max_age: Default maximum age of the data (see :meth:`check_age`);
             ``None`` means no check.
         conditional: Send ``If-None-Match`` / ``If-Modified-Since`` when a
@@ -150,8 +214,10 @@ class BaseClient:
             product that SWPC moved before a new version of swpc-kit knows.
 
     Raises:
-        ValueError: If ``timeout`` is not positive, or ``urls`` names a
-            product that does not exist.
+        TypeError: If an argument has the wrong type.
+        ValueError: If ``timeout`` or ``max_age`` is not positive, the user
+            agent is empty or not one line, or ``urls`` names a product that
+            does not exist or gives a URL that is not HTTP.
     """
 
     def __init__(
@@ -166,8 +232,14 @@ class BaseClient:
     ) -> None:
         from swpc_kit.client._products import PRODUCTS
 
-        if timeout <= 0:
-            raise ValueError(f"timeout must be positive, got {timeout}")
+        _check_arguments(
+            user_agent=user_agent,
+            timeout=timeout,
+            max_age=max_age,
+            conditional=conditional,
+            clock=clock,
+            urls=urls,
+        )
         self.urls: dict[str, str] = dict(urls or {})
         unknown = sorted(set(self.urls) - {product.name for product in PRODUCTS})
         if unknown:
@@ -226,6 +298,24 @@ class BaseClient:
             ParseError: Known format with an inconsistent value.
             StaleData: The data is older than the maximum age.
         """
+        model = self.reuse(product, response)
+        if model is None:
+            model = product.parse(response.content, product.url)
+            self.remember(product, response, model)
+        self.check_age(model, max_age)
+        return model
+
+    def reuse[M: _Timed](self, product: Product[M], response: HttpResponse) -> M | None:
+        """Return the cached model on ``304``, or ``None`` if the body is new.
+
+        The first half of :meth:`handle`: the async client runs it on the
+        event loop, then parses the body in a thread.
+
+        Raises:
+            SourceNotReady: Temporary failure (``429``, ``5xx``…).
+            UnexpectedContent: Redirect, other status, HTML instead of data,
+                or ``304`` with no copy.
+        """
         url = product.url
         status = response.status
         if status == 304:
@@ -234,32 +324,36 @@ class BaseClient:
                 raise UnexpectedContent(f"304 Not Modified from {url} with no copy")
             model: M = cached.model
             _log.debug("304 Not Modified from %s: reusing %s", url, product.name)
+            return model
+        if status in _TRANSIENT_STATUSES or 500 <= status <= 599:
+            raise SourceNotReady(f"HTTP {status} from {url}; try again later")
+        if 300 <= status <= 399:
+            location = response.header("Location")
+            target = location or "an unknown place"
+            raise UnexpectedContent(
+                f"HTTP {status} from {url}: moved to {target}",
+                status=status,
+                location=location,
+            )
+        if status != 200:
+            raise UnexpectedContent(f"HTTP {status} from {url}", status=status)
+        content_type = response.header("Content-Type") or ""
+        if "html" in content_type.lower():
+            raise UnexpectedContent(f"got HTML ({content_type}) from {url}")
+        return None
+
+    def remember(
+        self, product: Product[Any], response: HttpResponse, model: object
+    ) -> None:
+        """Log the skipped records of a new model and keep it for ``304``."""
+        url = product.url
+        _log_skipped(product.name, url, model)
+        etag = response.header("ETag")
+        last_modified = response.header("Last-Modified")
+        if etag is not None or last_modified is not None:
+            self._cache[url] = _Cached(etag, last_modified, model)
         else:
-            if status in _TRANSIENT_STATUSES or 500 <= status <= 599:
-                raise SourceNotReady(f"HTTP {status} from {url}; try again later")
-            if 300 <= status <= 399:
-                location = response.header("Location")
-                target = location or "an unknown place"
-                raise UnexpectedContent(
-                    f"HTTP {status} from {url}: moved to {target}",
-                    status=status,
-                    location=location,
-                )
-            if status != 200:
-                raise UnexpectedContent(f"HTTP {status} from {url}", status=status)
-            content_type = response.header("Content-Type") or ""
-            if "html" in content_type.lower():
-                raise UnexpectedContent(f"got HTML ({content_type}) from {url}")
-            model = product.parse(response.content, url)
-            _log_skipped(product.name, url, model)
-            etag = response.header("ETag")
-            last_modified = response.header("Last-Modified")
-            if etag is not None or last_modified is not None:
-                self._cache[url] = _Cached(etag, last_modified, model)
-            else:
-                self._cache.pop(url, None)
-        self.check_age(model, max_age)
-        return model
+            self._cache.pop(url, None)
 
     def check_age(self, model: _Timed, max_age: timedelta | None) -> None:
         """Raise :class:`StaleData` if ``model`` is older than allowed.

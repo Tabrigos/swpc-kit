@@ -38,6 +38,7 @@ when one is needed; any object with the :class:`Transport` or
 :class:`AsyncTransport` interface can replace them.
 """
 
+import asyncio
 from collections.abc import Callable, Mapping
 from datetime import datetime, timedelta
 from types import TracebackType
@@ -54,6 +55,7 @@ from swpc_kit.client._core import (
     Transport,
     _Timed,
     _utc_now,
+    check_transport,
 )
 from swpc_kit.client._products import PRODUCTS
 from swpc_kit.errors import SwpcError
@@ -123,7 +125,11 @@ class Client(BaseClient):
         transport: How requests are sent; by default an
             :class:`HttpxTransport` (closed with the client).
         user_agent: ``User-Agent`` header sent with every request.
-        timeout: Timeout for one request, in seconds.
+        timeout: Timeout in seconds for each phase of a request: connecting,
+            sending, waiting for a free connection, and each wait for the
+            next piece of the reply, as httpx2 applies it. It does not
+            bound the whole request: a server that keeps sending slowly can
+            make one last longer.
         max_age: Default maximum age of the data; ``None`` means no check.
             Each method also takes ``max_age``, which wins over this one.
         conditional: Use ``ETag``/``Last-Modified`` conditional requests.
@@ -133,8 +139,11 @@ class Client(BaseClient):
             product that SWPC moved: ``{"kyoto_dst": "https://..."}``.
 
     Raises:
-        ValueError: If ``timeout`` is not positive, or ``urls`` names a
-            method that does not exist.
+        TypeError: If an argument has the wrong type, or ``transport`` lacks
+            the methods it needs.
+        ValueError: If ``timeout`` or ``max_age`` is not positive, the user
+            agent is empty or not one line, or ``urls`` names a method that
+            does not exist or gives a URL that is not HTTP.
         ImportError: If no ``transport`` is given and httpx2 (the
             ``client`` extra) is not installed.
     """
@@ -162,6 +171,7 @@ class Client(BaseClient):
             from swpc_kit.client._httpx import HttpxTransport
 
             transport = HttpxTransport()
+        check_transport("Client", transport, "get", "close")
         self.transport: Transport = transport
 
     def fetch[M: _Timed](
@@ -285,13 +295,20 @@ class Client(BaseClient):
 class AsyncClient(BaseClient):
     """Asynchronous client for SWPC products.
 
-    Use it with ``async with`` or call :meth:`aclose`.
+    Use it with ``async with`` or call :meth:`aclose`. The content is parsed
+    in a thread (:func:`asyncio.to_thread`), so a large file such as the
+    OVATION grid does not block the event loop. For a limit on the whole
+    call, wrap it in :func:`asyncio.timeout`.
 
     Args:
         transport: How requests are sent; by default an
             :class:`AsyncHttpxTransport` (closed with the client).
         user_agent: ``User-Agent`` header sent with every request.
-        timeout: Timeout for one request, in seconds.
+        timeout: Timeout in seconds for each phase of a request: connecting,
+            sending, waiting for a free connection, and each wait for the
+            next piece of the reply, as httpx2 applies it. It does not
+            bound the whole request: a server that keeps sending slowly can
+            make one last longer.
         max_age: Default maximum age of the data; ``None`` means no check.
             Each method also takes ``max_age``, which wins over this one.
         conditional: Use ``ETag``/``Last-Modified`` conditional requests.
@@ -301,8 +318,11 @@ class AsyncClient(BaseClient):
             product that SWPC moved: ``{"kyoto_dst": "https://..."}``.
 
     Raises:
-        ValueError: If ``timeout`` is not positive, or ``urls`` names a
-            method that does not exist.
+        TypeError: If an argument has the wrong type, or ``transport`` lacks
+            the methods it needs.
+        ValueError: If ``timeout`` or ``max_age`` is not positive, the user
+            agent is empty or not one line, or ``urls`` names a method that
+            does not exist or gives a URL that is not HTTP.
         ImportError: If no ``transport`` is given and httpx2 (the
             ``client`` extra) is not installed.
     """
@@ -330,6 +350,7 @@ class AsyncClient(BaseClient):
             from swpc_kit.client._httpx import AsyncHttpxTransport
 
             transport = AsyncHttpxTransport()
+        check_transport("AsyncClient", transport, "get", "aclose")
         self.transport: AsyncTransport = transport
 
     async def fetch[M: _Timed](
@@ -351,7 +372,14 @@ class AsyncClient(BaseClient):
                 headers=self.request_headers(product),
                 timeout=self.timeout,
             )
-            return self.handle(product, response, max_age)
+            model = self.reuse(product, response)
+            if model is None:
+                model = await asyncio.to_thread(
+                    product.parse, response.content, product.url
+                )
+                self.remember(product, response, model)
+            self.check_age(model, max_age)
+            return model
         except SwpcError as error:
             self.locate(error, product)
             raise
