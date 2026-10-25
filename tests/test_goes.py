@@ -252,9 +252,14 @@ def test_xrays_inconsistent_values(changes: dict[str, Any], field: str) -> None:
 def test_xrays_missing_misspelled_field() -> None:
     record = xray_record()
     del record["electron_contaminaton"]
-    with pytest.raises(ParseError, match="missing") as info:
+    # Missing from every record: SWPC fixed the spelling, a new format.
+    with pytest.raises(UnexpectedContent, match="'electron_contaminaton' missing"):
         parse_goes_xrays(dump(record))
+    # Missing from one record only: an inconsistent file.
+    with pytest.raises(ParseError, match="missing") as info:
+        parse_goes_xrays(dump(xray_record(), record))
     assert info.value.field == "electron_contaminaton"
+    assert info.value.index == 1
 
 
 def test_xrays_errors() -> None:

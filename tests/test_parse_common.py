@@ -28,6 +28,14 @@ def test_empty_content_is_not_ready(raw: bytes | str) -> None:
         b'[{"time_tag":"2026-10-08T00:00:00","Kp":1.00},',
         b'[{"time_tag":"2026-10-08T00:00:00","Kp":1.0',
         b"[",
+        # cut inside a literal or a number
+        b'[{"Kp": nul',
+        b'[{"active": fals',
+        b'[{"active": t',
+        b'[{"bz_gsm": -',
+        b'[{"bz_gsm": -1.',
+        b'[{"bz_gsm": 1e',
+        b'[{"bz_gsm": 1E-',
     ],
 )
 def test_truncated_json_is_not_ready(raw: bytes) -> None:
@@ -48,9 +56,19 @@ def test_markup_is_unexpected(raw: bytes) -> None:
         load_json(raw)
 
 
-def test_invalid_json_in_the_middle_is_unexpected() -> None:
+@pytest.mark.parametrize(
+    "raw",
+    [
+        b'[{"a": 1} {"a": 2}]',
+        b'[{"a": nul}]',
+        b'[{"a": -}]',
+        b'[{"a": nulls',
+        b'[{"a": 1.2.3',
+    ],
+)
+def test_invalid_json_is_unexpected(raw: bytes) -> None:
     with pytest.raises(UnexpectedContent, match="not valid JSON"):
-        load_json(b'[{"a": 1} {"a": 2}]')
+        load_json(raw)
 
 
 def test_undecodable_bytes_are_unexpected() -> None:
@@ -113,6 +131,12 @@ def test_missing_field_names_field_and_record() -> None:
         _rec(a=1).get_float("Kp")
     assert info.value.field == "Kp"
     assert info.value.index == 3
+
+
+def test_field_missing_from_the_first_record_is_unexpected() -> None:
+    # Not this product, or a format no parser knows: do not retry, report.
+    with pytest.raises(UnexpectedContent, match="'Kp' missing from the first"):
+        Record(0, {"a": 1}).get_float("Kp")
 
 
 @pytest.mark.parametrize(

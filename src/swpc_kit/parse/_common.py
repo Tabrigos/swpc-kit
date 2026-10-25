@@ -14,11 +14,32 @@ from collections.abc import Mapping
 from datetime import UTC, datetime
 from typing import Any
 
-from swpc_kit.errors import ParseError, SourceNotReady, UnexpectedContent
+from swpc_kit.errors import ParseError, SourceNotReady, SwpcError, UnexpectedContent
 
 _TIME = re.compile(
     r"\d{4}-\d{2}-\d{2}[T ]\d{2}:\d{2}(?::\d{2}(?:\.\d{1,6})?)?(?:Z|[+-]\d{2}:\d{2})?"
 )
+
+
+_PARTIAL_NUMBER = re.compile(r"-?(?:\d+(?:\.\d*)?(?:[eE][+-]?\d*)?)?")
+_LITERALS = ("true", "false", "null")
+
+
+def _cut_inside_a_token(text: str, pos: int) -> bool:
+    """Whether ``text`` ends inside the literal or number that starts near ``pos``.
+
+    A file cut in ``"bz": -1.`` or ``"active": fals`` fails to decode before
+    its end, but it is still a truncated file, not invalid JSON.
+    """
+    start = pos
+    while start > 0 and (text[start - 1].isalnum() or text[start - 1] in "+-."):
+        start -= 1
+    token = text[start:]
+    if not token:
+        return False
+    if any(len(token) < len(word) and word.startswith(token) for word in _LITERALS):
+        return True
+    return _PARTIAL_NUMBER.fullmatch(token) is not None
 
 
 def decode(raw: str | bytes) -> str:
@@ -55,7 +76,12 @@ def load_json(raw: str | bytes) -> Any:
     try:
         return json.loads(text)
     except json.JSONDecodeError as exc:
-        if exc.pos >= len(text.rstrip()) or exc.msg.startswith("Unterminated string"):
+        end = text.rstrip()
+        if (
+            exc.pos >= len(end)
+            or exc.msg.startswith("Unterminated string")
+            or _cut_inside_a_token(end, exc.pos)
+        ):
             raise SourceNotReady(f"truncated JSON: {exc}") from None
         raise UnexpectedContent(f"not valid JSON: {exc}") from None
 
@@ -98,11 +124,26 @@ class Record:
         """Return a :class:`ParseError` located at ``field`` of this record."""
         return ParseError(message, field=field, index=self.index)
 
+    def missing(self, field: str) -> SwpcError:
+        """Return the error for ``field`` missing from this record.
+
+        Missing from the first record, the field is missing from the format:
+        the content is not this product, or a format no parser knows
+        (:class:`UnexpectedContent`). Missing from a later record, the file
+        is inconsistent (:class:`ParseError`).
+        """
+        if self.index == 0:
+            return UnexpectedContent(
+                f"field {field!r} missing from the first record:"
+                " not this product, or a format no parser knows"
+            )
+        return self.error("missing field", field)
+
     def _get(self, field: str) -> Any:
         try:
             return self.data[field]
         except KeyError:
-            raise self.error("missing field", field) from None
+            raise self.missing(field) from None
 
     def get_str(self, field: str) -> str:
         """Return a string field."""
