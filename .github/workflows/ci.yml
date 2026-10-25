@@ -21,7 +21,11 @@ jobs:
       - uses: actions/checkout@v5
       - uses: astral-sh/setup-uv@v6
       - run: uv sync --all-extras --locked
+      # tests/test_skill.py checks that the built wheel ships the skill.
+      - run: uv build --wheel
       - run: uv run pytest
+        env:
+          SKILL_WHEEL: dist/*.whl
       - run: uv run ruff check .
       - run: uv run ruff format --check .
       - run: uv run mypy

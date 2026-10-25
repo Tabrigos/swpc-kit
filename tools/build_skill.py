@@ -1,65 +1,141 @@
-"""Generate the API reference of the bundled agent skill from the code.
+"""Generate ``references/api.md`` of the bundled agent skill from the code.
 
-Writes ``src/swpc_kit/skill/swpc-kit/references/api.md``: products, client,
-models (fields, properties, methods), errors and exports, all read from the
-installed package by introspection. The hand-written ``SKILL.md`` next to it
-points here for details.
+For every public module in ``MODULES``: the names of its ``__all__`` (without
+one, the public classes and functions it defines) with their
+signatures and the first paragraph of their docstrings, the fields of classes
+with their meaning, class members, enum values with the strings that follow
+them in the source, pytest fixtures. A class or function is described once,
+in the module that defines it when that module is in ``MODULES`` (even without
+an ``__all__`` of its own), otherwise in the first module that exports it. The
+hand-written ``SKILL.md`` next to it points here for details.
 
 Usage::
 
-    uv run python tools/build_skill.py           # rewrite the file
-    uv run python tools/build_skill.py --check   # exit 1 if it is stale
+    python tools/build_skill.py           # rewrite the file
+    python tools/build_skill.py --check   # exit 1 if it is stale
 
 ``tests/test_skill.py`` fails when the committed file differs from what this
-script produces, so a change to the public API cannot ship without it.
+script produces, or when a public module is missing from ``MODULES``. The
+output does not depend on the operating system or on memory addresses; run
+the test on every Python of the CI matrix to keep it independent of the
+version too.
+
+A copy of the shared template (schema 1): only the constants above the line
+change from one library to another.
 """
 
+from __future__ import annotations
+
 import argparse
+import ast
 import dataclasses
 import enum
+import importlib
 import inspect
+import pkgutil
 import re
 import sys
-from collections.abc import Callable, Iterator
+import textwrap
+import typing
 from pathlib import Path
+from types import ModuleType
 from typing import Any
 
-import swpc_kit
-import swpc_kit.client
-import swpc_kit.codes
-import swpc_kit.errors
-import swpc_kit.export.geojson
-import swpc_kit.models
-import swpc_kit.parse
-from swpc_kit.client import PRODUCTS, Client
+PACKAGE = "swpc_kit"
+"""The import name of the package."""
+
+SKILL_NAME = "swpc-kit"
+"""The directory of the skill inside ``<package>/skill/``."""
+
+_GROUPS = ["indices", "solar_wind", "goes", "alerts", "bulletins", "grids"]
+
+MODULES: list[str] = [
+    "swpc_kit",
+    "swpc_kit.client",
+    "swpc_kit.models",
+    *(f"swpc_kit.models.{name}" for name in _GROUPS),
+    "swpc_kit.parse",
+    *(f"swpc_kit.parse.{name}" for name in _GROUPS),
+    "swpc_kit.errors",
+    "swpc_kit.export",
+    "swpc_kit.export.geojson",
+    "swpc_kit.export.geotiff",
+    "swpc_kit.codes",
+]
+"""Every public module, in reading order. ``<package>.skill`` stays out."""
+
+EXTRA: dict[str, str] = {
+    "swpc_kit.client": "extra `client`",
+    "swpc_kit.export.geotiff": "extra `geo`",
+}
+"""Modules that need an extra, such as ``{"pkg.adapters.httpx": "extra `httpx`"}``;
+without it installed their section has no signatures."""
+
+# ---- nothing below this line changes between libraries ----------------------
 
 ROOT = Path(__file__).resolve().parent.parent
-TARGET = ROOT / "src" / "swpc_kit" / "skill" / "swpc-kit" / "references" / "api.md"
+TARGET = ROOT / "src" / PACKAGE / "skill" / SKILL_NAME / "references" / "api.md"
 
-MODEL_MODULES = ["indices", "solar_wind", "goes", "alerts", "bulletins", "grids"]
+_QUALIFIED = re.compile(r"\b(?:[a-z_]\w*\.)+([A-Za-z_]\w*)")
+_STRING = re.compile(r"""('(?:[^'\\\n]|\\.)*'|"(?:[^"\\\n]|\\.)*")""")
+_CLASS = re.compile(r"<class '([^']+)'>")
+_FUNCTION = re.compile(r"<function ([\w.<>]+) at 0x[0-9A-Fa-f]+>")
+_ADDRESS = re.compile(r" at 0x[0-9A-Fa-f]+")
+_ROLE = re.compile(r":(?:class|meth|func|data|mod|attr|exc):`~?(?:[\w.]*\.)?([^`]+)`")
+_GOOGLE_ATTRIBUTE = re.compile(r"^(\w+)(?: \(([^)]*)\))?:\s*(.*)$")
+_ENUM_BASES = tuple(
+    base
+    for base in (enum.Enum, getattr(enum, "StrEnum", None), enum.IntEnum)
+    if base is not None
+)
 
-_QUALIFIED = re.compile(r"\b(?:[a-z_][\w]*\.)+([A-Za-z_]\w*)")
-_ATTRIBUTE = re.compile(r"^    (\w+)(?: \([^)]*\))?: (.*)$")
+
+def public_modules() -> list[str]:
+    """Every importable public module of the package except ``<package>.skill``."""
+    package = importlib.import_module(PACKAGE)
+    found = [PACKAGE]
+    for info in pkgutil.walk_packages(package.__path__, PACKAGE + "."):
+        parts = info.name.split(".")
+        if any(part.startswith("_") for part in parts) or parts[1:2] == ["skill"]:
+            continue
+        found.append(info.name)
+    return sorted(found)
 
 
 def _short(text: str) -> str:
-    """Drop module prefixes: ``swpc_kit.models.goes.XraySample`` -> ``XraySample``."""
-    text = text.replace("<class '", "").replace("'>", "")
-    return _QUALIFIED.sub(r"\1", text)
+    """Drop module prefixes and what changes between runs and systems.
+
+    String literals stay as they are: in ``url='https://a.b.org/x'`` the host
+    is a value, not a qualified name.
+    """
+    text = _CLASS.sub(r"\1", text)
+    text = _FUNCTION.sub(r"\1", text)
+    text = _ADDRESS.sub("", text)
+    text = re.sub(r"\b(?:Posix|Windows)Path\(", "Path(", text)
+    parts = _STRING.split(text)  # odd indices are the string literals
+    return "".join(
+        part if index % 2 else _QUALIFIED.sub(r"\1", part)
+        for index, part in enumerate(parts)
+    )
+
+
+def _inline(text: str) -> str:
+    """Turn reStructuredText inline markup into Markdown."""
+    return _ROLE.sub(r"`\1`", re.sub(r"``([^`]+)``", r"`\1`", text))
+
+
+def _paragraph(obj: Any) -> str:
+    """The first paragraph of a docstring, on one line."""
+    doc = inspect.getdoc(obj) or ""
+    first = " ".join(line.strip() for line in doc.split("\n\n", 1)[0].splitlines())
+    return _inline(first)
 
 
 def _type(annotation: Any) -> str:
-    if isinstance(annotation, type):
+    """A type annotation with short names."""
+    if isinstance(annotation, type) and not typing.get_args(annotation):
         return annotation.__name__
-    return _short(str(annotation))
-
-
-_ROLE = re.compile(r":(?:class|meth|func|data|mod|attr):`~?(?:[\w.]*\.)?([^`]+)`")
-
-
-def _md(text: str) -> str:
-    """Turn reStructuredText inline markup into Markdown."""
-    return _ROLE.sub(r"`\1`", text).replace("``", "`")
+    return _short(annotation if isinstance(annotation, str) else str(annotation))
 
 
 def _cell(text: str) -> str:
@@ -67,249 +143,325 @@ def _cell(text: str) -> str:
     return text.replace("|", "\\|")
 
 
-def _first_line(obj: Any) -> str:
-    doc = inspect.getdoc(obj) or ""
-    return _md(doc.split("\n\n")[0].replace("\n", " ").strip())
+def _signature(obj: Any) -> str:
+    """The signature without ``self`` and, for classes, without ``-> None``."""
+    try:
+        signature = inspect.signature(obj, eval_str=True)
+    except Exception:  # unresolvable annotations: fall back to the strings
+        try:
+            signature = inspect.signature(obj)
+        except (TypeError, ValueError):
+            return ""
+    text = re.sub(r"^\((?:self|cls)(, )?", "(", _short(str(signature)))
+    return text.removesuffix(" -> None") if inspect.isclass(obj) else text
 
 
-def _attributes(cls: type) -> dict[str, str]:
-    """Parse the ``Attributes:`` section of a Google-style class docstring."""
-    doc = inspect.getdoc(cls) or ""
-    found: dict[str, str] = {}
-    lines = iter(doc.splitlines())
-    for line in lines:
-        if line.strip() == "Attributes:":
-            break
-    current: str | None = None
-    for line in lines:
-        if line and not line.startswith(" "):
-            break
-        match = _ATTRIBUTE.match(line)
+def _attribute_docs(cls: type) -> dict[str, str]:
+    """The string literals that follow class attributes in the source."""
+    try:
+        body = ast.parse(textwrap.dedent(inspect.getsource(cls))).body[0]
+    except (OSError, TypeError, SyntaxError):
+        return {}
+    docs: dict[str, str] = {}
+    if not isinstance(body, ast.ClassDef):
+        return docs
+    for index, node in enumerate(body.body[:-1]):
+        after = body.body[index + 1]
+        if (
+            isinstance(node, (ast.Assign, ast.AnnAssign))
+            and isinstance(after, ast.Expr)
+            and isinstance(after.value, ast.Constant)
+            and isinstance(after.value.value, str)
+        ):
+            target = node.targets[0] if isinstance(node, ast.Assign) else node.target
+            if isinstance(target, ast.Name):
+                text = after.value.value.strip().split("\n\n", 1)[0]
+                docs[target.id] = " ".join(text.split())
+    return docs
+
+
+def _docstring_attributes(cls: type) -> dict[str, tuple[str, str]]:
+    """Type and meaning of each entry of ``Attributes:`` in a class docstring.
+
+    Google style: ``name (type): meaning``, continued on deeper lines.
+    """
+    lines = (inspect.getdoc(cls) or "").splitlines()
+    try:
+        start = [line.strip() for line in lines].index("Attributes:") + 1
+    except ValueError:
+        return {}
+    found: dict[str, tuple[str, str]] = {}
+    indent = 0
+    current = ""
+    for line in lines[start:]:
+        if not line.strip():
+            continue
+        depth = len(line) - len(line.lstrip())
+        if depth == 0:
+            break  # the next section
+        indent = indent or depth
+        match = _GOOGLE_ATTRIBUTE.match(line.strip()) if depth == indent else None
         if match:
             current = match[1]
-            found[current] = _md(match[2].strip())
-        elif current is not None and line.strip():
-            found[current] += " " + _md(line.strip())
-    return found
+            found[current] = (match[2] or "", match[3])
+        elif current:
+            kind, text = found[current]
+            found[current] = (kind, f"{text} {line.strip()}")
+    return {name: (kind, _inline(text)) for name, (kind, text) in found.items()}
 
 
-def _default(value: Any) -> str:
-    if isinstance(value, enum.Enum):
-        return f"{type(value).__name__}.{value.name}"
-    if callable(value):
-        return str(getattr(value, "__name__", "..."))
-    return repr(value)
+def _fields(cls: type) -> list[tuple[str, str, str]]:
+    """Name, type and meaning of the public fields of a class.
 
-
-def _signature(func: Callable[..., Any], *, drop_self: bool = True) -> str:
-    """Render a signature with short type names and stable defaults."""
-    sig = inspect.signature(func)
-    params = list(sig.parameters.values())
-    if drop_self and params and params[0].name in ("self", "cls"):
-        params = params[1:]
-    parts: list[str] = []
-    star_done = False
-    for p in params:
-        if p.kind is p.KEYWORD_ONLY and not star_done:
-            parts.append("*")
-            star_done = True
-        if p.kind is p.VAR_POSITIONAL:
-            star_done = True
-        text = p.name
-        if p.annotation is not p.empty:
-            text += f": {_type(p.annotation)}"
-        if p.default is not p.empty:
-            text += f" = {_default(p.default)}"
-        parts.append(text)
-    returns = ""
-    if sig.return_annotation is not sig.empty:
-        returns = f" -> {_type(sig.return_annotation)}"
-    return f"({', '.join(parts)}){returns}"
-
-
-def _members(cls: type) -> Iterator[tuple[str, str]]:
-    """Public properties and methods defined in swpc_kit (inherited included)."""
-    field_names = (
-        {f.name for f in dataclasses.fields(cls)}
-        if dataclasses.is_dataclass(cls)
-        else set()
-    )
-    for attr in inspect.classify_class_attrs(cls):
-        name = attr.name
-        if name.startswith("_") or name in field_names:
-            continue
-        if not attr.defining_class.__module__.startswith("swpc_kit"):
-            continue
-        obj: Any = attr.object
-        if attr.kind == "property":
-            returns = inspect.signature(obj.fget).return_annotation
-            yield f"`{name}` → `{_type(returns)}`", _first_line(obj)
-        elif attr.kind in ("method", "class method", "static method"):
-            func = obj if attr.kind == "method" else obj.__func__
-            yield f"`{name}{_signature(func)}`", _first_line(func)
-
-
-def _class_section(cls: type) -> list[str]:
-    out = [f"### `{cls.__name__}`", "", _first_line(cls), ""]
-    if issubclass(cls, enum.Enum):
-        values = ", ".join(f"`{m.name}` = `{m.value!r}`" for m in cls)
-        out += [f"Members: {values}.", ""]
-        return out
+    The fields of a dataclass, else the class annotations, plus the entries of
+    the ``Attributes:`` section; the meaning comes from that section or from
+    the string after the field in the source.
+    """
+    documented = _docstring_attributes(cls)
+    after = _attribute_docs(cls)
     if dataclasses.is_dataclass(cls):
-        described = _attributes(cls)
-        out += ["| Field | Type | Meaning |", "|---|---|---|"]
-        for f in dataclasses.fields(cls):
-            meaning = _cell(described.get(f.name, ""))
-            out.append(f"| `{f.name}` | `{_cell(_type(f.type))}` | {meaning} |")
-        out.append("")
-    members = list(_members(cls))
-    if members:
-        out += [f"- {name}: {doc}" if doc else f"- {name}" for name, doc in members]
-        out.append("")
+        names = [f.name for f in dataclasses.fields(cls)]
+    else:
+        names = list(inspect.get_annotations(cls))
+    names += [name for name in documented if name not in names]
+    try:
+        hints = typing.get_type_hints(cls)
+    except Exception:  # unresolvable annotations: fall back to the strings
+        hints = inspect.get_annotations(cls)
+    out = []
+    for name in names:
+        hint = hints.get(name)
+        if name.startswith("_") or typing.get_origin(hint) is typing.ClassVar:
+            continue
+        kind = _type(hint) if hint is not None else documented.get(name, ("", ""))[0]
+        meaning = documented[name][1] if name in documented else after.get(name, "")
+        out.append((name, kind, meaning))
     return out
 
 
-def _parsers_by_url() -> dict[str, Callable[..., Any]]:
-    found = {}
-    for name in swpc_kit.parse.__all__:
-        func = getattr(swpc_kit.parse, name)
-        found[inspect.signature(func).parameters["source_url"].default] = func
-    return found
+def _field_table(cls: type) -> list[str]:
+    fields = _fields(cls)
+    if not fields:
+        return []
+    rows = [
+        f"| `{name}` | {f'`{_cell(kind)}`' if kind else ''} | {_cell(meaning)} |"
+        for name, kind, meaning in fields
+    ]
+    return ["| Field | Type | Meaning |", "|---|---|---|", *rows, ""]
+
+
+def _members(cls: type) -> list[str]:
+    out = []
+    for name, member in vars(cls).items():
+        if name.startswith("_"):
+            continue
+        if isinstance(member, property):
+            out.append(f"- `.{name}` (property): {_paragraph(member)}".rstrip(": "))
+        elif isinstance(member, (staticmethod, classmethod)):
+            func = member.__func__
+            out.append(
+                f"- `.{name}{_signature(func)}`: {_paragraph(func)}".rstrip(": ")
+            )
+        elif inspect.isfunction(member):
+            out.append(
+                f"- `.{name}{_signature(member)}`: {_paragraph(member)}".rstrip(": ")
+            )
+    return out
+
+
+def _class(name: str, cls: type) -> list[str]:
+    out = [f"### `{name}`", ""]
+    if issubclass(cls, enum.Enum):
+        out += [_paragraph(cls), ""]
+        docs = _attribute_docs(cls)
+        for member in cls:
+            line = f"- `{member.name}` = `{member.value!r}`"
+            out.append(f"{line}: {docs[member.name]}" if member.name in docs else line)
+        return [*out, ""]
+    if getattr(cls, "_is_protocol", False):
+        return [
+            *out,
+            f"Protocol. {_paragraph(cls)}",
+            "",
+            *_field_table(cls),
+            *_members(cls),
+            "",
+        ]
+    heading = f"`{name}{_signature(cls)}`"
+    bases = [
+        b.__name__ for b in cls.__bases__ if b is not object and b not in _ENUM_BASES
+    ]
+    if bases:
+        heading += f" (subclass of {', '.join(f'`{b}`' for b in bases)})"
+    members = _members(cls)
+    return [
+        *out,
+        heading,
+        "",
+        _paragraph(cls),
+        "",
+        *_field_table(cls),
+        *members,
+        *([""] if members else []),
+    ]
+
+
+def _entry(name: str, value: Any) -> list[str]:
+    if inspect.isclass(value):
+        return _class(name, value)
+    if inspect.isfunction(value):
+        return [f"### `{name}{_signature(value)}`", "", _paragraph(value), ""]
+    if name == "__version__":
+        return [f"### `{name}`", "", "The package version, as a string.", ""]
+    return [f"### `{name}`", "", f"`{_short(repr(value))}`", ""]
+
+
+def _fixtures(module: ModuleType) -> list[str]:
+    out = []
+    for name, value in sorted(vars(module).items()):
+        if not name.startswith("_") and hasattr(value, "_fixture_function_marker"):
+            out += [f"### fixture `{name}`", "", _paragraph(value), ""]
+    return out
+
+
+def _loaded() -> dict[str, ModuleType]:
+    """The modules of ``MODULES`` that import here: one of ``EXTRA`` may not."""
+    modules = {}
+    for module_name in MODULES:
+        try:
+            modules[module_name] = importlib.import_module(module_name)
+        except ModuleNotFoundError:
+            if module_name not in EXTRA:
+                raise
+    return modules
+
+
+def exports(module: ModuleType) -> list[str]:
+    """The public names of a module.
+
+    Its ``__all__``; without one, the public classes and functions it defines,
+    in the order of the source.
+    """
+    if hasattr(module, "__all__"):
+        return list(module.__all__)
+    return [
+        name
+        for name, value in vars(module).items()
+        if not name.startswith("_")
+        and (inspect.isclass(value) or inspect.isfunction(value))
+        and value.__module__ == module.__name__
+    ]
+
+
+def _homes(modules: dict[str, ModuleType]) -> dict[int, str]:
+    """The module whose section describes each exported class and function.
+
+    The module that defines it when that is one of ``modules``, else the first
+    one that exports it.
+    """
+    homes: dict[int, str] = {}
+    for module_name, module in modules.items():
+        for name in exports(module):
+            value = getattr(module, name)
+            if inspect.isclass(value) or inspect.isfunction(value):
+                defined = value.__module__
+                home = defined if defined in modules else module_name
+                homes.setdefault(id(value), home)
+    return homes
+
+
+def _entries(
+    modules: dict[str, ModuleType], homes: dict[int, str]
+) -> dict[str, list[tuple[str, Any]]]:
+    """What each section describes, with the name it is exported under.
+
+    First the module's own exports in their order, then what the module
+    defines and only others export.
+    """
+    entries: dict[str, list[tuple[str, Any]]] = {name: [] for name in modules}
+    seen: set[int] = set()
+    for own in (True, False):
+        for module_name, module in modules.items():
+            for name in exports(module):
+                value = getattr(module, name)
+                if not (inspect.isclass(value) or inspect.isfunction(value)):
+                    if own:  # constants are described where they are exported
+                        entries[module_name].append((name, value))
+                    continue
+                home = homes[id(value)]
+                if id(value) in seen or (own and home != module_name):
+                    continue
+                seen.add(id(value))
+                entries[home].append((name, value))
+    return entries
+
+
+def _module(
+    module_name: str,
+    module: ModuleType | None,
+    entries: list[tuple[str, Any]],
+    homes: dict[int, str],
+) -> list[str]:
+    title = f"## `{module_name}`"
+    if module_name in EXTRA:
+        title += f" ({EXTRA[module_name]})"
+    if module is None:
+        # Without the extra: the section says so; tests/test_skill.py skips the
+        # checks that need it, and the CI job with every extra checks them.
+        note = f"Requires {EXTRA[module_name]}: install it to see the signatures."
+        return [title, "", note, ""]
+    out = [title, "", _paragraph(module), ""]
+    elsewhere = []
+    for name in exports(module):
+        home = homes.get(id(getattr(module, name)), module_name)
+        if home != module_name:
+            elsewhere.append((name, home))
+    if elsewhere:
+        listed = ", ".join(f"`{name}` ({home})" for name, home in elsewhere)
+        out += [f"Re-exports: {listed}.", ""]
+    for name, value in entries:
+        out += _entry(name, value)
+    return out + _fixtures(module)
 
 
 def build() -> str:
     """Return the content of ``references/api.md``."""
-    version = swpc_kit.__version__
+    modules = _loaded()
+    homes = _homes(modules)
+    entries = _entries(modules, homes)
+    version = getattr(importlib.import_module(PACKAGE), "__version__", "")
     out = [
-        f"# swpc-kit {version}: API reference",
+        f"# {PACKAGE} {version}: API reference",
         "",
         "<!-- Generated by tools/build_skill.py from the code. Do not edit by hand:",
-        "     run `uv run python tools/build_skill.py` after changing the API. -->",
+        "     run `python tools/build_skill.py` after changing the API. -->",
         "",
-        "Read only the section you need. Times are aware UTC `datetime` objects",
-        "everywhere; every top-level model has `data_time` and `source_url`.",
+        "Read only the section you need.",
         "",
-        "Contents: [Products](#products) · [Client](#client) ·",
-        " · ".join(f"[{m}](#models-{m.replace('_', '-')})" for m in MODEL_MODULES)
-        + " · [Errors](#errors) · [Exports](#exports)"
-        + " · [Message codes](#message-codes)",
-        "",
-        "## Products",
-        "",
-        "| Client method | Parser | Returns | URL |",
-        "|---|---|---|---|",
-    ]
-    parsers = _parsers_by_url()
-    for product in PRODUCTS:
-        parser = parsers[product.url]
-        returns = _type(inspect.signature(parser).return_annotation)
-        out.append(
-            f"| `{product.name}` | `{parser.__name__}` | `{returns}` | {product.url} |"
-        )
-    out += [
-        "",
-        "Every parser is `parse_x(raw: str | bytes, *, source_url=<URL>) -> Model`.",
-        "`parse_ovation_aurora` also takes `partial=False`; `True` accepts a grid",
-        "with whole longitudes missing.",
-        "",
-        "## Client",
-        "",
-        "`from swpc_kit.client import Client, AsyncClient` (`client` extra).",
-        "",
-        f"`Client{_signature(Client.__init__)}`",
-        "",
-        "`AsyncClient` takes the same arguments, its methods are coroutines, and it",
-        "closes with `aclose()` / `async with`.",
+        "Modules: " + " · ".join(f"`{m}`" for m in MODULES),
         "",
     ]
-    for name in ("fetch", "close"):
-        method = getattr(Client, name)
-        out.append(f"- `{name}{_signature(method)}`: {_first_line(method)}")
-    out += [
-        "- one method per product, `client.<method>(*, max_age=None) -> Model`"
-        " (see [Products](#products)).",
-        "",
-    ]
-    for module_name in MODEL_MODULES:
-        module = sys.modules[f"swpc_kit.models.{module_name}"]
-        out += [
-            f"## Models: {module_name}",
-            "",
-            f"`swpc_kit.models.{module_name}` (all re-exported by `swpc_kit.models`).",
-            "",
-        ]
-        for name in swpc_kit.models.__all__:
-            obj = getattr(swpc_kit.models, name)
-            if getattr(obj, "__module__", "") != module.__name__:
-                continue
-            if inspect.isclass(obj):
-                out += _class_section(obj)
-            else:
-                out += [f"### `{name}{_signature(obj, drop_self=False)}`", ""]
-                out += [_first_line(obj), ""]
-    geojson = swpc_kit.export.geojson.to_geojson
-    out += [
-        "## Errors",
-        "",
-        "`from swpc_kit import SwpcError, SourceNotReady, UnexpectedContent, "
-        "ParseError, StaleData`",
-        "",
-    ]
-    for name in (
-        "SwpcError",
-        "SourceNotReady",
-        "UnexpectedContent",
-        "ParseError",
-        "StaleData",
-    ):
-        cls = getattr(swpc_kit.errors, name)
-        base = cls.__bases__[0].__name__
-        out.append(f"- `{name}` ({base}): {_first_line(cls)}")
-    out += [
-        "",
-        "`ParseError` has `field`, `line` (1-based, text products) and `index`",
-        "(0-based record in a JSON array). `StaleData` has `data_time`, `max_age`,"
-        " `age`.",
-        "",
-        "## Exports",
-        "",
-        f"- `swpc_kit.export.to_geojson{_signature(geojson, drop_self=False)}`:"
-        f" {_first_line(geojson)}",
-        "- `swpc_kit.export.geotiff.write_geotiff(product, path, *, nodata=nan)`"
-        " (`geo` extra): write a single-band float32 GeoTIFF in EPSG:4326 with the"
-        " times in its tags.",
-        "",
-        "## Message codes",
-        "",
-        "`swpc_kit.codes`: catalogue of the alert codes.",
-        "",
-    ]
-    for name in ("by_short", "by_long", "lookup"):
-        func = getattr(swpc_kit.codes, name)
-        out.append(
-            f"- `{name}{_signature(func, drop_self=False)}`: {_first_line(func)}"
-        )
-    out.append("")
-    out += _class_section(swpc_kit.codes.MessageCode)
-    out += _class_section(swpc_kit.codes.Verification)
-    return "\n".join(out).rstrip() + "\n"
+    for module_name in MODULES:
+        module = modules.get(module_name)
+        out += _module(module_name, module, entries.get(module_name, []), homes)
+    return re.sub(r"\n{3,}", "\n\n", "\n".join(out)).rstrip() + "\n"
 
 
 def main(argv: list[str] | None = None) -> int:
-    """Write the reference, or check that it is up to date."""
-    parser = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
-    parser.add_argument("--check", action="store_true", help="fail if stale")
+    """Run ``python tools/build_skill.py``."""
+    parser = argparse.ArgumentParser(description=(__doc__ or "").split("\n\n")[0])
+    parser.add_argument("--check", action="store_true", help="exit 1 if stale")
     args = parser.parse_args(argv)
     content = build()
     if args.check:
-        current = TARGET.read_text(encoding="utf-8") if TARGET.exists() else ""
+        current = TARGET.read_bytes().decode("utf-8") if TARGET.exists() else ""
         if current != content:
-            print(f"{TARGET} is stale: run tools/build_skill.py", file=sys.stderr)
+            print(f"{TARGET} is stale: run `python tools/build_skill.py`")
             return 1
         return 0
     TARGET.parent.mkdir(parents=True, exist_ok=True)
-    TARGET.write_text(content, encoding="utf-8")
-    print(f"wrote {TARGET.relative_to(ROOT)}")
+    TARGET.write_bytes(content.encode("utf-8"))
+    print(f"wrote {TARGET.relative_to(ROOT).as_posix()}")
     return 0
 
 

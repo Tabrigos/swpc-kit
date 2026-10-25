@@ -30,6 +30,8 @@ except ImportError as exc:
         "swpc_kit.export.geotiff needs numpy and rasterio: pip install 'swpc-kit[geo]'"
     ) from exc
 
+__all__ = ["write_geotiff"]
+
 
 def _iso(value: datetime) -> str:
     return value.astimezone(UTC).isoformat().replace("+00:00", "Z")

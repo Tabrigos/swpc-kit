@@ -23,6 +23,9 @@ keeps its raw text.
 from dataclasses import dataclass
 from enum import StrEnum
 
+# CATALOGUE stays out: its repr would fill the API reference; use lookup().
+__all__ = ["MessageCode", "Verification", "by_long", "by_short", "lookup"]
+
 
 class Verification(StrEnum):
     """How a catalogue entry is known."""
