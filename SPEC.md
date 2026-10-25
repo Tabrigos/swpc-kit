@@ -27,6 +27,8 @@ Three layers, each usable on its own, plus the skill that describes them:
    `datetime`. Each product has a model with `issued` / `observed` /
    `valid_from` / `valid_to` where the source provides them, and `source_url`.
 3. **Outputs**:
+   - `swpc_kit.export.data` (standard library): `to_dict` for JSON and
+     `to_records` for tables;
    - `swpc_kit.export.geojson` (standard library);
    - `swpc_kit.export.geotiff` (`geo` extra, with `numpy` and `rasterio`);
    - `swpc_kit.client` (`client` extra, with `httpx2`, the maintained

@@ -4,12 +4,12 @@
 
 Riscritto da capo a ogni fine sessione, mai accodato.
 
-- **Stato**: T0–T11, T13 e T14 fatte; versione **0.2.0** nel codice, mai
-  pubblicata né taggata. Rami impilati: `t11-skill-v2` (PR #2) ←
-  `t13-niente-silenzi` (PR #3) ← `t14-tolleranza`. Le voci nuove del
-  CHANGELOG stanno in Unreleased.
-- **Prossimo passo**: T15 (serializzazione, cella più vicina, parse fuori
-  dall'event loop), poi T16 e la prima pubblicazione, 0.3.0 (`AGENTS.md`,
+- **Stato**: T0–T11, T13, T14 e T15 fatte; versione **0.2.0** nel codice,
+  mai pubblicata né taggata. Rami impilati: `t11-skill-v2` (PR #2) ←
+  `t13-niente-silenzi` (PR #3) ← `t14-tolleranza` (PR #4) ←
+  `t15-integrazione`. Le voci nuove del CHANGELOG stanno in Unreleased.
+- **Prossimo passo**: T16 (pulizia per il rilascio), poi la prima
+  pubblicazione, 0.3.0 (`AGENTS.md`,
   "Releases"): nel commit di versione anche l'asserzione `__version__` di
   `tests/test_public_api.py` e una sezione 0.3.0 del CHANGELOG che presenti
   il pacchetto intero, perché 0.1.0 e 0.2.0 non sono mai uscite. T17 (il
@@ -180,6 +180,21 @@ Riscritto da capo a ogni fine sessione, mai accodato.
     flag non documentati di RTSW.
   - Logger `swpc_kit.client` in `client/_core.py` (`_log_skipped`, debug sui
     `304`); i parser non scrivono log.
+- **T15** (integrazione):
+  - `swpc_kit/export/data.py`: `to_dict` e `to_records` (D-018). Le righe
+    di un prodotto vengono da `values`, o dall'attributo in `_ROWS` (avvisi,
+    scale, bollettini); i modelli annidati diventano colonne con prefisso,
+    letti dalle annotazioni dei tipi, così una colonna c'è anche quando il
+    modello annidato è `None`.
+  - `Grid.value_near` e `_holding` in `models/grids.py`: prima il bordo
+    verso nord o est su tutte le convenzioni di longitudine, poi l'altro.
+  - `BaseClient.handle` è diviso in `reuse` (stato, `304`, HTML) e
+    `remember` (log e cache): l'async fa il parse fra i due, in
+    `asyncio.to_thread`. Gli argomenti dei client li controlla
+    `_check_arguments`; il trasporto `check_transport`.
+  - Su Windows i test async si provano con
+    `uv run pytest --noconftest tests/test_client.py -k async`: senza la
+    barriera di rete, dato che usano trasporti finti.
 - **Dubbi aperti**: le ipotesi rimaste in `docs/FONTI.md` (UTC dei
   `time_tag` senza `Z`, millisecondi del vecchio Dst e flusso, significato
   delle chiavi di `noaa-scales.json`, unità dei valori OVATION).
@@ -244,3 +259,8 @@ Una riga per sessione: data, tappa, cosa è entrato, cosa resta.
   politefetch (D-016). Test visti rossi prima del codice: 67; difetti
   iniettati nella logica nuova: 9 su 9 presi. Resta: T15, T16, T12, poi
   0.3.0.
+- 2026-10-25 — T15: `to_dict`/`to_records` in `swpc_kit.export`,
+  `Grid.value_near` (la cella che contiene il punto, `None` fuori), parse
+  async in un thread, argomenti dei client controllati, timeout per fase
+  documentato (D-018). Test visti rossi prima del codice; difetti iniettati
+  nella logica nuova: 18 su 18 presi. Resta: T16, T12, poi 0.3.0.
