@@ -4,22 +4,19 @@
 
 Riscritto da capo a ogni fine sessione, mai accodato.
 
-- **Stato**: T0–T10 fatte: versione **0.2.0**, non pubblicata su PyPI.
-  Parser e modelli per tutti i prodotti della prima versione, export GeoJSON
-  e GeoTIFF, client sincrono e asincrono, README con esempi verificati da
-  `tests/test_readme.py`, `CHANGELOG.md`, skill per gli assistenti AI
-  dentro il pacchetto, sincronizzata nei progetti da `sync`.
-- **Prossimo passo**: nessuna tappa aperta. Repository pronto per diventare
-  pubblico (licenza MIT, autore Sidereus Team). Pubblicazione decisa il
-  2026-10-25: PyPI (nome `swpc-kit` libero su PyPI e TestPyPI quel giorno),
-  account Sidereus Team, solo da `.github/workflows/release.yml` con
-  Trusted Publishing e l'approvazione del maintainer (`AGENTS.md`,
-  "Releases"); prova su TestPyPI la prima volta. Prima la skill v2, perché
-  toglie `sync` e l'entry point `agent_skills`.
-- **Decisioni in sospeso**: override mypy per rasterio o stub
-  `types-rasterio` (T6); `alerts.json` vuoto = elenco vuoto con
-  `data_time` `None` (T4; il client non lo considera mai vecchio); unire il
-  parser dei tempi testuali di T4 (`parse/alerts.py`) e T5 (`parse/_text.py`).
+- **Stato**: T0–T11 fatte; versione **0.2.0** nel codice, mai pubblicata
+  né taggata. La skill segue lo standard comune delle skill di libreria
+  (schema 1): niente più `sync` né entry point `agent_skills`. Le voci nuove
+  del CHANGELOG stanno in Unreleased.
+- **Prossimo passo**: la prima pubblicazione (`AGENTS.md`, "Releases"). Prova
+  su TestPyPI con l'avvio manuale del workflow `Release`, poi il commit
+  `Version 0.3.0` e il tag `v0.3.0`. Nel commit di versione vanno anche
+  l'asserzione `__version__ == "0.2.0"` di `tests/test_public_api.py` e la
+  sezione 0.3.0 del CHANGELOG, che deve presentare il pacchetto intero: 0.1.0
+  e 0.2.0 non sono mai uscite. Poi T12.
+- **Decisioni in sospeso**: quelle di T12 (parser dei tempi testuali, stub
+  di rasterio, supporto di Windows). Da concordare con politefetch: la
+  semantica del 429 (`docs/DECISIONI.md`, D-006) e il client HTTP (D-005).
 - **Da sapere** (per chi scrive i prossimi parser):
   - `swpc_kit/parse/_common.py` è il kit comune: `load_json` classifica gli
     errori (vuoto o troncato → `SourceNotReady`; HTML o non JSON →
@@ -131,20 +128,29 @@ Riscritto da capo a ogni fine sessione, mai accodato.
     client sulle fixture (orologio fissato al 2026-10-15), comandi.
   - La fixture `swpc_from_fixtures` (client che legge le fixture) ora sta
     in `tests/conftest.py`, usata da README e skill.
-- **T10** (schema comune delle skill):
-  - Schema "skill dei pacchetti" v1, concordato con la sessione di
-    politefetch: entry point `agent_skills`, `sync`, marcatore
-    `.package-skill`, `.gitignore` `*` solo nelle copie create da `sync`.
-    Il modulo `swpc_kit/skill/__init__.py` deve restare uguale a quello di
-    politefetch salvo le costanti: un cambiamento va concordato.
-  - `sync` legge la versione da `metadata.version` di `SKILL.md` (copia e
-    pacchetto); aggiorna anche se una delle due manca. Riepilogo:
-    `skills: a 1.0 (added), b 2.0 (updated), c 0.2.0, d (removed)` o
-    `skills: none`.
-  - Non c'è un file DECISIONI: la scelta sta in `SPEC.md` (Architettura).
-  - La rimozione confronta i marcatori con gli entry point **dichiarati**
-    (`declared()`), non con quelli caricati: un pacchetto installato ma
-    rotto tiene la sua copia vecchia e dà un avviso.
+- **T10** (schema comune delle skill): schema v1 con `sync` ed entry point
+  `agent_skills`, superato in T11 (`docs/DECISIONI.md`, D-008 e D-010).
+- **T11** (skill v2):
+  - Tre file sono copie del modello comune delle skill di libreria, e si
+    cambiano solo le costanti sopra la riga `nothing below this line`:
+    `swpc_kit/skill/__init__.py` (`DISTRIBUTION`, `SKILL_NAME`; il resto è
+    controllato per impronta, `SCHEMA_FINGERPRINT`), `tests/test_skill.py`
+    (`PACKAGE`, `MIN_EXAMPLES`, `NOT_API`) e `tools/build_skill.py`
+    (`MODULES`, `EXTRA`). Una correzione si fa nel modello e si ricopia.
+  - `tests/test_skill_domain.py` ha i test di questa libreria. I blocchi
+    `python nocheck` della SKILL.md li salta il test comune, ma li esegue
+    sulle fixture il test di dominio.
+  - Un modulo pubblico senza `__all__` esporta le classi e le funzioni
+    pubbliche che definisce (`exports()` del generatore); il test del
+    modello calcola gli stessi nomi da sé.
+  - `CATALOGUE` di `codes.py` resta fuori da `__all__`: la sua `repr`
+    riempirebbe il riferimento.
+  - Il test della wheel salta in locale e in CI è obbligatorio:
+    `ci.yml` costruisce la wheel e passa `SKILL_WHEEL=dist/*.whl`.
+  - Misure: 85 nomi pubblici, tutti in `api.md` (verificato da test); 15
+    citati nella SKILL.md, tutti verificati dai test dei nomi. SKILL.md 203
+    righe, circa 2.400 token per attivazione; `api.md` 1008 righe, circa
+    12.500 token, letto solo per sezione.
 - **Dubbi aperti**: le ipotesi rimaste in `docs/FONTI.md` (UTC dei
   `time_tag` senza `Z`, millisecondi del vecchio Dst e flusso, significato
   delle chiavi di `noaa-scales.json`, unità dei valori OVATION).
@@ -190,3 +196,9 @@ Una riga per sessione: data, tappa, cosa è entrato, cosa resta.
   di `swpc-kit-archivio`, privato). Workflow di rilascio su PyPI e sdist con
   elenco esplicito di file. Resta: renderlo pubblico, la skill v2, la prima
   pubblicazione.
+- 2026-10-25 — T11: skill sullo standard comune (modulo, test e generatore
+  dal modello, dopo la correzione di sei suoi difetti trovati qui), via
+  `sync` ed entry point; test della wheel in CI; `docs/DECISIONI.md`
+  (D-001–D-010); T12 coi rinvii. Prova dei difetti iniettati: 26 su 26 presi
+  (21 nella skill, 5 nel codice).
+  Resta: prima pubblicazione, T12.
