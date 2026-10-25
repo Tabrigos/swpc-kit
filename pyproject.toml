@@ -37,11 +37,6 @@ geo = [
     "rasterio>=1.4",
 ]
 
-# The bundled agent skill, found by `python -m <package>.skill sync` of any
-# package that follows the same scheme (see swpc_kit/skill/__init__.py).
-[project.entry-points.agent_skills]
-swpc-kit = "swpc_kit.skill"
-
 [dependency-groups]
 dev = [
     "mypy>=1.17",

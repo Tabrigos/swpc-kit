@@ -5,7 +5,7 @@ description: >-
   planetary K index (Kp), Dst, F10.7, NOAA G/S/R storm scales, real-time solar
   wind (Bz, speed, density), GOES X-ray flares and protons, SWPC alerts and
   warnings, 3-day and 27-day forecasts, OVATION aurora and D-RAP grids, with
-  GeoJSON/GeoTIFF export. Use it whenever code imports swpc_kit, or the user
+  GeoJSON/GeoTIFF export. Use it when code imports swpc_kit, or the user
   wants current or forecast geomagnetic activity, aurora chances, solar flare
   or radiation storm levels, or any data from services.swpc.noaa.gov, even if
   they do not name the library. Read it instead of the library's source code.
@@ -61,7 +61,9 @@ you already have.
 
 ## Fetch from SWPC
 
-```python
+This example needs SWPC on the network (the tests run it against recorded files):
+
+```python nocheck
 from datetime import timedelta
 
 from swpc_kit import SourceNotReady, StaleData, SwpcError
@@ -93,7 +95,9 @@ written in the content (`data_time`), not on HTTP headers.
 
 ## Parse content you already have
 
-```python
+This example reads a file you have (the tests give it one):
+
+```python nocheck
 from pathlib import Path
 
 from swpc_kit.parse import parse_kyoto_dst
@@ -111,12 +115,12 @@ array-of-arrays JSON, and give the same model for both. Pass
 
 All errors are `SwpcError`. React to the class, not to the message text:
 
-| Error | Meaning | What to do |
-|---|---|---|
-| `SourceNotReady` | Timeout, network failure, HTTP 408/425/429/5xx, or a truncated file (SWPC rewrites files in place) | Retry after a short wait |
-| `UnexpectedContent` | Redirect, other HTTP status, HTML page, unknown format | Do not retry in a loop; report it |
-| `ParseError` | Known format, inconsistent value; `field`, `line` or `index` say where | Report it; the data is wrong |
-| `StaleData` | Content older than `max_age`; has `data_time`, `max_age`, `age` | Use it with a warning, or wait |
+| Error | Meaning | Whose fault | What to do |
+|---|---|---|---|
+| `SourceNotReady` | Timeout, network failure, HTTP 408/425/429/5xx, or a truncated file (SWPC rewrites files in place) | Nobody: a transient state of SWPC or of the network | Retry after a short wait |
+| `UnexpectedContent` | Redirect, other HTTP status, HTML page, unknown format | SWPC moved or changed the product, or the URL is wrong | Do not retry in a loop; report it |
+| `ParseError` | Known format, inconsistent value; `field`, `line` or `index` say where | The data SWPC served, or a format change the library does not know yet | Report it; do not patch the value |
+| `StaleData` | Content older than `max_age`; has `data_time`, `max_age`, `age` | Nobody: SWPC has not updated the product | Use it with a warning, or wait |
 
 ## Time and freshness
 
@@ -163,6 +167,22 @@ def aurora_geojson(oval):
 `swpc_kit.export.geotiff.write_geotiff(product, path)` writes an EPSG:4326
 GeoTIFF with the times in its tags; it needs the `geo` extra.
 
+## Do not
+
+- Do not read or patch the installed source of swpc-kit: what you need is
+  here and in `references/api.md`.
+- Do not edit the copy of this skill in `.claude/skills/swpc-kit/`: the check
+  fails on any change. Send the fix to the library instead.
+- Do not download a product with your own HTTP code and then parse it to get
+  around an error: the client's error classes are the information
+  (`SourceNotReady` means wait, `UnexpectedContent` means stop).
+- Do not poll faster than once a minute, nor create a `Client` per request:
+  keep one, so unchanged products cost a `304 Not Modified`.
+- Do not compare times as strings or convert them to local time before
+  computing: keep the aware UTC `datetime`, convert only for display.
+- Do not read `values[-1]` of the solar wind files as "the solar wind now":
+  use `latest_active()`.
+
 ## Not covered
 
 Images (coronagraphs, SUVI), other agencies (NASA DONKI, GFZ), and SWPC
@@ -171,13 +191,13 @@ library offers no generic downloader.
 
 ## Keeping this skill current
 
-This skill is bundled with swpc-kit and versioned with it (`metadata.version`
-above). If the project runs `python -m swpc_kit.skill sync` from a
-`SessionStart` hook, the copy in `.claude/skills/swpc-kit/` is refreshed at
-every session: do not edit it, changes are lost. Otherwise, after upgrading
-the package:
+This skill ships inside swpc-kit and is versioned with it
+(`metadata.version` above). Projects copy it into `.claude/skills/swpc-kit/`,
+keep the copy in git and compare it by hash with the installed package:
 
 ```bash
-python -m swpc_kit.skill check     # says whether the installed copy is current
-python -m swpc_kit.skill install   # copies it into .claude/skills/swpc-kit/
+python -m swpc_kit.skill check     # exit 1 if the copy differs from the package
+python -m swpc_kit.skill install --target .claude/skills/swpc-kit   # copy again
 ```
+
+After copying again, review the diff of the copy like any other change.

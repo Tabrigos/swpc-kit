@@ -158,3 +158,58 @@ modo:
   il suggerimento di installare in `~/.claude/skills`.
 
 Resta nella versione 0.2.0 (il tag non era ancora stato fatto).
+
+## T11 — Skill v2 e debiti di metodo
+
+- [x] Fatta
+
+Porta la skill allo standard comune delle skill di libreria (schema 1 del
+modello condiviso, lo stesso che adotterà politefetch) e chiude i debiti di
+metodo rimasti dalle tappe nel cloud. Toglie `sync` e l'entry point
+`agent_skills` prima della prima pubblicazione, perché nessuno li adotti:
+
+- `swpc_kit/skill/__init__.py` copiato dal modello comune (`path`, `show`,
+  `check` per impronta del contenuto, `install --target` solo in
+  `.claude/skills/swpc-kit` o `.agents/skills/swpc-kit`, marcatore
+  `.skill-libreria.json`); un test ne confronta l'impronta con quella del
+  modello. Via `sync`, `--force`, l'entry point `agent_skills`, il
+  marcatore `.package-skill` e il `.gitignore` `*` nelle copie.
+- `tests/test_skill.py` dal modello comune; i test di dominio (tabella dei
+  prodotti, parser citati, esempi eseguiti sulle fixture) in un file
+  accanto. Ogni test ha un `assert` che gli impedisce di passare a vuoto.
+- Il generatore di `api.md` dal modello comune (`tools/build_skill.py`, con
+  le costanti `MODULES` ed `EXTRA` di questo pacchetto). Un modulo pubblico
+  nuovo, o una classe pubblica che il riferimento non descrive, fa fallire
+  un test.
+- La wheel costruita contiene la skill: test con `SKILL_WHEEL`, obbligatorio
+  in CI su tutta la matrice.
+- README, `SPEC.md` (Architettura) e CHANGELOG senza `sync`. CHANGELOG:
+  0.1.0 e 0.2.0 non sono mai state pubblicate né taggate; le voci nuove
+  stanno in Unreleased finché non c'è il tag.
+- `docs/DECISIONI.md` a voci numerate, a partire da `httpx2` e dalla
+  classificazione dei codici HTTP.
+- I rinvii rimasti nel diario diventano caselle della T12.
+- Prova dei difetti iniettati: almeno una mutazione per famiglia di test
+  della skill, e alcune nel codice dei parser e del client.
+
+*Esce quando*: test visti rossi con i difetti iniettati (conteggio nel Log
+del diario), test della wheel verde in CI, CI verde su tutta la matrice.
+
+Non fa parte della tappa (da concordare con politefetch): la semantica del
+429 (qui `SourceNotReady`, là l'host congelato) e il client HTTP (qui
+`httpx2`, là `httpx`).
+
+## T12 — Debiti rimasti dalle tappe nel cloud
+
+- [ ] Fatta
+
+Rinvii scritti nel diario e mai chiusi:
+
+- [ ] Unire il parser dei tempi testuali (`2026 Oct 13 2058 UTC`) di
+  `parse/alerts.py` con quello di `parse/_text.py` in `parse/_common.py`
+  (rinviato da T4 e T5 a T8, poi rimasto).
+- [ ] rasterio: tenere l'override mypy (`ignore_missing_imports`) o passare
+  agli stub `types-rasterio` (nuova dipendenza di sviluppo, da giustificare).
+- [ ] Windows: la suite non passa tutta (async con la barriera sul socket del
+  loop Proactor, griglie, esempi del README). Decidere se Windows è
+  supportato; se sì, CI anche su Windows.
