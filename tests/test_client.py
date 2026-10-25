@@ -1,6 +1,7 @@
 import asyncio
 import importlib
 import json
+import logging
 import re
 import sys
 from collections.abc import Callable, Mapping
@@ -433,6 +434,54 @@ def test_errors_raised_by_a_parser_name_neither_product_nor_url() -> None:
     assert info.value.product is None
     assert info.value.url is None
     assert str(info.value) == "got HTML or XML instead of JSON"
+
+
+# --- logging --------------------------------------------------------------------
+
+
+def test_skipped_records_are_logged_as_a_warning(
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    records = json.loads(fixture(KP_FIXTURE))
+    records[5]["Kp"] = 12
+    transport = FakeTransport([ok(json.dumps(records).encode())])
+    with caplog.at_level(logging.DEBUG, logger="swpc_kit"):
+        kp = Client(transport=transport).planetary_k_index()
+    assert len(kp.skipped) == 1
+    [record] = [r for r in caplog.records if r.levelno == logging.WARNING]
+    assert record.name == "swpc_kit.client"
+    message = record.getMessage()
+    assert "planetary_k_index" in message
+    assert "1 record" in message
+    assert "record 5" in message
+
+
+def test_a_304_is_logged_at_debug_level(caplog: pytest.LogCaptureFixture) -> None:
+    transport = FakeTransport(
+        [
+            ok(fixture(KP_FIXTURE), ETag='"a"'),
+            HttpResponse(status=304, headers={}, content=b""),
+        ]
+    )
+    client = Client(transport=transport)
+    client.planetary_k_index()
+    with caplog.at_level(logging.DEBUG, logger="swpc_kit"):
+        client.planetary_k_index()
+    [record] = caplog.records
+    assert record.levelno == logging.DEBUG
+    assert "304" in record.getMessage()
+    assert KP_URL in record.getMessage()
+
+
+def test_a_clean_fetch_logs_no_warning(caplog: pytest.LogCaptureFixture) -> None:
+    transport = FakeTransport([ok(fixture(KP_FIXTURE))])
+    with caplog.at_level(logging.DEBUG, logger="swpc_kit"):
+        Client(transport=transport).planetary_k_index()
+    assert not [r for r in caplog.records if r.levelno >= logging.WARNING]
+
+
+def test_the_library_adds_no_log_handler() -> None:
+    assert logging.getLogger("swpc_kit").handlers == []
 
 
 # --- a product that moved -----------------------------------------------------

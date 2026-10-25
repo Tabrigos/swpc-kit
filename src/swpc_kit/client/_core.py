@@ -7,6 +7,7 @@ async client: conditional requests, classification of the source's replies,
 parsing, and the ``max_age`` check.
 """
 
+import logging
 from collections.abc import Callable, Mapping
 from dataclasses import dataclass, replace
 from datetime import UTC, datetime, timedelta
@@ -22,6 +23,8 @@ DEFAULT_USER_AGENT = f"swpc-kit/{__version__} (+https://github.com/Tabrigos/swpc
 """Default ``User-Agent`` header."""
 
 _TRANSIENT_STATUSES = frozenset({408, 425, 429})
+
+_log = logging.getLogger("swpc_kit.client")
 
 
 @dataclass(frozen=True, slots=True)
@@ -105,6 +108,26 @@ class _Cached:
     etag: str | None
     last_modified: str | None
     model: Any
+
+
+def _log_skipped(name: str, url: str, model: object) -> None:
+    """Warn about the records a parser skipped (see ``SkippedRecord``)."""
+    skipped = getattr(model, "skipped", ())
+    if not skipped:
+        return
+    first = skipped[0]
+    where = f"{first.field}: " if first.field else ""
+    count = f"{len(skipped)} record{'s' if len(skipped) > 1 else ''} skipped"
+    _log.warning(
+        "%s from %s: %s; %srecord %d: %s%s",
+        name,
+        url,
+        count,
+        "first, " if len(skipped) > 1 else "",
+        first.index,
+        where,
+        first.reason,
+    )
 
 
 def _utc_now() -> datetime:
@@ -210,6 +233,7 @@ class BaseClient:
             if cached is None:
                 raise UnexpectedContent(f"304 Not Modified from {url} with no copy")
             model: M = cached.model
+            _log.debug("304 Not Modified from %s: reusing %s", url, product.name)
         else:
             if status in _TRANSIENT_STATUSES or 500 <= status <= 599:
                 raise SourceNotReady(f"HTTP {status} from {url}; try again later")
@@ -227,6 +251,7 @@ class BaseClient:
             if "html" in content_type.lower():
                 raise UnexpectedContent(f"got HTML ({content_type}) from {url}")
             model = product.parse(response.content, url)
+            _log_skipped(product.name, url, model)
             etag = response.header("ETag")
             last_modified = response.header("Last-Modified")
             if etag is not None or last_modified is not None:
