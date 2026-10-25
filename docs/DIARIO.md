@@ -4,18 +4,19 @@
 
 Riscritto da capo a ogni fine sessione, mai accodato.
 
-- **Stato**: T0–T11, T13, T14 e T15 fatte; versione **0.2.0** nel codice,
-  mai pubblicata né taggata. Rami impilati: `t11-skill-v2` (PR #2) ←
-  `t13-niente-silenzi` (PR #3) ← `t14-tolleranza` (PR #4) ←
-  `t15-integrazione`. Le voci nuove del CHANGELOG stanno in Unreleased.
-- **Prossimo passo**: T16 (pulizia per il rilascio), poi la prima
-  pubblicazione, 0.3.0 (`AGENTS.md`,
+- **Stato**: T0–T11 e T13–T16 fatte; versione **0.2.0** nel codice, mai
+  pubblicata né taggata. Le PR #2–#5 (T11, T13, T14, T15) sono in `main`;
+  T16 ha la sua PR. Le voci nuove del CHANGELOG stanno in Unreleased.
+- **Prossimo passo**: T18, il GeoTIFF senza rasterio, che il maintainer ha
+  messo prima della 0.3.0. Poi la prima pubblicazione, 0.3.0 (`AGENTS.md`,
   "Releases"): nel commit di versione anche l'asserzione `__version__` di
   `tests/test_public_api.py` e una sezione 0.3.0 del CHANGELOG che presenti
   il pacchetto intero, perché 0.1.0 e 0.2.0 non sono mai uscite. T17 (il
   trasporto educato su politefetch) dopo la 0.3.0.
 - **Decisioni in sospeso**: quelle di T12 (parser dei tempi testuali, stub
-  di rasterio, supporto di Windows).
+  di rasterio, supporto di Windows). Il job `lowest` non è fra i controlli
+  richiesti di `main`: il maintainer lo rivede dopo T18, quando si sa quali
+  minimi restano da provare.
 - **Da sapere** (per chi scrive i prossimi parser):
   - `swpc_kit/parse/_common.py` è il kit comune: `load_json` classifica gli
     errori (vuoto o troncato → `SourceNotReady`; HTML o non JSON →
@@ -195,6 +196,12 @@ Riscritto da capo a ogni fine sessione, mai accodato.
   - Su Windows i test async si provano con
     `uv run pytest --noconftest tests/test_client.py -k async`: senza la
     barriera di rete, dato che usano trasporti finti.
+- **T16** (rilascio):
+  - Job `lowest` in `.github/workflows/ci.yml` (D-020). In locale si prova
+    con `UV_PROJECT_ENVIRONMENT=<cartella a parte>` e `uv sync --all-extras
+    --resolution lowest-direct --python 3.12`. Attenzione: `uv sync
+    --resolution` riscrive `uv.lock`, che poi va ripristinato.
+  - Il README ha `### Trying again`, il ciclo di retry promesso da D-016.
 - **Dubbi aperti**: le ipotesi rimaste in `docs/FONTI.md` (UTC dei
   `time_tag` senza `Z`, millisecondi del vecchio Dst e flusso, significato
   delle chiavi di `noaa-scales.json`, unità dei valori OVATION).
@@ -264,3 +271,8 @@ Una riga per sessione: data, tappa, cosa è entrato, cosa resta.
   async in un thread, argomenti dei client controllati, timeout per fase
   documentato (D-018). Test visti rossi prima del codice; difetti iniettati
   nella logica nuova: 18 su 18 presi. Resta: T16, T12, poi 0.3.0.
+- 2026-10-25 — T16: README con installazione da PyPI, peso e piattaforme
+  dell'extra `geo`, ciclo di retry; esempio di `SPEC.md` corretto;
+  classifier "4 - Beta"; job `lowest` nella CI (D-020), che ha trovato due
+  attriti con rasterio 1.4.0. Writer GeoTIFF senza rasterio valutato con un
+  prototipo: fattibile, tappa T18 (D-019). Resta: T12, T18, 0.3.0.
