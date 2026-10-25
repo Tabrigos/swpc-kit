@@ -59,6 +59,7 @@ MODULES: list[str] = [
     *(f"swpc_kit.parse.{name}" for name in _GROUPS),
     "swpc_kit.errors",
     "swpc_kit.export",
+    "swpc_kit.export.data",
     "swpc_kit.export.geojson",
     "swpc_kit.export.geotiff",
     "swpc_kit.codes",

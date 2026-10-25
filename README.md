@@ -123,6 +123,30 @@ Traceback (most recent call last):
 swpc_kit.errors.UnexpectedContent: got HTML or XML instead of JSON
 ```
 
+## JSON and tables
+
+`to_dict` turns any model into plain data for `json.dumps`, with times in
+ISO 8601 and `Z`. `to_records` turns a product into flat rows, one per
+record, with times kept as UTC `datetime`: ready for `csv.DictWriter` or
+`pandas.DataFrame(rows)`, without depending on pandas.
+
+```pycon
+>>> from swpc_kit.export import to_dict, to_records
+>>> from swpc_kit.parse import parse_kyoto_dst
+>>> dst = parse_kyoto_dst(Path("tests/fixtures/dst/2026-10-15.json").read_bytes())
+>>> to_dict(dst)["values"][-1]
+{'time': '2026-10-15T17:00:00Z', 'dst': -20}
+>>> to_records(dst)[-1]
+{'time': datetime.datetime(2026, 10, 15, 17, 0, tzinfo=datetime.timezone.utc), 'dst': -20}
+```
+
+The rows of a product are its `values`; for the alerts its `messages`, for
+the NOAA scales and the 27-day outlook its `days`, for the 3-day and
+geomagnetic forecasts their Kp periods, for a grid its cells. A nested model
+becomes prefixed columns (`g_scale`, `noaa_scale_level`). `to_records` also
+takes a sequence of records, such as `wind.active_series()`. Both keep the
+fields only: properties such as `data_time` stay on the model.
+
 ## Export the grids
 
 GeoJSON needs only the standard library; longitudes come out in -180…180.
@@ -138,7 +162,13 @@ GeoJSON needs only the standard library; longitudes come out in -180…180.
 >>> collection = to_geojson(drap, threshold=5)
 >>> collection["type"], len(collection["features"])
 ('FeatureCollection', 1835)
+>>> drap.grid.value_near(-11.6, 300.8)  # the cell that holds the point
+8.5
 ```
+
+`value_near` takes longitudes in either convention and gives `None` for a
+point no cell holds (outside the grid, or in a gap of a reduced OVATION
+file).
 
 GeoTIFF needs the `geo` extra:
 
@@ -194,6 +224,16 @@ async def main() -> None:
 
 asyncio.run(main())
 ```
+
+`AsyncClient` parses in a thread, so a large file (the OVATION grid) does
+not block the event loop.
+
+`timeout` (30 seconds by default) applies to each phase of a request, as
+httpx2 does: connecting, sending, and each wait for the next piece of the
+reply. It is not a limit on the whole call. For one, wrap an `AsyncClient`
+call in `asyncio.timeout()`. The arguments of both clients are checked
+when the client is built: `timeout="30"` is a `TypeError` that says what it
+wants.
 
 ### When SWPC moves a product or changes a format
 

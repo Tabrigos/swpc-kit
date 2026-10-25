@@ -304,21 +304,24 @@ tolleranza per record (D-015).
 
 ## T15 — Integrazione: serializzazione, griglie, async
 
-- [ ] Fatta
+- [x] Fatta
 
-- [ ] `to_dict()` (o una funzione di `swpc_kit.export`) che dà dati pronti
+- [x] `to_dict()` (o una funzione di `swpc_kit.export`) che dà dati pronti
   per JSON, con tempi ISO 8601 e `Z`; `to_records()` adatto a
   `pandas.DataFrame(...)` senza dipendere da pandas.
-- [ ] `Grid.value_near(latitude, longitude)` (la cella più vicina): oggi
+- [x] `Grid.value_near(latitude, longitude)` (la cella più vicina): oggi
   `value_at` vuole il centro esatto e solleva `KeyError`, che non è un
   `SwpcError`. Correggere la riga della SKILL che manda a `value_at`.
-- [ ] `AsyncClient`: il parse dei file grandi (OVATION, RTSW) fuori
+- [x] `AsyncClient`: il parse dei file grandi (OVATION, RTSW) fuori
   dall'event loop (`asyncio.to_thread`); oggi un OVATION intero lo blocca
   per circa 0,7 s.
-- [ ] Timeout: dire nel docstring che vale per connessione e per lettura,
+- [x] Timeout: dire nel docstring che vale per connessione e per lettura,
   non per l'intera richiesta, o offrire entrambi.
-- [ ] Messaggi chiari per gli argomenti sbagliati di `Client` (oggi
+- [x] Messaggi chiari per gli argomenti sbagliati di `Client` (oggi
   `timeout="30"` dà un `TypeError` grezzo).
+- Interpretazione (D-018): `value_near` dà la cella che *contiene* il punto,
+  non la più vicina a ogni costo; fuori dalla griglia o in un buco dà
+  `None`. Il timeout è documentato, non raddoppiato.
 
 ## T16 — Pulizia per il rilascio
 

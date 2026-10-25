@@ -306,3 +306,31 @@ scelte già prese e sparse fra `SPEC.md`, `docs/FONTI.md` e il diario; la data
 - **Conseguenze**: un cambio di unità o una sentinella nuova si vedono in
   `skipped` invece che nei dati.
 
+## D-018 — Dati semplici con funzioni, griglie per cella, timeout per fase
+
+- **Data e tappa**: 2026-10-25, T15
+- **Contesto**: la revisione scettica ha trovato tre attriti d'integrazione:
+  - nessun modo di passare un modello a JSON o a pandas;
+  - `value_at` vuole il centro esatto della cella e solleva `KeyError`;
+  - il `timeout` non dice a cosa si applica.
+- **Decisione**:
+  - `to_dict` e `to_records` sono funzioni di `swpc_kit.export`, non
+    metodi: una sola implementazione per tutti i modelli, e i modelli non
+    cambiano. Danno solo i campi: le proprietà (`data_time`,
+    `flare_class`) restano sui modelli.
+  - `to_records` tiene i tempi come `datetime` UTC (pandas li legge come
+    `datetime64[ns, UTC]`); `to_dict` li scrive in ISO 8601 con `Z`.
+  - `Grid.value_near` dà la cella che contiene il punto, o `None` fuori
+    dalla griglia o in un buco di una griglia ridotta, non la cella più
+    vicina a ogni costo: un punto in un buco avrebbe il valore di una cella
+    lontana. Sul bordo vince la cella a nord o a est; i bordi esterni sono
+    delle celle esterne.
+  - Il timeout resta quello di httpx2, per fase, e lo dicono le docstring;
+    per un limite sull'intera chiamata si usa `asyncio.timeout()`.
+- **Alternative scartate**:
+  - metodi `to_dict()` su ogni modello (sedici copie della stessa cosa);
+  - `value_near` che cerca sempre la cella più vicina;
+  - una scadenza totale nel client (nel client sincrono servirebbe un
+    thread per richiesta).
+- **Conseguenze**: `value_at` resta com'era, per chi ha il centro esatto.
+

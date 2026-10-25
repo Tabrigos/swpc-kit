@@ -1,9 +1,11 @@
 import asyncio
+import dataclasses
 import importlib
 import json
 import logging
 import re
 import sys
+import threading
 from collections.abc import Callable, Mapping
 from dataclasses import dataclass, field
 from datetime import UTC, datetime, timedelta
@@ -22,6 +24,7 @@ from swpc_kit.client import (
     HttpResponse,
     HttpxTransport,
 )
+from swpc_kit.client._products import PLANETARY_K_INDEX
 from swpc_kit.errors import (
     ParseError,
     SourceNotReady,
@@ -275,6 +278,58 @@ def test_user_agent_and_timeout_are_configurable() -> None:
 def test_timeout_must_be_positive(timeout: float) -> None:
     with pytest.raises(ValueError, match="timeout"):
         Client(transport=FakeTransport(), timeout=timeout)
+
+
+@pytest.mark.parametrize(
+    ("arguments", "error", "message"),
+    [
+        ({"timeout": "30"}, TypeError, "timeout must be a number of seconds, got '30'"),
+        ({"timeout": True}, TypeError, "timeout must be a number of seconds"),
+        ({"timeout": None}, TypeError, "timeout must be a number of seconds"),
+        ({"timeout": float("nan")}, ValueError, "timeout must be positive"),
+        ({"timeout": float("inf")}, ValueError, "timeout must be finite"),
+        ({"max_age": 3600}, TypeError, "max_age must be a timedelta or None"),
+        ({"max_age": timedelta(0)}, ValueError, "max_age must be positive"),
+        ({"max_age": timedelta(hours=-1)}, ValueError, "max_age must be positive"),
+        ({"user_agent": None}, TypeError, "user_agent must be a string"),
+        ({"user_agent": ""}, ValueError, "user_agent must not be empty"),
+        ({"user_agent": "app\r\nX-Evil: 1"}, ValueError, "user_agent must be one line"),
+        ({"conditional": "no"}, TypeError, "conditional must be True or False"),
+        ({"clock": "now"}, TypeError, "clock must be callable"),
+        ({"urls": ["kyoto_dst"]}, TypeError, "urls must be a mapping"),
+        ({"urls": {"kyoto_dst": 3}}, TypeError, "URL of kyoto_dst must be a string"),
+        (
+            {"urls": {"kyoto_dst": "services.swpc.noaa.gov/products/kyoto-dst.json"}},
+            ValueError,
+            "URL of kyoto_dst must start with https:// or http://",
+        ),
+    ],
+)
+@pytest.mark.parametrize("kind", ["sync", "async"])
+def test_wrong_arguments_say_what_is_wrong(
+    arguments: dict[str, Any], error: type[Exception], message: str, kind: str
+) -> None:
+    def build() -> object:
+        if kind == "sync":
+            return Client(transport=FakeTransport(), **arguments)
+        return AsyncClient(transport=AsyncFakeTransport(), **arguments)
+
+    with pytest.raises(error, match=re.escape(message)):
+        build()
+
+
+def test_a_transport_of_the_wrong_kind_is_named() -> None:
+    with pytest.raises(TypeError, match="AsyncClient needs an AsyncTransport"):
+        AsyncClient(transport=FakeTransport())  # type: ignore[arg-type]
+    with pytest.raises(TypeError, match="Client needs a Transport"):
+        Client(transport=AsyncFakeTransport())  # type: ignore[arg-type]
+    with pytest.raises(TypeError, match="got str"):
+        Client(transport="https://services.swpc.noaa.gov")  # type: ignore[arg-type]
+
+
+def test_timeout_is_documented_per_phase() -> None:
+    for documented in (Client, AsyncClient):
+        assert "each phase" in " ".join((documented.__doc__ or "").split())
 
 
 # --- conditional requests ---------------------------------------------------
@@ -659,6 +714,46 @@ def test_async_client_raises_the_same_errors() -> None:
 
     with pytest.raises(SourceNotReady):
         asyncio.run(run())
+
+
+def test_async_client_parses_off_the_event_loop() -> None:
+    threads: list[threading.Thread] = []
+
+    def parse(content: bytes, url: str) -> Any:
+        threads.append(threading.current_thread())
+        return parse_planetary_k_index(content, source_url=url)
+
+    product = dataclasses.replace(PLANETARY_K_INDEX, parse=parse)
+    transport = AsyncFakeTransport(FakeTransport([ok(fixture(KP_FIXTURE))]))
+
+    async def run() -> threading.Thread:
+        kp = await AsyncClient(transport=transport).fetch(product)
+        assert kp.data_time == KP_DATA_TIME
+        return threading.current_thread()
+
+    loop_thread = asyncio.run(run())
+    assert len(threads) == 1
+    assert threads[0] is not loop_thread
+
+
+def test_async_client_errors_from_the_parse_name_the_product() -> None:
+    transport = AsyncFakeTransport(FakeTransport([ok(b'[{"time_tag": "2026-')]))
+    with pytest.raises(SourceNotReady) as info:
+        asyncio.run(AsyncClient(transport=transport).planetary_k_index())
+    assert info.value.product == "planetary_k_index"
+    assert info.value.url == KP_URL
+
+
+def test_async_client_skipped_records_are_logged(
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    records = json.loads(fixture(KP_FIXTURE))
+    records[2]["Kp"] = 12
+    transport = AsyncFakeTransport(FakeTransport([ok(json.dumps(records).encode())]))
+    with caplog.at_level(logging.WARNING, logger="swpc_kit.client"):
+        kp = asyncio.run(AsyncClient(transport=transport).planetary_k_index())
+    assert [s.index for s in kp.skipped] == [2]
+    assert "1 record skipped" in caplog.text
 
 
 def test_async_stale_data() -> None:

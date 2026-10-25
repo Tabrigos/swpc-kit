@@ -120,6 +120,89 @@ def test_grid_with_gaps_is_not_contiguous() -> None:
     assert not grid.is_contiguous
 
 
+# --- value_near: the cell that holds a point -----------------------------------
+# small_grid: latitudes -1 (spans -2..0) and 1 (0..2); longitudes 0 (-2..2),
+# 4 (2..6) and 8 (6..10).
+
+
+def test_value_near_finds_the_cell_that_holds_the_point() -> None:
+    grid = small_grid()
+    assert grid.value_near(1, 4) == grid.value_at(1, 4) == 5.0
+    assert grid.value_near(0.4, 5.9) == 5.0
+    assert grid.value_near(-1.9, -1.9) == 1.0
+    assert grid.value_near(-0.1, 9.9) == 3.0
+
+
+def test_value_near_on_a_border_takes_the_cell_north_and_east() -> None:
+    grid = small_grid()
+    assert grid.value_near(0, 2) == 5.0
+    assert grid.value_near(0, 6) == 6.0
+    # The outer edges belong to the outer cells.
+    assert grid.value_near(2, 10) == 6.0
+    assert grid.value_near(-2, -2) == 1.0
+
+
+@pytest.mark.parametrize(
+    ("latitude", "longitude"), [(2.1, 4), (-2.1, 4), (0.5, 10.1), (0.5, -2.1)]
+)
+def test_value_near_outside_the_grid_is_none(latitude: float, longitude: float) -> None:
+    assert small_grid().value_near(latitude, longitude) is None
+
+
+def test_value_near_in_a_gap_of_a_reduced_grid_is_none() -> None:
+    grid = small_grid(longitudes=(0.0, 8.0, 12.0))
+    assert grid.value_near(1, 4.5) is None
+    assert grid.value_near(1, 3.5) is None
+    assert grid.value_near(1, 7) == 5.0
+    assert grid.value_near(1, 13.9) == 6.0
+
+
+@pytest.mark.parametrize(
+    ("latitude", "longitude"),
+    [
+        (91, 0),
+        (-90.5, 0),
+        (float("nan"), 0),
+        (0, float("nan")),
+        (0, float("inf")),
+        (0, -181),
+        (0, 360.5),
+    ],
+)
+def test_value_near_rejects_impossible_points(
+    latitude: float, longitude: float
+) -> None:
+    with pytest.raises(ValueError, match=r"latitude|longitude"):
+        small_grid().value_near(latitude, longitude)
+
+
+def test_value_near_on_ovation_takes_either_longitude_convention() -> None:
+    grid = parse_ovation_aurora(ovation_json()).grid
+    assert grid.value_near(45, -0.3) == grid.value_at(45, 0)
+    assert grid.value_near(45, 359.7) == grid.value_at(45, 0)
+    assert grid.value_near(45, 359.4) == grid.value_at(45, 359)
+    assert grid.value_near(45, -1) == grid.value_at(45, 359)
+    assert grid.value_near(45.4, 180.2) == grid.value_at(45, 180)
+    assert grid.value_near(89.6, 10) == grid.value_at(90, 10)
+    assert grid.value_near(90, 10) == grid.value_at(90, 10)
+    assert grid.value_near(-90, 10) == grid.value_at(-90, 10)
+
+
+def test_value_near_on_drap_covers_the_globe() -> None:
+    grid = parse_drap_global_frequencies(DRAP.read_bytes()).grid
+    assert grid.value_near(0.5, 179) == grid.value_at(1, 178)
+    assert grid.value_near(0.5, 181) == grid.value_at(1, -178)
+    assert grid.value_near(0.5, 180) == grid.value_at(1, -178)
+    assert grid.value_near(0.5, -180) == grid.value_at(1, -178)
+    assert grid.value_near(0.5, 359) == grid.value_at(1, -2)
+    assert grid.value_near(0, 0) == grid.value_at(1, 2)
+    assert grid.value_near(90, 0) == grid.value_at(89, 2)
+    assert grid.value_near(-90, -180) == grid.value_at(-89, -178)
+    for latitude in range(-90, 91, 5):
+        for longitude in range(-180, 361, 7):
+            assert grid.value_near(latitude, longitude) is not None
+
+
 @pytest.mark.parametrize(
     ("longitude", "wrapped"),
     [(0, 0), (179, 179), (180, -180), (359, -1), (-180, -180), (-1, -1)],

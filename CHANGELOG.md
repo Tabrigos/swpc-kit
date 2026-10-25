@@ -8,6 +8,13 @@ All notable changes to this project are listed here. The format follows
 
 ### Added
 
+- `swpc_kit.export.to_dict` (any model as plain data for `json.dumps`, times
+  in ISO 8601 with `Z`) and `swpc_kit.export.to_records` (a product as flat
+  rows for `csv` or `pandas.DataFrame`, times as UTC `datetime`), standard
+  library only.
+- `Grid.value_near(latitude, longitude)`: the value of the cell that holds a
+  point, or `None` outside the grid; `value_at` still wants the exact centre.
+
 - Tolerance per record in the products made of records (indices, solar wind,
   GOES, alerts): a record that cannot be read goes to the model's `skipped`
   (`swpc_kit.models.SkippedRecord`: index, field, reason) and the others are
@@ -43,6 +50,15 @@ All notable changes to this project are listed here. The format follows
 
 ### Changed
 
+- `AsyncClient` parses in a thread (`asyncio.to_thread`): a whole OVATION
+  grid no longer blocks the event loop for most of a second.
+- The arguments of `Client` and `AsyncClient` are checked when the client is
+  built, with errors that say what is expected: `timeout` a finite number of
+  seconds, `max_age` a positive `timedelta`, `user_agent` one non-empty
+  line, the URLs of `urls` HTTP, and a transport of the right kind.
+  `max_age=timedelta(0)` is no longer accepted.
+- The docstrings say that `timeout` applies to each phase of a request
+  (connecting, sending, each read), as httpx2 does, not to the whole call.
 - A field missing from every record of a JSON product is `UnexpectedContent`
   (not this product, or a format no parser knows), as the parsers' docstrings
   say; missing from some records only, those records are skipped.
