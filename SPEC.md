@@ -35,19 +35,19 @@ Three layers, each usable on its own, plus the skill that describes them:
 4. **Skill for AI assistants** (`swpc_kit/skill/`): instructions in the Agent
    Skills format (`SKILL.md` written by hand, `references/api.md` generated
    from the code), versioned with the package; the tests keep them aligned with
-   the API. It follows the shared "package skills" scheme v1, the same in the
-   other packages by the same author (for example politefetch):
-   - entry point `agent_skills` (`swpc-kit = "swpc_kit.skill"`): the module
-     exposes `bundled()`, the skill's folder. It is the only contract between
-     packages;
-   - `python -m swpc_kit.skill sync [--root DIR]` brings into
-     `<root>/.claude/skills/<name>/` the skills of all the installed packages
-     (adds, updates if the version changes, removes those of packages that are
-     gone), prints one line and always exits with 0. Meant for a
-     `SessionStart` hook of the project that uses the packages (README);
-   - every copy written by `install` or `sync` has the `.package-skill`
-     marker; `sync` touches only the marked folders. The folders created by
-     `sync` have a `.gitignore` with `*`; `install` does not write it;
+   the API. It follows the shared standard for library skills (schema 1), the
+   same in the other packages by the same author (for example politefetch):
+   - `swpc_kit/skill/__init__.py` is a copy of the shared module: only the
+     constants above its dividing line are this package's, and a test checks
+     the fingerprint of the rest;
+   - `python -m swpc_kit.skill path | show | check | install --target DIR`.
+     Only `install` writes, and only into `.claude/skills/swpc-kit` or
+     `.agents/skills/swpc-kit`; it replaces a directory only if it holds the
+     `.skill-libreria.json` marker of this package;
+   - a project keeps its copy in git and compares it with the installed
+     package by content hash (line endings normalized), never by version.
+     Nothing discovers skills among the installed packages: the project lists
+     the libraries it wants;
    - skills live only in projects, never in `~/.claude/skills`.
 
 ```python

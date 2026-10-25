@@ -197,56 +197,27 @@ asyncio.run(main())
 
 ## For AI assistants
 
-The package ships an [Agent Skill](https://agentskills.io) that tells coding
-assistants (Claude Code and others that read `SKILL.md` files) how to use the
-library, so they do not have to read its source. It is plain Markdown: the
-guide is `src/swpc_kit/skill/swpc-kit/SKILL.md`, and `references/api.md` next
-to it lists every model, field and method, generated from the code. The skill
-carries the version of the package it describes, and the test suite fails if
-it falls behind the code.
+The package ships an [Agent Skill](https://agentskills.io) for AI coding
+assistants (Claude Code and others that read `SKILL.md` files) in
+`swpc_kit/skill/swpc-kit/`, versioned with the package. It is plain Markdown:
+`SKILL.md` is a hand-written guide, and `references/api.md` next to it lists
+every model, field and method, generated from the code. The test suite fails
+if either falls behind the code.
 
-Assistants look for skills in the project, not inside installed packages.
-The simplest way to keep the right copy there is a `SessionStart` hook in the
-project's `.claude/settings.json`:
-
-```json
-{
-  "hooks": {
-    "SessionStart": [
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "cd \"$CLAUDE_PROJECT_DIR\" && uv run --quiet python -m swpc_kit.skill sync"
-          }
-        ]
-      }
-    ]
-  }
-}
-```
-
-(Without uv, use the project's interpreter: `.venv/bin/python -m
-swpc_kit.skill sync`.) At every session start, `sync` copies the skill of
-each installed package that ships one into `.claude/skills/<name>/`, updates
-copies whose version changed, removes those of packages no longer installed,
-and prints one line such as `skills: swpc-kit 0.2.0`. It never makes the
-session fail: problems go to stderr as warnings. The copies it creates hold a
-`.gitignore` that keeps them out of git, and a `.package-skill` file that
-marks them as managed; a skill directory without that file is never touched.
-
-To keep a copy under version control instead, install it by hand and refresh
-it after upgrading:
+Assistants look for skills in the project, not inside installed packages. A
+project copies the skill into `.claude/skills/swpc-kit/`, keeps the copy in
+git and checks it against the installed version by hash, so the assistant
+reads the guide of the version it actually uses:
 
 ```bash
-python -m swpc_kit.skill install   # into .claude/skills/swpc-kit/
-python -m swpc_kit.skill check     # is the installed copy current?
+python -m swpc_kit.skill install --target .claude/skills/swpc-kit
+python -m swpc_kit.skill check   # exit 1 if the copy differs from the package
 ```
 
-Other packages can take part: a package declares its skill in the
-`agent_skills` entry point group, pointing at a module with a `bundled()`
-function that returns the skill directory (see `swpc_kit/skill/__init__.py`
-and the `[project.entry-points.agent_skills]` table in `pyproject.toml`).
+`install` writes only into `.claude/skills/swpc-kit` or
+`.agents/skills/swpc-kit`, and never replaces a directory it did not write.
+Run `check` in CI; after upgrading swpc-kit, run `install` again and review
+the diff like any other change.
 
 ## Development
 
