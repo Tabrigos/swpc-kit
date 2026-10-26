@@ -448,10 +448,10 @@ One-minute interplanetary magnetic field of the last 24 hours.
 
 - `.data_time` (property): Time of the most recent active record.
 - `.sources` (property): Names of the sources in the content, sorted.
-- `.series(source: str) -> tuple[S, ...]`: Return the records of `source`, oldest first (empty if none).
-- `.active_series() -> tuple[S, ...]`: Return the active record of each time that has one, oldest first.
-- `.active_at(time: datetime) -> Optional[S]`: Return the active record at exactly `time`, or `None`.
-- `.latest_active() -> Optional[S]`: Return the most recent active record, or `None` if there is none.
+- `.series(source: str) -> tuple[RtswMagSample, ...]`: Return the records of `source`, oldest first (empty if none).
+- `.active_series() -> tuple[RtswMagSample, ...]`: Return the active record of each time that has one, oldest first.
+- `.active_at(time: datetime) -> RtswMagSample | None`: Return the active record at exactly `time`, or `None`.
+- `.latest_active() -> RtswMagSample | None`: Return the most recent active record, or `None` if there is none.
 
 ### `RtswWind1m`
 
@@ -467,10 +467,10 @@ One-minute solar wind plasma of the last 24 hours.
 
 - `.data_time` (property): Time of the most recent active record.
 - `.sources` (property): Names of the sources in the content, sorted.
-- `.series(source: str) -> tuple[S, ...]`: Return the records of `source`, oldest first (empty if none).
-- `.active_series() -> tuple[S, ...]`: Return the active record of each time that has one, oldest first.
-- `.active_at(time: datetime) -> Optional[S]`: Return the active record at exactly `time`, or `None`.
-- `.latest_active() -> Optional[S]`: Return the most recent active record, or `None` if there is none.
+- `.series(source: str) -> tuple[RtswWindSample, ...]`: Return the records of `source`, oldest first (empty if none).
+- `.active_series() -> tuple[RtswWindSample, ...]`: Return the active record of each time that has one, oldest first.
+- `.active_at(time: datetime) -> RtswWindSample | None`: Return the active record at exactly `time`, or `None`.
+- `.latest_active() -> RtswWindSample | None`: Return the most recent active record, or `None` if there is none.
 
 ## `swpc_kit.models.goes`
 
