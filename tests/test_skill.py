@@ -64,6 +64,12 @@ FENCE = re.compile(r"^```(\w*)([^\n]*)\n(.*?)^```[ \t]*$", re.MULTILINE | re.DOT
 INLINE = re.compile(r"`([^`\n]+)`")
 BODY = SKILL.split("\n---\n", 1)[-1]
 PROSE = FENCE.sub("", BODY)
+# a file path in backticks: a slash and an extension; no spaces (commands), globs,
+# placeholders or `:` (URLs)
+FILE_PATH = re.compile(r"[^\s*?<>{}:]*/[^\s*?<>{}:/]*\.[A-Za-z0-9]{1,8}")
+IN_REPOSITORY = re.compile(
+    r"in the library's repository|nel repository della libreria", re.I
+)
 PORTABLE = {
     "name",
     "description",
@@ -182,6 +188,32 @@ def test_every_reference_is_cited_and_every_citation_exists() -> None:
         assert (SKILL_DIR / rel).is_file(), rel
     for path in (SKILL_DIR / "references").iterdir():
         assert f"references/{path.name}" in cited, f"references/{path.name} not cited"
+
+
+def test_cited_paths_open_from_the_copy() -> None:
+    """A project copies only the skill directory: a path of the repository does
+    not open there. Paths of the consumer (.claude/, .agents/) are not the
+    library's."""
+    installed = Path(inspect.getfile(package)).resolve().parent.parent
+    checked = 0
+    broken = []
+    for line in PROSE.splitlines():
+        for span in INLINE.findall(line):
+            rel = span.removeprefix("./")
+            if not FILE_PATH.fullmatch(span) or re.match(r"\.(claude|agents)/", rel):
+                continue
+            checked += 1
+            if (SKILL_DIR / rel).is_file() or IN_REPOSITORY.search(line):
+                continue
+            if rel.startswith(f"{PACKAGE}/") and (installed / rel).is_file():
+                continue
+            broken.append(span)
+    assert checked, "no file path in backticks: SKILL.md should cite references/api.md"
+    assert not broken, (
+        f"paths that the copy in a project cannot open: {broken}; cite a file of "
+        f"the skill, {PACKAGE}/<file> of the installed package, or say 'in the "
+        "library's repository' on the same line"
+    )
 
 
 def test_skill_files_have_lf_line_endings() -> None:
