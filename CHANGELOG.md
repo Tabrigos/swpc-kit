@@ -6,6 +6,8 @@ All notable changes to this project are listed here. The format follows
 
 ## [Unreleased]
 
+## [0.3.1] - 2026-10-26
+
 ### Added
 
 - `MessageKind.CANCEL_WARNING`.
@@ -196,5 +198,6 @@ First version. Never published or tagged.
   declares.
 - Recorded fixtures and the tools that record them (`tools/`).
 
-[Unreleased]: https://github.com/Tabrigos/swpc-kit/compare/v0.3.0...HEAD
+[Unreleased]: https://github.com/Tabrigos/swpc-kit/compare/v0.3.1...HEAD
+[0.3.1]: https://github.com/Tabrigos/swpc-kit/releases/tag/v0.3.1
 [0.3.0]: https://github.com/Tabrigos/swpc-kit/releases/tag/v0.3.0
