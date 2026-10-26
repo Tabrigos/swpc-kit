@@ -28,8 +28,8 @@ from swpc_kit.models.bulletins import (
     ThreeDayForecast,
     TwentySevenDayOutlook,
 )
+from swpc_kit.parse._common import MONTHS
 from swpc_kit.parse._text import (
-    MONTHS,
     Line,
     TextReader,
     Unwrapped,

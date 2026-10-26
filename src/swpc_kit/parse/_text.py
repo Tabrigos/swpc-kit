@@ -22,32 +22,10 @@ import re
 from bisect import bisect_right
 from collections.abc import Sequence
 from dataclasses import dataclass
-from datetime import UTC, date, datetime
+from datetime import date, datetime
 
 from swpc_kit.errors import ParseError, SourceNotReady, SwpcError, UnexpectedContent
-from swpc_kit.parse._common import decode
-
-MONTHS = {
-    name: number
-    for number, name in enumerate(
-        (
-            "Jan",
-            "Feb",
-            "Mar",
-            "Apr",
-            "May",
-            "Jun",
-            "Jul",
-            "Aug",
-            "Sep",
-            "Oct",
-            "Nov",
-            "Dec",
-        ),
-        start=1,
-    )
-}
-"""English month abbreviations as SWPC writes them, to month numbers."""
+from swpc_kit.parse._common import MONTHS, decode, text_time
 
 _PRODUCT = re.compile(r":Product:\s*(.*)")
 _ISSUED = re.compile(
@@ -325,9 +303,7 @@ def open_text_product(
     if number is None:
         raise reader.error(f"unknown month {month!r}", line.number, "Issued")
     try:
-        issued = datetime(
-            int(year), number, int(day), int(hour), int(minute), tzinfo=UTC
-        )
+        issued = text_time(year, number, day, hour, minute)
     except ValueError as exc:
         raise reader.error(f"not a valid time: {exc}", line.number, "Issued") from None
     reader.skip_comments()

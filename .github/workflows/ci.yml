@@ -30,6 +30,22 @@ jobs:
       - run: uv run ruff format --check .
       - run: uv run mypy
 
+  # Windows is supported (D-022). A job of its own, so that the names of the
+  # checks that main requires stay the same; lint and types do not depend on
+  # the system and run in the checks job.
+  windows:
+    runs-on: windows-latest
+    env:
+      UV_PYTHON: "3.12"
+    steps:
+      - uses: actions/checkout@v5
+      - uses: astral-sh/setup-uv@v6
+      - run: uv sync --all-extras --locked
+      - run: uv build --wheel
+      - run: uv run pytest
+        env:
+          SKILL_WHEEL: dist/*.whl
+
   # The lowest versions that pyproject.toml allows for the direct
   # dependencies (httpx2, numpy, rasterio), so that the minimums stay true.
   lowest:

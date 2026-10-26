@@ -11,7 +11,7 @@ for what is known about each SWPC format.
 
 ## Install
 
-Requires Python 3.12 or later.
+Requires Python 3.12 or later; the tests run on Linux and Windows.
 
 ```bash
 pip install swpc-kit              # parsers, models, JSON, GeoJSON, GeoTIFF

@@ -414,3 +414,40 @@ scelte già prese e sparse fra `SPEC.md`, `docs/FONTI.md` e il diario; la data
   minimi di numpy e rasterio provati dal job `lowest` diventano quelli dei
   test.
 
+## D-022 — Windows supportato; tempi testuali con una parte comune; niente stub di rasterio
+
+- **Data e tappa**: 2026-10-26, T12 (scelte del maintainer)
+- **Contesto**: su Windows la suite non passava tutta. Le cause stavano
+  tutte nei test:
+  - la barriera di rete bloccava la coppia di socket con cui l'event loop
+    di asyncio si risveglia, che su Windows si connette a 127.0.0.1;
+  - gli id di `test_drap_inconsistent_lines` contenevano un file D-RAP
+    intero, oltre il limite di una variabile d'ambiente di Windows (pytest
+    ci mette l'id);
+  - `test_readme` creava un symlink, che su Windows richiede un privilegio.
+
+  Gli avvisi lasciati dai test async cadevano poi su test innocenti.
+- **Decisione**:
+  - Windows è supportato. Un job `windows` nella CI fa girare la suite
+    intera con la wheel. È un job a sé, non una voce della matrice di
+    `checks`, così i nomi dei controlli richiesti di `main` non cambiano;
+    il maintainer lo aggiunge fra i richiesti dopo il primo giro verde.
+  - La barriera lascia aperto solo `connect` verso l'indirizzo locale
+    (`127.0.0.1`, `::1`); `connect_ex`, `create_connection` e
+    `getaddrinfo` restano chiusi. Un test lo prova.
+  - Tempi testuali: la tabella dei mesi e la costruzione dell'ora UTC
+    (`text_time`) stanno in `parse/_common.py`. Ogni formato tiene il suo
+    pattern e il suo modo di leggere il mese: i bollettini lo leggono senza
+    badare alle maiuscole, gli avvisi solo come `Oct`. Due test fissano
+    questa differenza.
+  - rasterio resta con l'override di mypy (`ignore_missing_imports`).
+- **Alternative scartate**:
+  - saltare su Windows i test che falliscono (la suite di chi sviluppa qui
+    restava rossa, e un guasto vero si sarebbe confuso con quelli noti);
+  - un solo parser per i due formati (gli avvisi avrebbero accettato
+    `OCT`, un cambio di comportamento);
+  - `types-rasterio` (una dipendenza in più, legata alla versione di
+    rasterio, per un solo file di test dopo D-021).
+- **Conseguenze**: la suite è verde anche su Windows, e un guasto solo di
+  Windows si vede nella CI.
+
