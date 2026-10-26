@@ -4,19 +4,19 @@
 
 Riscritto da capo a ogni fine sessione, mai accodato.
 
-- **Stato**: T0–T11 e T13–T16 fatte; versione **0.2.0** nel codice, mai
-  pubblicata né taggata. Le PR #2–#5 (T11, T13, T14, T15) sono in `main`;
-  T16 ha la sua PR. Le voci nuove del CHANGELOG stanno in Unreleased.
-- **Prossimo passo**: T18, il GeoTIFF senza rasterio, che il maintainer ha
-  messo prima della 0.3.0. Poi la prima pubblicazione, 0.3.0 (`AGENTS.md`,
+- **Stato**: T0–T11, T13–T16 e T18 fatte; versione **0.2.0** nel codice,
+  mai pubblicata né taggata. T11–T16 sono in `main` (PR #2–#6); T18 è sul
+  ramo `t18-geotiff`. Le voci nuove del CHANGELOG stanno in Unreleased.
+- **Prossimo passo**: la prima pubblicazione, 0.3.0 (`AGENTS.md`,
   "Releases"): nel commit di versione anche l'asserzione `__version__` di
   `tests/test_public_api.py` e una sezione 0.3.0 del CHANGELOG che presenti
   il pacchetto intero, perché 0.1.0 e 0.2.0 non sono mai uscite. T17 (il
   trasporto educato su politefetch) dopo la 0.3.0.
 - **Decisioni in sospeso**: quelle di T12 (parser dei tempi testuali, stub
   di rasterio, supporto di Windows). Il job `lowest` non è fra i controlli
-  richiesti di `main`: il maintainer lo rivede dopo T18, quando si sa quali
-  minimi restano da provare.
+  richiesti di `main`, e il maintainer lo rivede ora che la T18 è fatta: i
+  minimi di numpy e rasterio sono diventati quelli dei test, e per chi usa
+  la libreria resta solo httpx2 2.13.
 - **Da sapere** (per chi scrive i prossimi parser):
   - `swpc_kit/parse/_common.py` è il kit comune: `load_json` classifica gli
     errori (vuoto o troncato → `SourceNotReady`; HTML o non JSON →
@@ -202,6 +202,12 @@ Riscritto da capo a ogni fine sessione, mai accodato.
     --resolution lowest-direct --python 3.12`. Attenzione: `uv sync
     --resolution` riscrive `uv.lock`, che poi va ripristinato.
   - Il README ha `### Trying again`, il ciclo di retry promesso da D-016.
+- **T18** (GeoTIFF):
+  - `swpc_kit/export/_tiff.py` è il contenitore TIFF; i numeri dei tag
+    GeoTIFF e GDAL sono commentati in `geotiff.py`. rasterio serve solo ai
+    test, per rileggere.
+  - Su Windows, nella suite intera, l'avviso dei test async può cadere su
+    un test GeoTIFF o GeoJSON: è il guasto noto, e da soli passano.
 - **Dubbi aperti**: le ipotesi rimaste in `docs/FONTI.md` (UTC dei
   `time_tag` senza `Z`, millisecondi del vecchio Dst e flusso, significato
   delle chiavi di `noaa-scales.json`, unità dei valori OVATION).
@@ -276,3 +282,7 @@ Una riga per sessione: data, tappa, cosa è entrato, cosa resta.
   classifier "4 - Beta"; job `lowest` nella CI (D-020), che ha trovato due
   attriti con rasterio 1.4.0. Writer GeoTIFF senza rasterio valutato con un
   prototipo: fattibile, tappa T18 (D-019). Resta: T12, T18, 0.3.0.
+- 2026-10-26 — T18: `write_geotiff` con la sola libreria standard
+  (`export/_tiff.py` per il contenitore TIFF), extra `geo` tolto, numpy e
+  rasterio solo nei test (D-021). Stesse 16 proprietà del file di rasterio,
+  20 difetti iniettati su 20 presi. Resta: T12, 0.3.0.
