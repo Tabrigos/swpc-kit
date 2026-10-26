@@ -4,21 +4,19 @@
 
 Riscritto da capo a ogni fine sessione, mai accodato.
 
-- **Stato**: T0–T11, T13–T16 e T18 fatte e in `main` (PR #2–#7). Il
-  commit `Version 0.3.0` (ramo `version-0.3.0`) porta la versione, la
-  sezione 0.3.0 del CHANGELOG, che presenta il pacchetto intero perché
-  0.1.0 e 0.2.0 non sono mai uscite, e il tag `v0.3.0`.
-- **Prossimo passo**: la prima pubblicazione (`AGENTS.md`, "Releases"). Il
-  maintainer registra il pending publisher su pypi.org; poi il merge della
-  PR di versione e il push del tag, che avvia `release.yml`, e il
-  maintainer approva l'environment `pypi`. Subito prima del tag, ricontrollare
-  che `swpc-kit` sia libero su PyPI. Dopo la 0.3.0: T12, e T17 (il
-  trasporto educato su politefetch, la cui API è cambiata: rileggerla).
-- **Decisioni in sospeso**: quelle di T12 (parser dei tempi testuali, stub
-  di rasterio, supporto di Windows). Il job `lowest` resta fuori dai
-  controlli richiesti di `main` (maintainer, 2026-10-26): per chi usa la
-  libreria il solo minimo è httpx2 2.13, e il job lo prova lo stesso su ogni
-  PR.
+- **Stato**: tutte le tappe fino alla T18 fatte, più la T12; **0.3.0
+  pubblicata su PyPI** il 2026-10-26 (tag `v0.3.0`, release su GitHub). Le
+  voci nuove del CHANGELOG stanno in Unreleased.
+- **Prossimo passo**: T17, il trasporto educato su politefetch, quando
+  politefetch è su PyPI. La sua API è cambiata prima della pubblicazione
+  (client con retry propri rifiutato, `NoPolicy`, `Transport.send` con un
+  context manager): rileggerla, e decidere con quella sessione la
+  semantica del 429 e il client HTTP.
+- **Decisioni in sospeso**: il job `windows` fra i controlli richiesti di
+  `main`, dopo il primo giro verde (lo aggiunge il maintainer, D-022). Il
+  job `lowest` resta fuori dai richiesti (maintainer, 2026-10-26): per chi
+  usa la libreria il solo minimo è httpx2 2.13, e il job lo prova lo stesso
+  su ogni PR.
 - **Da sapere** (per chi scrive i prossimi parser):
   - `swpc_kit/parse/_common.py` è il kit comune: `load_json` classifica gli
     errori (vuoto o troncato → `SourceNotReady`; HTML o non JSON →
@@ -195,9 +193,6 @@ Riscritto da capo a ogni fine sessione, mai accodato.
     `remember` (log e cache): l'async fa il parse fra i due, in
     `asyncio.to_thread`. Gli argomenti dei client li controlla
     `_check_arguments`; il trasporto `check_transport`.
-  - Su Windows i test async si provano con
-    `uv run pytest --noconftest tests/test_client.py -k async`: senza la
-    barriera di rete, dato che usano trasporti finti.
 - **T16** (rilascio):
   - Job `lowest` in `.github/workflows/ci.yml` (D-020). In locale si prova
     con `UV_PROJECT_ENVIRONMENT=<cartella a parte>` e `uv sync --all-extras
@@ -208,8 +203,14 @@ Riscritto da capo a ogni fine sessione, mai accodato.
   - `swpc_kit/export/_tiff.py` è il contenitore TIFF; i numeri dei tag
     GeoTIFF e GDAL sono commentati in `geotiff.py`. rasterio serve solo ai
     test, per rileggere.
-  - Su Windows, nella suite intera, l'avviso dei test async può cadere su
-    un test GeoTIFF o GeoJSON: è il guasto noto, e da soli passano.
+- **T12** (Windows e debiti):
+  - Su Windows la suite intera è verde, anche in locale (D-022). La
+    barriera di `tests/conftest.py` lascia aperto solo `connect` verso
+    l'indirizzo locale; un test lungo con id costruiti dai dati deve dare
+    id corti (`ids=`), perché pytest mette l'id in una variabile
+    d'ambiente.
+  - `MONTHS` e `text_time` stanno in `parse/_common.py`; i pattern e le
+    maiuscole del mese restano di ciascun formato.
 - **Dubbi aperti**: le ipotesi rimaste in `docs/FONTI.md` (UTC dei
   `time_tag` senza `Z`, millisecondi del vecchio Dst e flusso, significato
   delle chiavi di `noaa-scales.json`, unità dei valori OVATION).
@@ -292,3 +293,8 @@ Una riga per sessione: data, tappa, cosa è entrato, cosa resta.
   CHANGELOG che presenta il pacchetto, i link in fondo e il tag `v0.3.0`.
   Note della release provate con lo stesso `awk` del workflow. Il nome
   `swpc-kit` su PyPI era ancora libero.
+- 2026-10-26 — 0.3.0 pubblicata. T12: Windows supportato, con la suite
+  verde e un job `windows` nella CI (barriera aperta solo verso l'indirizzo
+  locale, id corti, fixture copiate invece del symlink); tabella dei mesi e
+  `text_time` in `_common.py`; override di mypy per rasterio tenuto
+  (D-022). Resta: T17.

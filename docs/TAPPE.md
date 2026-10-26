@@ -201,18 +201,30 @@ Non fa parte della tappa (da concordare con politefetch): la semantica del
 
 ## T12 — Debiti rimasti dalle tappe nel cloud
 
-- [ ] Fatta
+- [x] Fatta
 
 Rinvii scritti nel diario e mai chiusi:
 
-- [ ] Unire il parser dei tempi testuali (`2026 Oct 13 2058 UTC`) di
+- [x] Unire il parser dei tempi testuali (`2026 Oct 13 2058 UTC`) di
   `parse/alerts.py` con quello di `parse/_text.py` in `parse/_common.py`
   (rinviato da T4 e T5 a T8, poi rimasto).
-- [ ] rasterio: tenere l'override mypy (`ignore_missing_imports`) o passare
+- [x] rasterio: tenere l'override mypy (`ignore_missing_imports`) o passare
   agli stub `types-rasterio` (nuova dipendenza di sviluppo, da giustificare).
-- [ ] Windows: la suite non passa tutta (async con la barriera sul socket del
+- [x] Windows: la suite non passa tutta (async con la barriera sul socket del
   loop Proactor, griglie, esempi del README). Decidere se Windows è
   supportato; se sì, CI anche su Windows.
+- Esito (D-022), con le scelte del maintainer:
+  - Windows supportato, job `windows` nella CI;
+  - in `_common.py` la tabella dei mesi e `text_time`, mentre pattern e
+    maiuscole restano di ciascun formato: un solo parser avrebbe cambiato
+    il comportamento degli avvisi;
+  - l'override di mypy per rasterio resta.
+
+  In più, in un commit a sé, la parte comune di `tests/test_skill.py`
+  ricopiata dal modello `c3371e9`: i percorsi citati in SKILL.md si devono
+  aprire dalla copia di un progetto. La `829d005` non passava `ruff format`.
+  La SKILL.md di swpc-kit cita solo `references/api.md`; il test si è visto
+  fallire con un percorso del repo aggiunto per prova.
 
 ## Revisione prima della pubblicazione (2026-10-25)
 
@@ -340,8 +352,9 @@ tolleranza per record (D-015).
   `numpy>=2.0`, `rasterio>=1.4`.
 - [x] Valutare un writer GeoTIFF senza rasterio (il raster è piccolo):
   solo valutazione, con la scelta in `docs/DECISIONI.md`.
-- [ ] Ricontrollare che `swpc-kit` sia libero su PyPI subito prima del tag
-  (libero il 2026-10-25: `https://pypi.org/pypi/swpc-kit/json` dà 404).
+- [x] Ricontrollare che `swpc-kit` sia libero su PyPI subito prima del tag
+  (libero il 2026-10-25: `https://pypi.org/pypi/swpc-kit/json` dà 404; di
+  nuovo libero il 2026-10-26, subito prima di spingere `v0.3.0`).
 - Esito (D-019, D-020):
   - classifier "4 - Beta";
   - job `lowest` nella CI;
