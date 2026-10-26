@@ -4,19 +4,21 @@
 
 Riscritto da capo a ogni fine sessione, mai accodato.
 
-- **Stato**: T0–T11, T13–T16 e T18 fatte; versione **0.2.0** nel codice,
-  mai pubblicata né taggata. T11–T16 sono in `main` (PR #2–#6); T18 è sul
-  ramo `t18-geotiff`. Le voci nuove del CHANGELOG stanno in Unreleased.
-- **Prossimo passo**: la prima pubblicazione, 0.3.0 (`AGENTS.md`,
-  "Releases"): nel commit di versione anche l'asserzione `__version__` di
-  `tests/test_public_api.py` e una sezione 0.3.0 del CHANGELOG che presenti
-  il pacchetto intero, perché 0.1.0 e 0.2.0 non sono mai uscite. T17 (il
-  trasporto educato su politefetch) dopo la 0.3.0.
+- **Stato**: T0–T11, T13–T16 e T18 fatte e in `main` (PR #2–#7). Il
+  commit `Version 0.3.0` (ramo `version-0.3.0`) porta la versione, la
+  sezione 0.3.0 del CHANGELOG, che presenta il pacchetto intero perché
+  0.1.0 e 0.2.0 non sono mai uscite, e il tag `v0.3.0`.
+- **Prossimo passo**: la prima pubblicazione (`AGENTS.md`, "Releases"). Il
+  maintainer registra il pending publisher su pypi.org; poi il merge della
+  PR di versione e il push del tag, che avvia `release.yml`, e il
+  maintainer approva l'environment `pypi`. Subito prima del tag, ricontrollare
+  che `swpc-kit` sia libero su PyPI. Dopo la 0.3.0: T12, e T17 (il
+  trasporto educato su politefetch, la cui API è cambiata: rileggerla).
 - **Decisioni in sospeso**: quelle di T12 (parser dei tempi testuali, stub
-  di rasterio, supporto di Windows). Il job `lowest` non è fra i controlli
-  richiesti di `main`, e il maintainer lo rivede ora che la T18 è fatta: i
-  minimi di numpy e rasterio sono diventati quelli dei test, e per chi usa
-  la libreria resta solo httpx2 2.13.
+  di rasterio, supporto di Windows). Il job `lowest` resta fuori dai
+  controlli richiesti di `main` (maintainer, 2026-10-26): per chi usa la
+  libreria il solo minimo è httpx2 2.13, e il job lo prova lo stesso su ogni
+  PR.
 - **Da sapere** (per chi scrive i prossimi parser):
   - `swpc_kit/parse/_common.py` è il kit comune: `load_json` classifica gli
     errori (vuoto o troncato → `SourceNotReady`; HTML o non JSON →
@@ -286,3 +288,7 @@ Una riga per sessione: data, tappa, cosa è entrato, cosa resta.
   (`export/_tiff.py` per il contenitore TIFF), extra `geo` tolto, numpy e
   rasterio solo nei test (D-021). Stesse 16 proprietà del file di rasterio,
   20 difetti iniettati su 20 presi. Resta: T12, 0.3.0.
+- 2026-10-26 — Preparata la 0.3.0: commit di versione con la sezione del
+  CHANGELOG che presenta il pacchetto, i link in fondo e il tag `v0.3.0`.
+  Note della release provate con lo stesso `awk` del workflow. Il nome
+  `swpc-kit` su PyPI era ancora libero.

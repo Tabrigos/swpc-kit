@@ -6,6 +6,31 @@ All notable changes to this project are listed here. The format follows
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-10-26
+
+The first release on PyPI. 0.1.0 and 0.2.0 were never published; their
+sections in `CHANGELOG.md` tell how the package got here. swpc-kit 0.3.0:
+
+- reads the machine-readable products of NOAA SWPC into frozen, typed
+  models with UTC times: planetary K index (3-hour, forecast, 1-minute),
+  Kyoto Dst, F10.7, the NOAA scales, real-time solar wind from the active
+  spacecraft, GOES X-ray flux and protons, alerts with their code catalogue,
+  the three text bulletins, OVATION aurora and D-RAP;
+- reads every documented format of a product, old and new, and in the
+  products made of records sets aside a record it cannot read (`skipped`)
+  instead of guessing;
+- raises typed errors (`SourceNotReady`, `UnexpectedContent`, `ParseError`,
+  `StaleData`); those raised by the client name the product and the URL;
+- fetches with a sync or async client (`client` extra, httpx2), with
+  conditional requests and a `max_age` measured on the time the content
+  declares;
+- exports to plain data for JSON and tables, to GeoJSON and to GeoTIFF,
+  with the standard library only;
+- ships a skill for AI coding assistants, kept in step with the API by the
+  tests.
+
+The changes since 0.2.0 follow.
+
 ### Added
 
 - `swpc_kit.export.to_dict` (any model as plain data for `json.dumps`, times
@@ -146,3 +171,6 @@ First version. Never published or tagged.
   error classification and a `max_age` check on the time the content
   declares.
 - Recorded fixtures and the tools that record them (`tools/`).
+
+[Unreleased]: https://github.com/Tabrigos/swpc-kit/compare/v0.3.0...HEAD
+[0.3.0]: https://github.com/Tabrigos/swpc-kit/releases/tag/v0.3.0
