@@ -30,7 +30,8 @@ Three layers, each usable on its own, plus the skill that describes them:
    - `swpc_kit.export.data` (standard library): `to_dict` for JSON and
      `to_records` for tables;
    - `swpc_kit.export.geojson` (standard library);
-   - `swpc_kit.export.geotiff` (`geo` extra, with `numpy` and `rasterio`);
+   - `swpc_kit.export.geotiff` (standard library; the tests read the files
+     back with GDAL);
    - `swpc_kit.client` (`client` extra, with `httpx2`, the maintained
      continuation of httpx: see `docs/FONTI.md`): downloads, recognizes the
      source's errors, calls the parser.

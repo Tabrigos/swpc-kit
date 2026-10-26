@@ -30,17 +30,15 @@ Changelog = "https://github.com/Tabrigos/swpc-kit/blob/main/CHANGELOG.md"
 client = [
     "httpx2>=2.13",
 ]
-# GeoTIFF export (swpc_kit.export.geotiff): numpy for the raster array,
-# rasterio (GDAL) to write a georeferenced file.
-geo = [
-    "numpy>=2.0",
-    "rasterio>=1.4",
-]
 
 [dependency-groups]
+# numpy and rasterio only for the tests, which read back the GeoTIFF files
+# with GDAL; the library writes them with the standard library.
 dev = [
     "mypy>=1.17",
+    "numpy>=2.0",
     "pytest>=8.4",
+    "rasterio>=1.4",
     "ruff>=0.12",
 ]
 
@@ -105,9 +103,9 @@ warn_unreachable = true
 files = ["src", "tests", "tools"]
 mypy_path = "tools"
 
-# rasterio (geo extra) ships no inline types (no py.typed): its names are typed
-# as Any. It is used only by swpc_kit/export/geotiff.py and its test. The
-# typeshed stubs (types-rasterio) would need a new dev dependency.
+# rasterio (dev group) ships no inline types (no py.typed): its names are typed
+# as Any. Only tests/test_export_geotiff.py uses it. The typeshed stubs
+# (types-rasterio) would need a new dev dependency.
 [[tool.mypy.overrides]]
 module = ["rasterio", "rasterio.*"]
 ignore_missing_imports = true

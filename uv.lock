@@ -580,30 +580,26 @@ source = { editable = "." }
 client = [
     { name = "httpx2" },
 ]
-geo = [
-    { name = "numpy" },
-    { name = "rasterio" },
-]
 
 [package.dev-dependencies]
 dev = [
     { name = "mypy" },
+    { name = "numpy" },
     { name = "pytest" },
+    { name = "rasterio" },
     { name = "ruff" },
 ]
 
 [package.metadata]
-requires-dist = [
-    { name = "httpx2", marker = "extra == 'client'", specifier = ">=2.13" },
-    { name = "numpy", marker = "extra == 'geo'", specifier = ">=2.0" },
-    { name = "rasterio", marker = "extra == 'geo'", specifier = ">=1.4" },
-]
-provides-extras = ["client", "geo"]
+requires-dist = [{ name = "httpx2", marker = "extra == 'client'", specifier = ">=2.13" }]
+provides-extras = ["client"]
 
 [package.metadata.requires-dev]
 dev = [
     { name = "mypy", specifier = ">=1.17" },
+    { name = "numpy", specifier = ">=2.0" },
     { name = "pytest", specifier = ">=8.4" },
+    { name = "rasterio", specifier = ">=1.4" },
     { name = "ruff", specifier = ">=0.12" },
 ]
 

@@ -28,11 +28,10 @@ here. Reading the library's source is slower and not needed.
 
 ```bash
 pip install "swpc-kit[client]"       # fetch from SWPC (httpx2)
-pip install "swpc-kit[client,geo]"   # plus GeoTIFF export (numpy, rasterio)
 ```
 
-Python 3.12 or later. Without extras you get the parsers, the models and the
-GeoJSON export, which use only the standard library.
+Python 3.12 or later. Without the extra you get the parsers, the models and
+the JSON, GeoJSON and GeoTIFF exports, which use only the standard library.
 
 ## Pick the product
 
@@ -220,7 +219,7 @@ def aurora_geojson(oval):
 ```
 
 `swpc_kit.export.geotiff.write_geotiff(product, path)` writes an EPSG:4326
-GeoTIFF with the times in its tags; it needs the `geo` extra.
+GeoTIFF with the times in its tags.
 
 ## Do not
 

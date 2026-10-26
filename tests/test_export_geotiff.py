@@ -1,12 +1,14 @@
 import importlib
 import json
 import math
+import struct
 import sys
 from pathlib import Path
 
 import numpy as np
 import pytest
 import rasterio
+from rasterio.enums import Compression
 
 from swpc_kit.export.geotiff import write_geotiff
 from swpc_kit.models.grids import DrapFrequencies, OvationAurora
@@ -54,6 +56,7 @@ def test_drap_raster(tmp_path: Path) -> None:
         assert src.crs.to_epsg() == 4326
         assert (src.count, src.height, src.width) == (1, 90, 90)
         assert src.dtypes == ("float32",)
+        assert src.compression is Compression.deflate
         assert tuple(src.transform)[:6] == (4.0, 0.0, -180.0, 0.0, -2.0, 90.0)
         assert src.bounds == (-180.0, -90.0, 180.0, 90.0)
         assert math.isnan(src.nodata)
@@ -74,6 +77,16 @@ def test_time_tags(tmp_path: Path) -> None:
     write_geotiff(reduced_ovation(), str(tmp_path / "oval.tif"))
     with rasterio.open(tmp_path / "drap.tif") as src:
         tags = src.tags()
+        assert src.tags(1) == {}
+    assert set(tags) == {
+        "VALID_AT",
+        "DATA_TIME",
+        "TIFFTAG_DATETIME",
+        "SOURCE_URL",
+        "QUANTITY",
+        "UNITS",
+        "AREA_OR_POINT",
+    }
     assert tags["VALID_AT"] == "2026-10-15T17:54:00Z"
     assert tags["DATA_TIME"] == "2026-10-15T17:54:00Z"
     assert tags["TIFFTAG_DATETIME"] == "2026:10:15 17:54:00"
@@ -100,6 +113,11 @@ def test_full_ovation_is_rotated_to_minus_180(tmp_path: Path) -> None:
         assert tuple(src.transform)[:6] == (1.0, 0.0, -180.5, 0.0, -1.0, 90.5)
         data = src.read(1)
         assert not np.isnan(data).any()
+        expected = [
+            [product.grid.value_at(lat, (col + 180) % 360) for col in range(360)]
+            for lat in range(90, -91, -1)
+        ]
+        np.testing.assert_array_equal(data, np.array(expected, dtype=np.float32))
         for lon, lat in [(0, 0), (359, 45), (180, -90), (179, 90), (200, -60)]:
             row, col = map(int, src.index(((lon + 180) % 360) - 180, lat))
             assert data[row, col] == product.grid.value_at(lat, lon)
@@ -128,6 +146,24 @@ def test_reduced_ovation_leaves_missing_longitudes_empty(tmp_path: Path) -> None
             assert column.mask.all()
 
 
+def test_the_file_follows_the_tiff_and_geotiff_rules(tmp_path: Path) -> None:
+    # Rules that GDAL forgives but other readers may not.
+    write_geotiff(drap(), tmp_path / "drap.tif")
+    raw = (tmp_path / "drap.tif").read_bytes()
+    assert raw[:4] == b"II*\0"
+    (directory,) = struct.unpack_from("<I", raw, 4)
+    (count,) = struct.unpack_from("<H", raw, directory)
+    entries = [
+        struct.unpack_from("<HHII", raw, directory + 2 + 12 * i) for i in range(count)
+    ]
+    tags = [tag for tag, _, _, _ in entries]
+    assert tags == sorted(tags)  # TIFF 6.0: ascending order
+    _, kind, n, offset = next(entry for entry in entries if entry[0] == 33550)
+    assert (kind, n) == (12, 3)
+    # GeoTIFF: ModelPixelScale is positive; the tiepoint puts row 0 north.
+    assert struct.unpack_from("<3d", raw, offset) == (4.0, 2.0, 0.0)
+
+
 def test_nodata_can_be_chosen(tmp_path: Path) -> None:
     write_geotiff(reduced_ovation(), tmp_path / "oval.tif", nodata=-1.0)
     with rasterio.open(tmp_path / "oval.tif") as src:
@@ -142,8 +178,20 @@ def test_nodata_must_not_be_a_value(tmp_path: Path) -> None:
     assert not (tmp_path / "drap.tif").exists()
 
 
-def test_missing_geo_extra_gives_a_clear_error(monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.setitem(sys.modules, "rasterio", None)
-    monkeypatch.delitem(sys.modules, "swpc_kit.export.geotiff")
-    with pytest.raises(ImportError, match=r"pip install 'swpc-kit\[geo\]'"):
-        importlib.import_module("swpc_kit.export.geotiff")
+def test_nodata_must_fit_in_float32(tmp_path: Path) -> None:
+    with pytest.raises(ValueError, match="float32"):
+        write_geotiff(drap(), tmp_path / "drap.tif", nodata=1e40)
+    assert not (tmp_path / "drap.tif").exists()
+
+
+def test_writes_without_numpy_or_rasterio(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    with monkeypatch.context() as m:
+        m.setitem(sys.modules, "numpy", None)
+        m.setitem(sys.modules, "rasterio", None)
+        m.delitem(sys.modules, "swpc_kit.export.geotiff")
+        module = importlib.import_module("swpc_kit.export.geotiff")
+        module.write_geotiff(drap(), tmp_path / "drap.tif")
+    with rasterio.open(tmp_path / "drap.tif") as src:
+        assert src.read(1).shape == (90, 90)

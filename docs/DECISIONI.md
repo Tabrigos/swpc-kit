@@ -381,3 +381,36 @@ scelte già prese e sparse fra `SPEC.md`, `docs/FONTI.md` e il diario; la data
   job non è fra i controlli richiesti di `main` finché il maintainer non lo
   aggiunge.
 
+## D-021 — GeoTIFF con la sola libreria standard, e niente extra `geo`
+
+- **Data e tappa**: 2026-10-26, T18 (supera la scelta di D-019 di tenere
+  rasterio)
+- **Contesto**: il maintainer ha messo la T18 prima della 0.3.0, quindi
+  l'extra `geo` non è mai uscito su PyPI.
+- **Decisione**:
+  - `write_geotiff` scrive il file con `struct` e `zlib`. Il contenitore
+    TIFF sta in `swpc_kit/export/_tiff.py`, che non sa nulla di GeoTIFF.
+    I tag GeoTIFF e GDAL li sceglie `geotiff.py`, nel modo in cui li scrive
+    GDAL: strip da circa 8 KB, deflate, metadati in `GDAL_METADATA` (42112)
+    e nodata in `GDAL_NODATA` (42113).
+  - numpy e rasterio passano nel gruppo `dev`: i test rileggono i file con
+    GDAL. Un test legge la directory del TIFF con `struct`, per le regole
+    che GDAL perdona: tag in ordine crescente, scala positiva.
+  - L'extra `geo` si toglie del tutto, scelta del maintainer: chi scrive
+    `swpc-kit[geo]` riceve da pip un avviso, non un errore.
+  - Un `nodata` che non sta in un `float32` è un `ValueError`; con numpy
+    diventava `inf` con un avviso.
+- **Alternative scartate**: lasciare `geo` vuoto (un extra che non fa
+  niente, da spiegare per sempre); file di riferimento scritti con
+  rasterio fra le fixture (le fixture sono contenuto SWPC, e i test
+  controllano già ogni proprietà che rasterio rilegge).
+- **Verifica**: prima di togliere il writer vecchio, uno script fuori dal
+  repo ha fatto scrivere ai due writer D-RAP, OVATION ridotta e completa e
+  due nodata diversi. Riletti con rasterio, i file nuovi danno le stesse 16
+  proprietà dei vecchi, compresi i blocchi, e il confronto si è visto
+  segnalare un nodata diverso. Venti difetti iniettati nel writer, tutti
+  presi dai test.
+- **Conseguenze**: per chi usa la libreria cambia solo l'installazione. I
+  minimi di numpy e rasterio provati dal job `lowest` diventano quelli dei
+  test.
+

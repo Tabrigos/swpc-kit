@@ -14,17 +14,12 @@ for what is known about each SWPC format.
 Requires Python 3.12 or later.
 
 ```bash
-pip install swpc-kit                  # parsers, models, JSON, GeoJSON
-pip install "swpc-kit[client]"        # plus the HTTP client (httpx2)
-pip install "swpc-kit[client,geo]"    # plus the GeoTIFF export
+pip install swpc-kit              # parsers, models, JSON, GeoJSON, GeoTIFF
+pip install "swpc-kit[client]"    # plus the HTTP client (httpx2)
 ```
 
-The core uses only the standard library, and the `client` extra adds only
-httpx2. The `geo` extra brings numpy and rasterio, which ships GDAL inside
-its wheels: about 140 MB once installed. The wheels of the latest rasterio
-need macOS 15 or Linux with glibc 2.28 or later. On older systems pip would
-try to build GDAL from source: add `--only-binary rasterio` and pip takes
-the newest rasterio with a wheel for your system (1.4.0 or later is enough).
+The library uses only the standard library, GeoTIFF export included; the
+`client` extra adds only httpx2.
 
 ## Products
 
@@ -176,7 +171,7 @@ GeoJSON needs only the standard library; longitudes come out in -180…180.
 point no cell holds (outside the grid, or in a gap of a reduced OVATION
 file).
 
-GeoTIFF needs the `geo` extra:
+GeoTIFF, which GDAL, rasterio and QGIS open:
 
 ```python
 from pathlib import Path

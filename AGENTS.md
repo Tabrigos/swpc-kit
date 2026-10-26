@@ -45,7 +45,7 @@ uv run mypy
 - **Parsers are pure functions**: `str`/`bytes` in, models out. No I/O in the
   parsers; the network lives only in the client.
 - **The core uses only the standard library.** External dependencies live in
-  the extras (`client`, `geo`). A new dependency is justified in the PR.
+  the extras (today only `client`). A new dependency is justified in the PR.
 - **Types**: `mypy --strict` clean; models `@dataclass(frozen=True, slots=True)`;
   dates always `datetime` with UTC timezone, never strings.
 - **Old and new formats**: SWPC changes its formats (see `docs/FONTI.md`). A

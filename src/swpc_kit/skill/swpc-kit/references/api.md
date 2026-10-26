@@ -1006,9 +1006,9 @@ GeoJSON export of the gridded products (standard library only).
 
 Return the cells of a gridded product as a GeoJSON FeatureCollection.
 
-## `swpc_kit.export.geotiff` (extra `geo`)
+## `swpc_kit.export.geotiff`
 
-GeoTIFF export of the gridded products (needs the `geo` extra).
+GeoTIFF export of the gridded products, with the standard library only.
 
 ### `write_geotiff(product: GridProduct, path: str | PathLike[str], *, nodata: float = nan) -> None`
 

@@ -40,7 +40,6 @@ NOT_API: set[str] = {
     "metadata.version",
     "ETag",  # an HTTP header
     "datetime",  # the standard library type
-    "geo",  # the name of an extra
     "parse_",  # the prefix of the parsers, in prose
 }
 """Spans in backticks that look like names but are not the library's API."""
@@ -266,6 +265,12 @@ def _known_names() -> set[str]:
     for module_name in [*build_skill.public_modules(), f"{PACKAGE}.skill"]:
         module = _import(module_name)
         names |= set(module_name.split("."))
+        # the pytest fixtures, which references/api.md lists even outside __all__
+        names |= {
+            name
+            for name, value in vars(module).items()
+            if not name.startswith("_") and hasattr(value, "_fixture_function_marker")
+        }
         for name in _public_names(module):
             value = getattr(module, name)
             names |= {name} | _parameters(value)

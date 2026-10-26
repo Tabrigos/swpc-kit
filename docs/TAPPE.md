@@ -357,17 +357,22 @@ tolleranza per record (D-015).
 
 ## T18 — GeoTIFF senza rasterio
 
-- [ ] Fatta
+- [x] Fatta
 
 Quando: prima della 0.3.0, deciso dal maintainer il 2026-10-25 (D-019).
 
-- [ ] `write_geotiff` con la sola libreria standard (`struct`, `zlib`),
+- [x] `write_geotiff` con la sola libreria standard (`struct`, `zlib`),
   stesso file di oggi: float32, deflate, EPSG:4326, pixel-is-area, nodata,
   tag di GDAL con i tempi, descrizione e unità della banda.
-- [ ] rasterio resta solo nei test, che rileggono il file con GDAL e lo
+- [x] rasterio resta solo nei test, che rileggono il file con GDAL e lo
   confrontano con quello di oggi.
-- [ ] L'extra `geo` diventa vuoto e resta, perché chi scrive
-  `swpc-kit[geo]` non trovi un errore.
+- [x] ~~L'extra `geo` diventa vuoto e resta~~: tolto del tutto, perché non
+  è mai uscito su PyPI (scelta del maintainer, D-021).
+- Esito (D-021): il confronto con il writer vecchio è stato fatto una volta,
+  con uno script fuori dal repo, invece che con file di riferimento fra le
+  fixture. I test controllano già ogni proprietà che rasterio rilegge;
+  in più ora controllano la compressione, l'elenco completo dei tag,
+  l'intero raster di OVATION completa e le regole TIFF che GDAL perdona.
 
 ## T17 — Trasporto educato su politefetch
 
