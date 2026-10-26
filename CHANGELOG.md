@@ -19,10 +19,16 @@ All notable changes to this project are listed here. The format follows
 - The docs treat a `429` as a refusal (slow down, stop until the next run)
   rather than a reason to retry soon, and explain how to use the parsers
   behind your own download code. The client still raises `SourceNotReady`.
+- `python -m swpc_kit.skill check` without `--target` looks for the copy
+  from the current folder up to the root of the repository, so it works
+  from a subfolder too.
 
 ### Fixed
 
 - A `CANCEL WARNING` message had `kind=None`.
+- The skill's API reference left out the methods the solar wind models
+  inherit (`latest_active`, `active_series` and the others), and wrote
+  some types as `Optional[...]`.
 
 ## [0.3.0] - 2026-10-26
 

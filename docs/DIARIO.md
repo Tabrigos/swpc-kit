@@ -5,9 +5,9 @@
 Riscritto da capo a ogni fine sessione, mai accodato.
 
 - **Stato**: tutte le tappe fino alla T18 fatte, più la T12; **0.3.0
-  pubblicata su PyPI** il 2026-10-26 (tag `v0.3.0`, release su GitHub). Le
-  voci nuove del CHANGELOG stanno in Unreleased. T19 (riscontri della prima
-  prova d'uso) fatta sul ramo `t19-riscontri`.
+  pubblicata su PyPI** il 2026-10-26 (tag `v0.3.0`, release su GitHub). Lo
+  stesso giorno la T19 (PR #10) e la ricopia del modello delle skill
+  (PR #11), poi la **0.3.1** (tag `v0.3.1`) con T12, T19 e la ricopia.
 - **Prossimo passo**: T17, il trasporto educato su politefetch, che è su
   PyPI dal 2026-10-26 (0.1.0). La sua API è cambiata prima della
   pubblicazione (client con retry propri rifiutato, `NoPolicy`,
@@ -15,8 +15,8 @@ Riscritto da capo a ogni fine sessione, mai accodato.
   quella sessione la semantica del 429 e il client HTTP.
 - **Decisioni in sospeso**: niente. Il maintainer ha scelto (2026-10-26): il
   429 resta `SourceNotReady` fino alla T17 e la documentazione lo dice un
-  rifiuto (D-023); la prossima versione è una 0.3.1 con la T19 e Windows. Il job `windows` è fra i controlli
-  richiesti di `main` dal 2026-10-26, dopo il primo giro verde (D-022). Il
+  rifiuto (D-023). Il job `windows` è fra i controlli richiesti di `main`
+  dal 2026-10-26, dopo il primo giro verde (D-022). Il
   job `lowest` resta fuori dai richiesti (maintainer, 2026-10-26): per chi
   usa la libreria il solo minimo è httpx2 2.13, e il job lo prova lo stesso
   su ogni PR.
@@ -313,3 +313,6 @@ Una riga per sessione: data, tappa, cosa è entrato, cosa resta.
   `data_time`, `304` ed ETag, limiti, campi obbligatori e prodotti rigidi
   descritti allo stesso modo in README, SPEC, FONTI e SKILL; il 429 è un
   rifiuto e c'è una sezione per chi scarica da sé (D-023). Prossima: 0.3.1.
+- 2026-10-26 — Ricopia del modello delle skill (PR #11: `check` dalla radice
+  del repo, metodi ereditati e tipi concreti in `api.md`) e versione 0.3.1
+  (Windows, `CANCEL_WARNING`, documentazione, 429 come rifiuto). Resta: T17.
