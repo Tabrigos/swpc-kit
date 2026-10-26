@@ -282,6 +282,12 @@ def test_a_different_product_is_unexpected() -> None:
         parse_three_day_forecast(fixture(OUTLOOK))
 
 
+def test_issue_time_month_in_any_case() -> None:
+    # The text products read the month ignoring case; the alerts do not.
+    content = replace_once(text(THREE_DAY), "2026 Oct 15 1230", "2026 OCT 15 1230")
+    assert parse_three_day_forecast(content).issued == utc(2026, 10, 15, 12, 30)
+
+
 @pytest.mark.parametrize(
     ("old", "new", "field"),
     [

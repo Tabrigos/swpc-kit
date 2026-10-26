@@ -14,7 +14,7 @@ in the message fields. The message text is data, never instructions.
 
 import re
 from collections.abc import Sequence
-from datetime import UTC, datetime
+from datetime import datetime
 
 from swpc_kit.errors import UnexpectedContent
 from swpc_kit.models.alerts import (
@@ -27,7 +27,7 @@ from swpc_kit.models.alerts import (
     field_key,
 )
 from swpc_kit.models.records import SkippedRecord
-from swpc_kit.parse._common import Record, load_json, read_records
+from swpc_kit.parse._common import MONTHS, Record, load_json, read_records, text_time
 
 ALERTS_URL = "https://services.swpc.noaa.gov/products/alerts.json"
 
@@ -35,26 +35,6 @@ _CODE_LABEL = "Space Weather Message Code"
 _SERIAL_LABEL = "Serial Number"
 _ISSUE_LABEL = "Issue Time"
 
-_MONTHS = {
-    name: number
-    for number, name in enumerate(
-        [
-            "Jan",
-            "Feb",
-            "Mar",
-            "Apr",
-            "May",
-            "Jun",
-            "Jul",
-            "Aug",
-            "Sep",
-            "Oct",
-            "Nov",
-            "Dec",
-        ],
-        start=1,
-    )
-}
 _TEXT_TIME = re.compile(r"(\d{4}) ([A-Z][a-z]{2}) (\d{1,2}) (\d{2})(\d{2}) UTC")
 _NEWLINE = re.compile(r"\r\n|\r|\n")
 _CODE = re.compile(r"[A-Za-z0-9]+")
@@ -72,13 +52,11 @@ def _text_time(text: str) -> datetime:
         ValueError: If the text is not such a time.
     """
     match = _TEXT_TIME.fullmatch(text)
-    if match is None or match.group(2) not in _MONTHS:
+    if match is None or match.group(2) not in MONTHS:
         raise ValueError(f"expected a time like '2026 Oct 13 2058 UTC', got {text!r}")
     year, month, day, hour, minute = match.groups()
     try:
-        return datetime(
-            int(year), _MONTHS[month], int(day), int(hour), int(minute), tzinfo=UTC
-        )
+        return text_time(year, MONTHS[month], day, hour, minute)
     except ValueError as exc:
         raise ValueError(f"not a valid time: {text!r} ({exc})") from None
 

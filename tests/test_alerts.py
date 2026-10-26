@@ -441,6 +441,10 @@ def test_empty_array_means_no_messages() -> None:
             HEADER.replace("2026 Oct 13 2058 UTC", "2026 Oct 13 2460 UTC"),
             "message.Issue Time",
         ),
+        (  # the alerts write the month as "Oct" only
+            HEADER.replace("2026 Oct 13 2058 UTC", "2026 OCT 13 2058 UTC"),
+            "message.Issue Time",
+        ),
         ("", "message.Space Weather Message Code"),
     ],
 )

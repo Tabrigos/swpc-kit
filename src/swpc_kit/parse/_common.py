@@ -109,6 +109,41 @@ def parse_time(text: str) -> datetime:
     return value.astimezone(UTC)
 
 
+MONTHS = {
+    name: number
+    for number, name in enumerate(
+        (
+            "Jan",
+            "Feb",
+            "Mar",
+            "Apr",
+            "May",
+            "Jun",
+            "Jul",
+            "Aug",
+            "Sep",
+            "Oct",
+            "Nov",
+            "Dec",
+        ),
+        start=1,
+    )
+}
+"""English month abbreviations as SWPC writes them, to month numbers."""
+
+
+def text_time(year: str, month: int, day: str, hour: str, minute: str) -> datetime:
+    """Return the UTC time of the parts of a text time (``2026 Oct 13 2058 UTC``).
+
+    The text products and the alerts each match their own pattern and look up
+    the month in :data:`MONTHS`; this builds the time from the parts.
+
+    Raises:
+        ValueError: If the parts are not a valid date and time.
+    """
+    return datetime(int(year), month, int(day), int(hour), int(minute), tzinfo=UTC)
+
+
 class Record:
     """One record of a JSON product, with typed accessors.
 
