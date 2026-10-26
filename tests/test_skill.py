@@ -47,7 +47,7 @@ NOT_API: set[str] = {
 # ---- nothing below this line changes between libraries ----------------------
 
 SCHEMA_FINGERPRINT = (
-    "sha256:babbb17f57cf7027fbe3f35f03549e8b500f45ef37117f5bfa4bf6c19550dc25"
+    "sha256:e2f2a891d45627172a8b4ba79615e1261dcd6f8cc207b785c76319eaac28915d"
 )
 """Fingerprint of the shared part of ``<package>/skill/__init__.py``."""
 
@@ -412,6 +412,22 @@ def test_install_writes_a_marked_copy_that_check_accepts(
     (target / "SKILL.md").write_bytes(crlf + b"local edit\r\n")
     assert skill.main(["check", "--target", str(target)]) == 1
     assert "by hand" in capsys.readouterr().out
+
+
+def test_check_finds_the_copy_from_a_subfolder_of_the_repository(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    (tmp_path / ".git").mkdir()
+    backend = tmp_path / "backend"
+    backend.mkdir()
+    monkeypatch.chdir(backend)
+    root_copy = (tmp_path / ".claude" / "skills" / SKILL_DIR.name).resolve()
+    assert skill.main(["check"]) == 1
+    assert str(root_copy) in capsys.readouterr().out  # the place to install into
+    assert skill.main(["install", "--target", str(root_copy)]) == 0
+    capsys.readouterr()
+    assert skill.main(["check"]) == 0
+    assert str(root_copy) in capsys.readouterr().out
 
 
 def test_install_refuses_other_places_and_unmarked_directories(tmp_path: Path) -> None:

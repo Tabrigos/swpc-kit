@@ -124,7 +124,7 @@ Synchronous transport on an `httpx2.Client`.
 
 ### `Product`
 
-`Product(name: str, url: str, parse: Callable[[bytes, str], M])` (subclass of `Generic`)
+`Product(name: str, url: str, parse: Callable[[bytes, str], M])`
 
 A SWPC product the clients know how to fetch.
 
@@ -436,7 +436,7 @@ One one-minute record of the solar wind plasma.
 
 ### `RtswMag1m`
 
-`RtswMag1m(values: tuple[RtswMagSample, ...], source_url: str, skipped: tuple[SkippedRecord, ...] = ())` (subclass of `_RtswSeries`)
+`RtswMag1m(values: tuple[RtswMagSample, ...], source_url: str, skipped: tuple[SkippedRecord, ...] = ())`
 
 One-minute interplanetary magnetic field of the last 24 hours.
 
@@ -446,9 +446,16 @@ One-minute interplanetary magnetic field of the last 24 hours.
 | `source_url` | `str` | Where the content came from. |
 | `skipped` | `tuple[SkippedRecord, ...]` | The records that could not be read, in source order. |
 
+- `.data_time` (property): Time of the most recent active record.
+- `.sources` (property): Names of the sources in the content, sorted.
+- `.series(source: str) -> tuple[RtswMagSample, ...]`: Return the records of `source`, oldest first (empty if none).
+- `.active_series() -> tuple[RtswMagSample, ...]`: Return the active record of each time that has one, oldest first.
+- `.active_at(time: datetime) -> RtswMagSample | None`: Return the active record at exactly `time`, or `None`.
+- `.latest_active() -> RtswMagSample | None`: Return the most recent active record, or `None` if there is none.
+
 ### `RtswWind1m`
 
-`RtswWind1m(values: tuple[RtswWindSample, ...], source_url: str, skipped: tuple[SkippedRecord, ...] = ())` (subclass of `_RtswSeries`)
+`RtswWind1m(values: tuple[RtswWindSample, ...], source_url: str, skipped: tuple[SkippedRecord, ...] = ())`
 
 One-minute solar wind plasma of the last 24 hours.
 
@@ -457,6 +464,13 @@ One-minute solar wind plasma of the last 24 hours.
 | `values` | `tuple[RtswWindSample, ...]` | The records of every source, oldest first; records with the same time keep the order of the source file. |
 | `source_url` | `str` | Where the content came from. |
 | `skipped` | `tuple[SkippedRecord, ...]` | The records that could not be read, in source order. |
+
+- `.data_time` (property): Time of the most recent active record.
+- `.sources` (property): Names of the sources in the content, sorted.
+- `.series(source: str) -> tuple[RtswWindSample, ...]`: Return the records of `source`, oldest first (empty if none).
+- `.active_series() -> tuple[RtswWindSample, ...]`: Return the active record of each time that has one, oldest first.
+- `.active_at(time: datetime) -> RtswWindSample | None`: Return the active record at exactly `time`, or `None`.
+- `.latest_active() -> RtswWindSample | None`: Return the most recent active record, or `None` if there is none.
 
 ## `swpc_kit.models.goes`
 
