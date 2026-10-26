@@ -12,8 +12,8 @@ Riscritto da capo a ogni fine sessione, mai accodato.
   (client con retry propri rifiutato, `NoPolicy`, `Transport.send` con un
   context manager): rileggerla, e decidere con quella sessione la
   semantica del 429 e il client HTTP.
-- **Decisioni in sospeso**: il job `windows` fra i controlli richiesti di
-  `main`, dopo il primo giro verde (lo aggiunge il maintainer, D-022). Il
+- **Decisioni in sospeso**: niente. Il job `windows` è fra i controlli
+  richiesti di `main` dal 2026-10-26, dopo il primo giro verde (D-022). Il
   job `lowest` resta fuori dai richiesti (maintainer, 2026-10-26): per chi
   usa la libreria il solo minimo è httpx2 2.13, e il job lo prova lo stesso
   su ogni PR.
