@@ -46,7 +46,7 @@ def write_geotiff(
     *,
     nodata: float = math.nan,
 ) -> None:
-    """Write a gridded product to a GeoTIFF file.
+    """Write a gridded product to a GeoTIFF file, in place; nodata is declared.
 
     Cells the grid does not have (the missing longitudes of a reduced
     OVATION file) are set to ``nodata``.

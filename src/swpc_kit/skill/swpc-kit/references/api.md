@@ -1013,7 +1013,7 @@ GeoTIFF export of the gridded products, with the standard library only.
 
 ### `write_geotiff(product: GridProduct, path: str | PathLike[str], *, nodata: float = nan) -> None`
 
-Write a gridded product to a GeoTIFF file.
+Write a gridded product to a GeoTIFF file, in place; nodata is declared.
 
 ## `swpc_kit.codes`
 
