@@ -68,7 +68,6 @@ MODULES: list[str] = [
 
 EXTRA: dict[str, str] = {
     "swpc_kit.client": "extra `client`",
-    "swpc_kit.export.geotiff": "extra `geo`",
 }
 """Modules that need an extra, such as ``{"pkg.adapters.httpx": "extra `httpx`"}``;
 without it installed their section has no signatures."""

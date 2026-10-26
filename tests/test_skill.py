@@ -40,7 +40,6 @@ NOT_API: set[str] = {
     "metadata.version",
     "ETag",  # an HTTP header
     "datetime",  # the standard library type
-    "geo",  # the name of an extra
     "parse_",  # the prefix of the parsers, in prose
 }
 """Spans in backticks that look like names but are not the library's API."""

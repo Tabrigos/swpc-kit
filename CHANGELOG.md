@@ -50,6 +50,12 @@ All notable changes to this project are listed here. The format follows
 
 ### Changed
 
+- `swpc_kit.export.geotiff.write_geotiff` writes the GeoTIFF with the
+  standard library only, and needs no extra: the same file as before for
+  GDAL, rasterio and QGIS (CRS, transform, values, nodata, tags, band
+  description and unit, deflate). A `nodata` that does not fit in a
+  `float32` is a `ValueError`.
+
 - `AsyncClient` parses in a thread (`asyncio.to_thread`): a whole OVATION
   grid no longer blocks the event loop for most of a second.
 - The arguments of `Client` and `AsyncClient` are checked when the client is
@@ -86,6 +92,10 @@ All notable changes to this project are listed here. The format follows
 - `swpc_kit.codes` and `swpc_kit.export.geotiff` declare `__all__`.
 
 ### Removed
+
+- The `geo` extra, with its numpy and rasterio (about 140 MB with GDAL):
+  GeoTIFF export no longer needs them. `pip install "swpc-kit[geo]"` still
+  installs swpc-kit, with a warning that the extra does not exist.
 
 - `python -m swpc_kit.skill sync` and the `agent_skills` entry point: skills
   are no longer discovered among the installed packages. A project lists the
