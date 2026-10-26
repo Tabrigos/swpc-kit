@@ -197,6 +197,38 @@ def test_cancel_watch(alerts: Alerts) -> None:
     assert not [f for f in m.fields if f.name.startswith("Oct")]
 
 
+# A record of alerts.json issued 2026-07-12 21:01 UTC, as served: the recorded
+# fixture has no cancelled warning.
+CANCEL_WARNING = (
+    "Space Weather Message Code: WARK05\r\n"
+    "Serial Number: 2250\r\n"
+    "Issue Time: 2026 Jul 12 2101 UTC\r\n"
+    "\r\n"
+    "CANCEL WARNING: Geomagnetic K-index of 5 expected \n"
+    "Cancel Serial Number: 2249\n"
+    "Original Issue Time: 2026 Jul 12 1411 UTC\n"
+    "Should have only been valid until 12/2100 UTC.\r\n"
+    "\n"
+    "Should have only been valid until 12/2100 UTC.NOAA Scale: G1 - Minor\r\n"
+    "\r\n"
+    "NOAA Space Weather Scale descriptions can be found at\r\n"
+    "www.swpc.noaa.gov/noaa-scales-explanation\r\n"
+)
+
+
+def test_cancel_warning() -> None:
+    raw = one("K05W", CANCEL_WARNING, issued="2026-07-12 21:01:57.203")
+    (m,) = parse_alerts(raw).messages
+    assert m.kind is MessageKind.CANCEL_WARNING
+    assert m.title == "CANCEL WARNING: Geomagnetic K-index of 5 expected"
+    assert m.cancel_serial == 2249
+    assert m.field("Original Issue Time") == "2026 Jul 12 1411 UTC"
+    assert m.noaa_scale is None  # its scale line is glued to a sentence
+    # The catalogue describes the code, which a cancel shares with the warning.
+    assert m.info is not None
+    assert m.info.long == "WARK05"
+
+
 def test_continued_alert_with_max_time(alerts: Alerts) -> None:
     m = alerts.messages[38]
     assert m.code == "ALTEF3"

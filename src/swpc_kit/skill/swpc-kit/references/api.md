@@ -566,6 +566,7 @@ The kind of a message, from the word before the colon of its title.
 - `CONTINUED_ALERT` = `'CONTINUED ALERT'`
 - `WARNING` = `'WARNING'`
 - `EXTENDED_WARNING` = `'EXTENDED WARNING'`
+- `CANCEL_WARNING` = `'CANCEL WARNING'`
 - `WATCH` = `'WATCH'`
 - `CANCEL_WATCH` = `'CANCEL WATCH'`
 - `SUMMARY` = `'SUMMARY'`
