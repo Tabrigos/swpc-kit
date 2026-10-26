@@ -7,6 +7,7 @@ nothing goes to the network.
 
 import doctest
 import re
+import shutil
 from pathlib import Path
 from typing import Any
 
@@ -26,8 +27,9 @@ def workdir(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch, swpc_from_fixtures: None
 ) -> Path:
     """A scratch directory where the README's relative paths resolve."""
-    (tmp_path / "tests").mkdir()
-    (tmp_path / "tests" / "fixtures").symlink_to(ROOT / "tests" / "fixtures")
+    # A copy, not a symlink: on Windows a symlink needs a privilege that a
+    # normal user does not have. The fixtures stay under 2 MiB.
+    shutil.copytree(ROOT / "tests" / "fixtures", tmp_path / "tests" / "fixtures")
     monkeypatch.chdir(tmp_path)
     return tmp_path
 

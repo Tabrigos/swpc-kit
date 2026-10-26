@@ -6,6 +6,10 @@ All notable changes to this project are listed here. The format follows
 
 ## [Unreleased]
 
+### Changed
+
+- Windows is supported: the CI runs the whole test suite on Windows too.
+
 ## [0.3.0] - 2026-10-26
 
 The first release on PyPI. 0.1.0 and 0.2.0 were never published; their

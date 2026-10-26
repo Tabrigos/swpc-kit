@@ -1,7 +1,9 @@
 """Shared test setup.
 
 Tests never use the network: they read the fixtures in ``tests/fixtures/``.
-Any attempt to open a socket fails loudly instead of reaching SWPC.
+Any attempt to open a socket fails loudly instead of reaching SWPC. Only the
+loopback interface stays open, for the socket pair through which asyncio's
+event loop wakes itself up (on Windows it connects to 127.0.0.1).
 """
 
 import json
@@ -17,9 +19,20 @@ def _no_network(*args: Any, **kwargs: Any) -> NoReturn:
     raise RuntimeError("tests must not use the network; read a fixture instead")
 
 
+_LOOPBACK = {"127.0.0.1", "::1"}
+_connect = socket.socket.connect
+
+
+def _loopback_only(sock: socket.socket, address: Any) -> None:
+    if isinstance(address, tuple) and address[0] in _LOOPBACK:
+        _connect(sock, address)
+        return
+    _no_network()
+
+
 @pytest.fixture(autouse=True)
 def _block_network(monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.setattr(socket.socket, "connect", _no_network)
+    monkeypatch.setattr(socket.socket, "connect", _loopback_only)
     monkeypatch.setattr(socket.socket, "connect_ex", _no_network)
     monkeypatch.setattr(socket, "create_connection", _no_network)
     monkeypatch.setattr(socket, "getaddrinfo", _no_network)

@@ -548,6 +548,9 @@ def _replace_in_line(number: int, old: str, new: str) -> str:
         (_replace_in_line(41, " 51 |", " 50 |"), 41),  # off the step
         (_replace_line(50, "# a comment in the table"), 50),
     ],
+    # Short ids: pytest puts the id in an environment variable, and on Windows
+    # the whole file is longer than an environment variable can be.
+    ids=lambda value: f"line{value}" if isinstance(value, int) else "drap",
 )
 def test_drap_inconsistent_lines(text: str, line: int) -> None:
     with pytest.raises(ParseError) as info:

@@ -35,3 +35,18 @@ def test_package_is_marked_as_typed() -> None:
 def test_network_is_blocked_in_tests() -> None:
     with pytest.raises(RuntimeError, match="network"):
         socket.create_connection(("services.swpc.noaa.gov", 443), timeout=1)
+
+
+def test_only_the_loopback_interface_is_open() -> None:
+    with socket.socket() as sock:
+        sock.settimeout(0.5)  # should the barrier fail, do not hang
+        with pytest.raises(RuntimeError, match="network"):
+            sock.connect(("192.0.2.1", 443))  # TEST-NET-1, never routed
+    with socket.socket() as sock, pytest.raises(RuntimeError, match="network"):
+        sock.connect_ex(("127.0.0.1", 9))
+    # asyncio's event loop wakes itself up through a socket pair, which on
+    # Windows connects to 127.0.0.1.
+    left, right = socket.socketpair()
+    with left, right:
+        left.sendall(b"x")
+        assert right.recv(1) == b"x"
