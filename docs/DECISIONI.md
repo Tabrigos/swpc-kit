@@ -451,3 +451,24 @@ scelte già prese e sparse fra `SPEC.md`, `docs/FONTI.md` e il diario; la data
 - **Conseguenze**: la suite è verde anche su Windows, e un guasto solo di
   Windows si vede nella CI.
 
+
+## D-023 — Il 429 è un rifiuto: per ora lo dice la documentazione
+
+- **Data e tappa**: 2026-10-26, T19 (scelta del maintainer, concordata con
+  l'agente di politefetch)
+- **Contesto**: README e SKILL mettevano il 429 fra gli errori da ritentare
+  presto, con `SourceNotReady`. Per chi interroga SWPC da un job, e per
+  politefetch, un 429 è un rifiuto: si rallenta, non si ritenta subito.
+  Mancava anche una guida per chi scarica con un livello suo e usa solo i
+  parser.
+- **Decisione**: il comportamento del client non cambia fino alla T17. README
+  e SKILL dicono che il 429 è un rifiuto: dopo pochi tentativi distanziati ci
+  si ferma fino al giro successivo del job. Una sezione nuova spiega come
+  leggere le risposte HTTP a chi scarica da sé; con un livello che registra i
+  fallimenti, "più tardi" vuol dire il suo giro successivo, mai un ciclo nello
+  stesso processo.
+- **Alternative scartate**: una classe d'errore per il 429 già nella prossima
+  patch (cambia il contratto prima che la T17 lo progetti insieme
+  all'errore per l'host congelato, D-016).
+- **Conseguenze**: fino alla T17 il 429 si distingue solo dal messaggio, che
+  la SKILL sconsiglia di leggere; la T17 gli dà un errore suo.

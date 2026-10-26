@@ -6,13 +6,16 @@ Riscritto da capo a ogni fine sessione, mai accodato.
 
 - **Stato**: tutte le tappe fino alla T18 fatte, più la T12; **0.3.0
   pubblicata su PyPI** il 2026-10-26 (tag `v0.3.0`, release su GitHub). Le
-  voci nuove del CHANGELOG stanno in Unreleased.
-- **Prossimo passo**: T17, il trasporto educato su politefetch, quando
-  politefetch è su PyPI. La sua API è cambiata prima della pubblicazione
-  (client con retry propri rifiutato, `NoPolicy`, `Transport.send` con un
-  context manager): rileggerla, e decidere con quella sessione la
-  semantica del 429 e il client HTTP.
-- **Decisioni in sospeso**: niente. Il job `windows` è fra i controlli
+  voci nuove del CHANGELOG stanno in Unreleased. T19 (riscontri della prima
+  prova d'uso) fatta sul ramo `t19-riscontri`.
+- **Prossimo passo**: T17, il trasporto educato su politefetch, che è su
+  PyPI dal 2026-10-26 (0.1.0). La sua API è cambiata prima della
+  pubblicazione (client con retry propri rifiutato, `NoPolicy`,
+  `Transport.send` con un context manager): rileggerla, e decidere con
+  quella sessione la semantica del 429 e il client HTTP.
+- **Decisioni in sospeso**: niente. Il maintainer ha scelto (2026-10-26): il
+  429 resta `SourceNotReady` fino alla T17 e la documentazione lo dice un
+  rifiuto (D-023); la prossima versione è una 0.3.1 con la T19 e Windows. Il job `windows` è fra i controlli
   richiesti di `main` dal 2026-10-26, dopo il primo giro verde (D-022). Il
   job `lowest` resta fuori dai richiesti (maintainer, 2026-10-26): per chi
   usa la libreria il solo minimo è httpx2 2.13, e il job lo prova lo stesso
@@ -211,6 +214,13 @@ Riscritto da capo a ogni fine sessione, mai accodato.
     d'ambiente.
   - `MONTHS` e `text_time` stanno in `parse/_common.py`; i pattern e le
     maiuscole del mese restano di ciascun formato.
+- **T19** (riscontri):
+  - `MessageKind.CANCEL_WARNING`; il caso sta come testo in
+    `tests/test_alerts.py`, perché la fixture registrata non ha un warning
+    annullato.
+  - Il generatore di `api.md` prende solo la prima riga delle docstring
+    (con la regola D205 il primo paragrafo è una riga): i dettagli vanno
+    nella SKILL, non nelle docstring.
 - **Dubbi aperti**: le ipotesi rimaste in `docs/FONTI.md` (UTC dei
   `time_tag` senza `Z`, millisecondi del vecchio Dst e flusso, significato
   delle chiavi di `noaa-scales.json`, unità dei valori OVATION).
@@ -298,3 +308,8 @@ Una riga per sessione: data, tappa, cosa è entrato, cosa resta.
   locale, id corti, fixture copiate invece del symlink); tabella dei mesi e
   `text_time` in `_common.py`; override di mypy per rasterio tenuto
   (D-022). Resta: T17.
+- 2026-10-26 — T19 (in locale, ramo `t19-riscontri`): riscontri
+  della prima prova d'uso vagliati sul codice; `MessageKind.CANCEL_WARNING`;
+  `data_time`, `304` ed ETag, limiti, campi obbligatori e prodotti rigidi
+  descritti allo stesso modo in README, SPEC, FONTI e SKILL; il 429 è un
+  rifiuto e c'è una sezione per chi scarica da sé (D-023). Prossima: 0.3.1.

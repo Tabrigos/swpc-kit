@@ -387,6 +387,37 @@ Quando: prima della 0.3.0, deciso dal maintainer il 2026-10-25 (D-019).
   in più ora controllano la compressione, l'elenco completo dei tag,
   l'intero raster di OVATION completa e le regole TIFF che GDAL perdona.
 
+## T19 — Riscontri della prima prova d'uso
+
+- [x] Fatta
+
+Quando: dopo la 0.3.0, prima della T17. Il 2026-10-26 un progetto che userebbe
+solo i parser ha provato la 0.3.0 sulle sue risposte registrate. Ogni voce
+del suo riscontro è stata ricontrollata sul codice prima di tenerla buona.
+
+- [x] `MessageKind.CANCEL_WARNING`: un `CANCEL WARNING` aveva `kind=None`.
+  Ha lo stesso codice del warning che annulla, quindi `info` va letto
+  dopo `kind` (docstring e SKILL).
+- [x] `data_time` descritto allo stesso modo in README, SPEC, FONTI e SKILL:
+  il tempo che i dati descrivono, mai un tempo di previsione. In FONTI la
+  riga del vento solare era rimasta a prima di D-012.
+- [x] Il `304` è un risparmio, non una promessa: l'ETag può cambiare a
+  contenuto identico (ipotesi riportata, in FONTI).
+- [x] SKILL: installazione senza extra, limiti di plausibilità, campi
+  obbligatori in ogni record, `noaa-scales.json` fra i prodotti rigidi,
+  veicolo attivo fermo, dettagli del GeoTIFF, `partial` di OVATION.
+- Restano come sono, per scelta già presa (D-015, D-017): colonna assente
+  da tutti i record = `UnexpectedContent`; `noaa-scales`, bollettini e
+  griglie rigidi; `a_running` e `station_count` obbligatori (nessun null
+  visto nelle risposte registrate); classe dei flare troncata, come la
+  `max_class` di SWPC nell'elenco dei flare della prova; nessun ripiego
+  automatico sul veicolo di riserva (D-012).
+- [x] Il 429 è un rifiuto (D-023): README e SKILL lo dicono, il
+  comportamento cambia in T17. Sezione per chi scarica con codice suo,
+  concordata con l'agente di politefetch (scelte del maintainer).
+- Fuori da questa tappa: i metodi ereditati in `api.md` sono un difetto del
+  modello comune, corretto con la sua ricopia.
+
 ## T17 — Trasporto educato su politefetch
 
 - [ ] Fatta
