@@ -40,6 +40,7 @@ class MessageKind(StrEnum):
     CONTINUED_ALERT = "CONTINUED ALERT"
     WARNING = "WARNING"
     EXTENDED_WARNING = "EXTENDED WARNING"
+    CANCEL_WARNING = "CANCEL WARNING"
     WATCH = "WATCH"
     CANCEL_WATCH = "CANCEL WATCH"
     SUMMARY = "SUMMARY"
@@ -179,6 +180,8 @@ class AlertMessage:
     def info(self) -> MessageCode | None:
         """Catalogue entry of the message, by short code then long code.
 
+        A cancel has the code of the message it cancels, so the meaning of
+        the entry holds only when ``kind`` is not a ``CANCEL_*`` kind.
         ``None`` when neither code is in :mod:`swpc_kit.codes`.
         """
         return by_short(self.product_id) or by_long(self.code)

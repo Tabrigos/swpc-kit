@@ -6,9 +6,23 @@ All notable changes to this project are listed here. The format follows
 
 ## [Unreleased]
 
+### Added
+
+- `MessageKind.CANCEL_WARNING`.
+
 ### Changed
 
 - Windows is supported: the CI runs the whole test suite on Windows too.
+- The docs describe `data_time` the same way everywhere, present the `304`
+  as a saving rather than a promise, and the skill lists the plausibility
+  limits, the fields each record must have and the strict products.
+- The docs treat a `429` as a refusal (slow down, stop until the next run)
+  rather than a reason to retry soon, and explain how to use the parsers
+  behind your own download code. The client still raises `SourceNotReady`.
+
+### Fixed
+
+- A `CANCEL WARNING` message had `kind=None`.
 
 ## [0.3.0] - 2026-10-26
 
