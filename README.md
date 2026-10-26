@@ -49,8 +49,10 @@ Parsers live in `swpc_kit.parse`, models in `swpc_kit.models`, the clients in
 ## Parse content you already have
 
 Parsers are pure functions: `str` or `bytes` in, a frozen dataclass out, with
-every time an aware UTC `datetime`. Each model has `data_time`, the most
-recent time its content declares, and `source_url`.
+every time an aware UTC `datetime`. Each model has `data_time`, the time its
+data describes and never a forecast time (the last observed value, the
+observation time of a grid, the issue time of a bulletin; the docstring of
+each model says which), and `source_url`.
 
 ```pycon
 >>> from pathlib import Path
@@ -189,8 +191,10 @@ write_geotiff(drap, "drap.tif")  # EPSG:4326, times in the tags
 
 The client (`client` extra) downloads, classifies the errors of the source,
 parses, and checks the age of the data on the time the content declares.
-Requests are conditional: an unchanged file comes back as `304 Not Modified`
-and the previous model is reused.
+Requests are conditional: when the `ETag` of a file has not changed, SWPC
+answers `304 Not Modified` and the previous model is reused. The `ETag` may
+also change when the content does not, so a `304` is a saving, not a
+promise.
 
 ```python
 from datetime import timedelta
@@ -238,9 +242,14 @@ wants.
 
 ### Trying again
 
-`SourceNotReady` is the only error worth retrying: SWPC is busy (`429`,
-`5xx`), the network failed, or the file was caught while SWPC was rewriting
-it. Wait, and wait longer each time; give up after a few attempts.
+`SourceNotReady` is the only error worth retrying: SWPC is busy (`5xx`), the
+network failed, or the file was caught while SWPC was rewriting it. Wait, and
+wait longer each time; give up after a few attempts.
+
+A `429` is a `SourceNotReady` too, but it is a refusal: SWPC asks you to slow
+down. If the attempts below do not get past it, stop and try at the next run
+of your job, and make the runs less frequent. A later version will give the
+`429` an error of its own.
 
 ```python
 import time
@@ -270,6 +279,26 @@ be the same until SWPC or swpc-kit changes. `StaleData` means SWPC has not
 updated the product yet: try at the next run of your job, not within
 seconds. The client does not read `Retry-After` and keeps its `ETag`s in
 memory only, so keep one `Client` for the life of your program.
+
+### Downloading with your own code
+
+If your program already downloads through a layer of its own (a scheduler,
+a rate limiter, a cache), keep it and use only the parsers. Read the answers
+the way the client does:
+
+- **200**: parse the body. A `SourceNotReady` from the parser is a file
+  caught while SWPC was rewriting it: try again later, by the rules of your
+  layer.
+- **408, 425, 5xx**, a timeout or a network failure: try again later, by the
+  rules of your layer. If that layer records failures and pauses the host,
+  "later" is its next run, never a loop in the same process.
+- **429**: a refusal. Slow down, honour `Retry-After` if your layer reads
+  it, and do not retry in the same run.
+- **A redirect, a 404 or any other status**, or an HTML page: stop. SWPC
+  moved or changed the product, or the URL is wrong.
+
+Then measure the age on `data_time`, not on the HTTP headers: a `304` or a
+recent `Last-Modified` does not say that the data is new.
 
 ### When SWPC moves a product or changes a format
 

@@ -143,8 +143,9 @@ texts end with `\n`. The server sends `Last-Modified`, `ETag` and
   instant is the one with `active: true` (if there were two, the first in
   the file wins); an instant with no active record stays without one, with
   no fallback to another source. Unknown sources stay strings.
-  `data_time` is the last `time_tag` of any source; the freshness of the
-  active source alone is `latest_active().time`.
+  Since T13 (D-012) `data_time` is the `time_tag` of the last active
+  record, not of any source: a backup that keeps running after the active
+  source stopped does not make the data look new.
 
 ## GOES
 
@@ -216,7 +217,7 @@ texts end with `\n`. The server sends `Last-Modified`, `ETag` and
 - First three lines always present: `Space Weather Message Code: WARK04`,
   `Serial Number: 5435`, `Issue Time: 2026 Oct 13 2058 UTC`. Then the title
   (`ALERT:`, `WARNING:`, `EXTENDED WARNING:`, `WATCH:`, `CONTINUED ALERT:`,
-  `CANCEL WATCH:`, `SUMMARY:`) and fields such as `Valid From:`,
+  `CANCEL WATCH:`, `SUMMARY:`; `CANCEL WARNING:` too, below) and fields such as `Valid From:`,
   `Valid To:`, `Now Valid Until:`, `Threshold Reached:`,
   `Synoptic Period:`, `Active Warning:`, `Begin Time:`, `End Time:`,
   `Maximum Time:`, `Extension to Serial Number:`,
@@ -281,6 +282,13 @@ Verified in T4 on the same fixture:
   are lines without `Name:` (`THIS SUPERSEDES ANY/ALL PRIOR WATCHES IN EFFECT`,
   `CORRECTED`, free sentences, the continuation of `Potential Impacts:`),
   and `Comment:` can contain long runs of spaces.
+- **`CANCEL WARNING`**, **verified** on one record of `alerts.json` issued
+  2026-07-12 21:01 UTC, outside the recorded fixture (the test keeps its
+  text): `product_id` `K05W`, code `WARK05`, the same as the warning it
+  cancels, then `Cancel Serial Number:` and `Original Issue Time:`. Its
+  scale line is glued to a sentence
+  (`... until 12/2100 UTC.NOAA Scale: G1 - Minor`), so it is not read as a
+  field.
 - **Hypothesis**: an empty array `[]` has never been seen; the parser reads
   it as "no messages" (not as `SourceNotReady`), because a period without
   alerts is a legitimate state.
@@ -476,6 +484,11 @@ comes):
   downloads and parses all 16 products of the day; SWPC sends **weak**
   `ETag`s (`W/"12c4-…"`) and `Last-Modified`, and answers
   `304 Not Modified` to the conditional request with `If-None-Match`.
+- **Hypothesis** (reported by a user of the library, measured on
+  2026-09-13, not verified here): the `ETag` of a product can change about
+  every 165 seconds while the content stays byte for byte the same, so the
+  `304` saves less than it seems. The docs present the `304` as a saving,
+  not a promise.
 
 ## Plausibility limits (T14, 2026-10-25)
 

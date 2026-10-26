@@ -97,8 +97,8 @@ A hierarchy under `SwpcError`:
 The age of the data is measured **on the time the content declares**
 (`Observation Time`, `:Issued:`, the last `time_tag`), never on the HTTP
 outcome: a `304 Not Modified` or a recent modification date does not say that
-the data is new. Every model exposes `data_time` (the most recent time in the
-content), and the client accepts `max_age`.
+the data is new. Every model exposes `data_time` (the time its data
+describes, never a forecast time), and the client accepts `max_age`.
 
 ## Changing formats
 
