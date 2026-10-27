@@ -14,6 +14,7 @@ affiliated with or endorsed by NOAA.
 
 from swpc_kit.errors import (
     ParseError,
+    RateLimited,
     SourceNotReady,
     StaleData,
     SwpcError,
@@ -24,6 +25,7 @@ __version__ = "0.3.2"
 
 __all__ = [
     "ParseError",
+    "RateLimited",
     "SourceNotReady",
     "StaleData",
     "SwpcError",

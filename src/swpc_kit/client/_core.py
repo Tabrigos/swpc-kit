@@ -15,15 +15,14 @@ from datetime import UTC, datetime, timedelta
 from typing import Any, Protocol
 
 from swpc_kit import __version__
-from swpc_kit.errors import SourceNotReady, StaleData, SwpcError, UnexpectedContent
+from swpc_kit.errors import StaleData, SwpcError, UnexpectedContent
+from swpc_kit.http import _header, check_response
 
 DEFAULT_TIMEOUT = 30.0
 """Default timeout, in seconds, for each phase of a request (see ``timeout``)."""
 
 DEFAULT_USER_AGENT = f"swpc-kit/{__version__} (+https://github.com/Tabrigos/swpc-kit)"
 """Default ``User-Agent`` header."""
-
-_TRANSIENT_STATUSES = frozenset({408, 425, 429})
 
 _log = logging.getLogger("swpc_kit.client")
 
@@ -44,11 +43,7 @@ class HttpResponse:
 
     def header(self, name: str) -> str | None:
         """Return the header ``name`` (any case), or ``None``."""
-        wanted = name.lower()
-        for key, value in self.headers.items():
-            if key.lower() == wanted:
-                return value
-        return None
+        return _header(self.headers, name)
 
 
 class Transport(Protocol):
@@ -291,8 +286,9 @@ class BaseClient:
             The parsed model, or the cached one on ``304 Not Modified``.
 
         Raises:
-            SourceNotReady: Temporary failure (``429``, ``5xx``…) or
-                truncated content.
+            RateLimited: ``429``: slow down, do not retry in this run.
+            SourceNotReady: Temporary failure (``5xx``…) or truncated
+                content.
             UnexpectedContent: Redirect, other status, HTML instead of data,
                 or content no parser knows.
             ParseError: Known format with an inconsistent value.
@@ -312,7 +308,8 @@ class BaseClient:
         event loop, then parses the body in a thread.
 
         Raises:
-            SourceNotReady: Temporary failure (``429``, ``5xx``…).
+            RateLimited: ``429``.
+            SourceNotReady: Temporary failure (``5xx``…).
             UnexpectedContent: Redirect, other status, HTML instead of data,
                 or ``304`` with no copy.
         """
@@ -325,21 +322,7 @@ class BaseClient:
             model: M = cached.model
             _log.debug("304 Not Modified from %s: reusing %s", url, product.name)
             return model
-        if status in _TRANSIENT_STATUSES or 500 <= status <= 599:
-            raise SourceNotReady(f"HTTP {status} from {url}; try again later")
-        if 300 <= status <= 399:
-            location = response.header("Location")
-            target = location or "an unknown place"
-            raise UnexpectedContent(
-                f"HTTP {status} from {url}: moved to {target}",
-                status=status,
-                location=location,
-            )
-        if status != 200:
-            raise UnexpectedContent(f"HTTP {status} from {url}", status=status)
-        content_type = response.header("Content-Type") or ""
-        if "html" in content_type.lower():
-            raise UnexpectedContent(f"got HTML ({content_type}) from {url}")
+        check_response(status, response.headers, url=url)
         return None
 
     def remember(

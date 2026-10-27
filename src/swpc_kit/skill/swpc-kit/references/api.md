@@ -5,17 +5,25 @@
 
 Read only the section you need.
 
-Modules: `swpc_kit` · `swpc_kit.client` · `swpc_kit.models` · `swpc_kit.models.indices` · `swpc_kit.models.solar_wind` · `swpc_kit.models.goes` · `swpc_kit.models.alerts` · `swpc_kit.models.bulletins` · `swpc_kit.models.grids` · `swpc_kit.models.records` · `swpc_kit.parse` · `swpc_kit.parse.indices` · `swpc_kit.parse.solar_wind` · `swpc_kit.parse.goes` · `swpc_kit.parse.alerts` · `swpc_kit.parse.bulletins` · `swpc_kit.parse.grids` · `swpc_kit.errors` · `swpc_kit.export` · `swpc_kit.export.data` · `swpc_kit.export.geojson` · `swpc_kit.export.geotiff` · `swpc_kit.codes`
+Modules: `swpc_kit` · `swpc_kit.http` · `swpc_kit.client` · `swpc_kit.models` · `swpc_kit.models.indices` · `swpc_kit.models.solar_wind` · `swpc_kit.models.goes` · `swpc_kit.models.alerts` · `swpc_kit.models.bulletins` · `swpc_kit.models.grids` · `swpc_kit.models.records` · `swpc_kit.parse` · `swpc_kit.parse.indices` · `swpc_kit.parse.solar_wind` · `swpc_kit.parse.goes` · `swpc_kit.parse.alerts` · `swpc_kit.parse.bulletins` · `swpc_kit.parse.grids` · `swpc_kit.errors` · `swpc_kit.export` · `swpc_kit.export.data` · `swpc_kit.export.geojson` · `swpc_kit.export.geotiff` · `swpc_kit.codes`
 
 ## `swpc_kit`
 
 Typed readers for the public data products of NOAA SWPC.
 
-Re-exports: `ParseError` (swpc_kit.errors), `SourceNotReady` (swpc_kit.errors), `StaleData` (swpc_kit.errors), `SwpcError` (swpc_kit.errors), `UnexpectedContent` (swpc_kit.errors).
+Re-exports: `ParseError` (swpc_kit.errors), `RateLimited` (swpc_kit.errors), `SourceNotReady` (swpc_kit.errors), `StaleData` (swpc_kit.errors), `SwpcError` (swpc_kit.errors), `UnexpectedContent` (swpc_kit.errors).
 
 ### `__version__`
 
 The package version, as a string.
+
+## `swpc_kit.http`
+
+The rules for reading SWPC's HTTP answers, with no network (D-006, D-024).
+
+### `check_response(status: int, headers: Mapping[str, str], *, url: str) -> None`
+
+Check that an answer from SWPC holds a product, before parsing it.
 
 ## `swpc_kit.client` (extra `client`)
 
@@ -976,6 +984,12 @@ Base class for every error raised by swpc-kit.
 `SourceNotReady` (subclass of `SwpcError`)
 
 The data is truncated or empty.
+
+### `RateLimited`
+
+`RateLimited(message: str, *, retry_after: str | None = None)` (subclass of `SourceNotReady`)
+
+SWPC refused the request with `429 Too Many Requests`.
 
 ### `UnexpectedContent`
 

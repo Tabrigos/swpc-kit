@@ -472,3 +472,37 @@ scelte già prese e sparse fra `SPEC.md`, `docs/FONTI.md` e il diario; la data
   all'errore per l'host congelato, D-016).
 - **Conseguenze**: fino alla T17 il 429 si distingue solo dal messaggio, che
   la SKILL sconsiglia di leggere; la T17 gli dà un errore suo.
+
+## D-024 — Le regole HTTP sono una funzione senza rete; niente extra `[polite]`
+
+- **Data e tappa**: 2026-10-27, T17 (scelta del maintainer dopo una
+  revisione scettica dell'architettura; concordata con l'agente di
+  politefetch). Sostituisce D-016.
+- **Contesto**: la T17 prevedeva un extra `swpc-kit[polite]` con un
+  `PoliteTransport` che avvolgeva il `Transport` in `gate.attempt(url)`. Il
+  cancello avrebbe visto solo la richiesta: il parsing viene dopo, quindi
+  un 200 con un JSON a metà sarebbe stato registrato come risposta buona,
+  con il suo ETag. Due pacchetti in 0.x si sarebbero legati con una matrice
+  di CI, e per i 304 dopo un riavvio sarebbe servita una cache su disco che
+  lo SPEC esclude. Intanto le regole sugli stati HTTP (D-006) stavano in un
+  metodo privato del client, e chi scarica da sé le rifaceva leggendo il
+  README; il 429 si riconosceva solo dal messaggio (D-023).
+- **Decisione**: `swpc_kit.http.check_response(status, headers, *, url)`,
+  pubblica e con la sola libreria standard, applica le regole di D-006 e
+  solleva l'errore tipizzato; il client la usa a sua volta. Il 429 diventa
+  `RateLimited`, sottoclasse di `SourceNotReady` con `retry_after` (il
+  valore dell'intestazione così com'è). Un 304 è un `ValueError`: la copia
+  ce l'ha solo il chiamante. Nessuna dipendenza da politefetch:
+  l'incontro è una ricetta nel README, provata in un test con un cancello
+  finto, e lo schema generico sta nella skill di politefetch.
+- **Alternative scartate**: l'extra `[polite]` (D-016, motivi sopra); una
+  funzione che prende un prodotto del catalogo e restituisce il modello
+  (`PRODUCTS` è `Product[Any]`, il tipo del modello si perderebbe: con
+  `check_response` il chiamante chiama il parser che vuole, tipato);
+  solo documentazione (chi scarica da sé continuerebbe a rifare la tabella
+  degli stati); `retry_after` già convertito in tempo (un HTTP date vuole
+  un orologio, e politefetch lo converte da sé).
+- **Conseguenze**: le regole sugli stati sono un contratto pubblico sotto
+  semver. Chi cattura `SourceNotReady` continua a prendere anche il 429;
+  chi vuole fermarsi lo cattura prima come `RateLimited`. Il client resta
+  senza attesa su `Retry-After` e con gli ETag in memoria.

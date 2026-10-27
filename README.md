@@ -108,8 +108,11 @@ X-ray samples know their flare class:
 
 ## Errors
 
-Every error is a `swpc_kit.SwpcError`. `SourceNotReady` means try again later
-(SWPC sometimes serves a file while rewriting it), `UnexpectedContent` means
+Every error about the data or the source is a `swpc_kit.SwpcError` (a
+mistake in the call is a `TypeError` or a `ValueError`). `SourceNotReady`
+means try again later (SWPC sometimes serves a file while rewriting it);
+its subclass `RateLimited` is a `429`, a refusal that waits for the next
+run. `UnexpectedContent` means
 the source answered with something else (an HTML page, an unknown format),
 `ParseError` names the field and the record or line that is wrong, and
 `StaleData` comes from the client's `max_age` check.
@@ -246,15 +249,15 @@ wants.
 network failed, or the file was caught while SWPC was rewriting it. Wait, and
 wait longer each time; give up after a few attempts.
 
-A `429` is a `SourceNotReady` too, but it is a refusal: SWPC asks you to slow
-down. If the attempts below do not get past it, stop and try at the next run
-of your job, and make the runs less frequent. A later version will give the
-`429` an error of its own.
+A `429` raises `RateLimited`, a subclass of `SourceNotReady`, but it is a
+refusal: SWPC asks you to slow down. Do not retry it in the same run: stop,
+try at the next run of your job, and make the runs less frequent.
+`retry_after` holds the `Retry-After` header, if SWPC sent one.
 
 ```python
 import time
 
-from swpc_kit import SourceNotReady
+from swpc_kit import RateLimited, SourceNotReady
 from swpc_kit.client import Client
 
 
@@ -263,6 +266,8 @@ def fetch_with_retry(fetch, attempts=4, wait=30.0):
     for attempt in range(attempts):
         try:
             return fetch()
+        except RateLimited:
+            raise  # a refusal: stop until the next run
         except SourceNotReady:
             if attempt == attempts - 1:
                 raise
@@ -277,28 +282,99 @@ with Client() as client:
 Do not retry `UnexpectedContent` or `ParseError` in a loop: the answer will
 be the same until SWPC or swpc-kit changes. `StaleData` means SWPC has not
 updated the product yet: try at the next run of your job, not within
-seconds. The client does not read `Retry-After` and keeps its `ETag`s in
-memory only, so keep one `Client` for the life of your program.
+seconds. The client does not wait for `Retry-After` and keeps its `ETag`s
+in memory only, so keep one `Client` for the life of your program.
 
 ### Downloading with your own code
 
-If your program already downloads through a layer of its own (a scheduler,
-a rate limiter, a cache), keep it and use only the parsers. Read the answers
-the way the client does:
+The client sends its requests through a transport, httpx2 by default. To
+send them another way and keep the rest of the client, pass
+`transport=`: any object with `get(url, *, headers, timeout)`, which
+returns an `HttpResponse`, and `close()` (`aclose()` for `AsyncClient`).
+It must not follow redirects, and must raise `SourceNotReady` when SWPC
+cannot be reached.
 
-- **200**: parse the body. A `SourceNotReady` from the parser is a file
-  caught while SWPC was rewriting it: try again later, by the rules of your
-  layer.
-- **408, 425, 5xx**, a timeout or a network failure: try again later, by the
-  rules of your layer. If that layer records failures and pauses the host,
-  "later" is its next run, never a loop in the same process.
-- **429**: a refusal. Slow down, honour `Retry-After` if your layer reads
-  it, and do not retry in the same run.
-- **A redirect, a 404 or any other status**, or an HTML page: stop. SWPC
-  moved or changed the product, or the URL is wrong.
+If your program already downloads through a layer of its own (a scheduler,
+a rate limiter, a cache), keep it and use the parsers. `check_response`
+reads the status and the headers the way the client does, with no network:
+
+```python
+from pathlib import Path
+
+from swpc_kit.http import check_response
+from swpc_kit.parse import parse_planetary_k_index
+
+# The status, headers and body that your own code downloaded.
+url = "https://services.swpc.noaa.gov/products/noaa-planetary-k-index.json"
+status, headers = 200, {"Content-Type": "application/json"}
+body = Path("tests/fixtures/kp-3h/2026-10-15.json").read_bytes()
+
+check_response(status, headers, url=url)
+kp = parse_planetary_k_index(body, source_url=url)
+print(kp.values[-1].kp)
+```
+
+- It returns for a **200** that is not an HTML page. A `SourceNotReady`
+  from the parser after that is a file caught while SWPC was rewriting it:
+  try again later, by the rules of your layer.
+- **408, 425, 5xx** (and a timeout or a network failure, which your code
+  sees first) raise `SourceNotReady`: try again later. If your layer
+  records failures and pauses the host, "later" is its next run, never a
+  loop in the same process.
+- **429** raises `RateLimited`: slow down, honour `retry_after`, and do not
+  retry in the same run.
+- **A redirect, a 404 or any other status**, or an HTML page, raise
+  `UnexpectedContent`: stop. SWPC moved or changed the product, or the URL
+  is wrong.
+- **304** raises `ValueError`: only your code holds the copy it refers to.
 
 Then measure the age on `data_time`, not on the HTTP headers: a `304` or a
 recent `Last-Modified` does not say that the data is new.
+
+### With a politefetch gate
+
+[politefetch](https://pypi.org/project/politefetch/) keeps a program polite
+to a source: a daily cap, a minimum interval, a pause after failures, a
+host frozen after a `429`, all recorded across restarts. swpc-kit does not
+depend on it; the two meet in your code. The gate must hear about a body
+that the parser refused, without keeping its `ETag`: otherwise the next
+conditional request gets a `304` for a broken file.
+
+```python
+from swpc_kit import SourceNotReady, SwpcError
+from swpc_kit.http import check_response
+
+
+def fetch_politely(gate, http, url, parse, copy=None):
+    """Download url through gate.attempt() and parse it; copy answers a 304."""
+    with gate.attempt(url) as attempt:
+        # Without a copy, a 304 would be of no use: ask for the whole body.
+        headers = attempt.conditional_headers if copy is not None else {}
+        response = http.get(url, headers=headers)
+        status = response.status_code
+        if status == 304 and copy is not None:
+            attempt.response(status, headers=response.headers)
+            return copy
+        try:
+            check_response(status, response.headers, url=url)
+            model = parse(response.content, source_url=url)
+        except SwpcError as error:
+            if not 200 <= status < 300:
+                # The gate reads the status: a 429 freezes, a 5xx pauses.
+                attempt.response(status, headers=response.headers)
+            else:
+                # The gate takes any 2xx as a good answer: a refused body is
+                # a failure instead, and its validators are not kept.
+                ready = isinstance(error, SourceNotReady)
+                shape = "not_ready" if ready else "unexpected_content"
+                attempt.failure(shape, status=status, headers=response.headers)
+            raise
+        attempt.response(status, headers=response.headers)
+        return model
+```
+
+`http` is your HTTP client (httpx, for instance) and `parse` one of the
+parsers. In async code, write `async with` and `await`.
 
 ### When SWPC moves a product or changes a format
 

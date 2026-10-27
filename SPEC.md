@@ -32,9 +32,14 @@ Three layers, each usable on its own, plus the skill that describes them:
    - `swpc_kit.export.geojson` (standard library);
    - `swpc_kit.export.geotiff` (standard library; the tests read the files
      back with GDAL);
+   - `swpc_kit.http` (standard library, no network): `check_response`
+     reads an HTTP status and headers by the rules of D-006 and raises the
+     typed error, for the client and for any download code (D-024);
    - `swpc_kit.client` (`client` extra, with `httpx2`, the maintained
-     continuation of httpx: see `docs/FONTI.md`): downloads, recognizes the
-     source's errors, calls the parser.
+     continuation of httpx: see `docs/FONTI.md`): downloads through a
+     `Transport` that any HTTP library can implement, applies
+     `check_response`, calls the parser. It depends on no rate limiter:
+     politefetch and swpc-kit meet in the caller's code (README recipe).
 4. **Skill for AI assistants** (`swpc_kit/skill/`): instructions in the Agent
    Skills format (`SKILL.md` written by hand, `references/api.md` generated
    from the code), versioned with the package; the tests keep them aligned with
@@ -85,6 +90,8 @@ A hierarchy under `SwpcError`:
 - `SourceNotReady`: truncated or empty data (unclosed JSON, half-written file).
   It really happens: SWPC sometimes serves a file while rewriting it. It is a
   transient state, not a bug: the caller retries later.
+  - `RateLimited` (a subclass): HTTP 429, a refusal. The caller slows down
+    and stops until its next run; `retry_after` holds the header.
 - `UnexpectedContent`: the source responds with something else (an HTML page,
   a redirect to an announcements page, a format that no parser knows).
 - `ParseError`: the format is the expected one but a field is inconsistent. The

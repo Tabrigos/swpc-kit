@@ -51,6 +51,7 @@ _GROUPS = ["indices", "solar_wind", "goes", "alerts", "bulletins", "grids"]
 
 MODULES: list[str] = [
     "swpc_kit",
+    "swpc_kit.http",
     "swpc_kit.client",
     "swpc_kit.models",
     *(f"swpc_kit.models.{name}" for name in _GROUPS),
