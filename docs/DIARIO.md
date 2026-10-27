@@ -8,12 +8,16 @@ Riscritto da capo a ogni fine sessione, mai accodato.
   pubblicata su PyPI** il 2026-10-26 (tag `v0.3.0`, release su GitHub). Lo
   stesso giorno la T19 (PR #10) e la ricopia del modello delle skill
   (PR #11), poi la **0.3.1** (tag `v0.3.1`) con T12, T19 e la ricopia.
-- **Prossimo passo**: T17, il trasporto educato su politefetch, che è su
-  PyPI dal 2026-10-26 (0.1.0). La sua API è cambiata prima della
-  pubblicazione (client con retry propri rifiutato, `NoPolicy`,
-  `Transport.send` con un context manager): rileggerla, e decidere con
-  quella sessione la semantica del 429 e il client HTTP.
-- **Decisioni in sospeso**: niente. Il maintainer ha scelto (2026-10-26): il
+  Il 2026-10-27 la T20 (colonna assente con record difettosi), in
+  `[Unreleased]` del changelog.
+- **Prossimo passo**: T17, il trasporto educato su politefetch. Aspetta la
+  sua 0.2 (cadenza per chiave, `wait_up_to=`, `SourceNotReady` come
+  risposta, tetto orario: issue #12, #14, #13, #16 di quel repo); sulla
+  0.1.1 andrebbe riscritta.
+- **Decisioni in sospeso**: dalla prova d'uso, campi accessori assenti o
+  vuoti letti come `None` (cambierebbe D-015 e D-017: `"MinorProb": ""`
+  in `noaa-scales`, `a_running` null che scarta lo slot del Kp) e la scala
+  NOAA dei `CANCEL WARNING`, oggi `None`. Il maintainer ha scelto (2026-10-26): il
   429 resta `SourceNotReady` fino alla T17 e la documentazione lo dice un
   rifiuto (D-023). Il job `windows` è fra i controlli richiesti di `main`
   dal 2026-10-26, dopo il primo giro verde (D-022). Il
@@ -316,3 +320,7 @@ Una riga per sessione: data, tappa, cosa è entrato, cosa resta.
 - 2026-10-26 — Ricopia del modello delle skill (PR #11: `check` dalla radice
   del repo, metodi ereditati e tipi concreti in `api.md`) e versione 0.3.1
   (Windows, `CANCEL_WARNING`, documentazione, 429 come rifiuto). Resta: T17.
+- 2026-10-27 — T20: una colonna assente da tutti i record è `UnexpectedContent`
+  anche quando altri record falliscono per altro (i `-9999` di un minuto
+  senza misura); in FONTI cade l'ipotesi «niente `-9999` nei campi fisici».
+  Difetti iniettati 2, sopravvissuti 0. Resta: T17, dopo la 0.2 di politefetch.

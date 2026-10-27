@@ -462,6 +462,29 @@ def test_wind_nulls_become_none() -> None:
     assert sample.max_data_flag is None
 
 
+def test_wind_missing_column_with_a_filled_record() -> None:
+    # A minute without a measurement can have -9999 in the proton fields
+    # (reported on a file of 2026-07-16): that record fails on its own, and
+    # must not hide a column missing from every record.
+    filled = wind_record(
+        time_tag="2026-10-15T17:52:00",
+        proton_speed=-9999,
+        proton_temperature=-9999,
+        proton_density=-9999,
+        proton_vx_gse=-9999,
+        proton_vy_gse=-9999,
+        proton_vz_gse=-9999,
+        proton_vx_gsm=-9999,
+        proton_vy_gsm=-9999,
+        proton_vz_gsm=-9999,
+    )
+    records = [filled, wind_record()]
+    for record in records:
+        del record["alpha_speed"]
+    with pytest.raises(UnexpectedContent, match="'alpha_speed' missing from every"):
+        parse_rtsw_wind_1m(dump(*records))
+
+
 def test_wind_truncated_and_html() -> None:
     raw = fixture(WIND)
     with pytest.raises(SourceNotReady):

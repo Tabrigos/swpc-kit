@@ -312,12 +312,13 @@ def read_records[V](
         The values with the index of their record, and the records skipped.
 
     Raises:
-        UnexpectedContent: If no record can be read because the same field
-            is missing from all of them: not this product, or a format no
-            parser knows.
+        UnexpectedContent: If no record can be read and a field is missing
+            from all of them, whatever else is wrong in some records: not
+            this product, or a format no parser knows.
         ParseError: If no record can be read for any other reason (the
             error of the first record).
     """
+    records = list(records)
     good: list[tuple[int, V]] = []
     failures: list[tuple[int, ParseError]] = []
     for record in records:
@@ -326,12 +327,15 @@ def read_records[V](
         except ParseError as exc:
             failures.append((record.index, exc))
     if not good and failures:
-        fields = {exc.field for _, exc in failures if isinstance(exc, MissingField)}
-        if len(fields) == 1 and all(isinstance(e, MissingField) for _, e in failures):
-            raise UnexpectedContent(
-                f"field {fields.pop()!r} missing from every record:"
-                " not this product, or a format no parser knows"
-            )
+        missing = dict.fromkeys(
+            exc.field for _, exc in failures if isinstance(exc, MissingField)
+        )
+        for field in missing:
+            if all(field not in record.data for record in records):
+                raise UnexpectedContent(
+                    f"field {field!r} missing from every record:"
+                    " not this product, or a format no parser knows"
+                )
         raise failures[0][1]
     skipped = [
         SkippedRecord(index=index, field=exc.field, reason=exc.reason)

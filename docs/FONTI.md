@@ -130,8 +130,13 @@ texts end with `\n`. The server sends `Last-Modified`, `ETag` and
     cannot be inferred and the parser does not read them;
   - ACE and IMAP do not give the velocity components (`proton_v*` set to
     `null`); the `alpha_*` are `null` for all sources;
-  - `-9999` never appears in the physical fields: that a missing value is
-    always `null` is a **hypothesis**. The parser rejects (`ParseError`)
+  - `-9999` never appears in the physical fields of the fixtures: that a
+    missing value is always `null` is a **hypothesis**. It does not hold in
+    plasma (reported by a user of the library, on the file of 2026-07-16,
+    not in our fixtures): the active SOLAR1 record of 17:41 has `-9999` in
+    the nine `proton_*` fields from `proton_speed` to `proton_vz_gsm`, with
+    `proton_sample_size` 1. The plausibility limits skip that record
+    (D-017). The parser rejects (`ParseError`)
     impossible values: negative `bt`, speed, density and temperature,
     `theta_*` outside -90…90, `phi_*` outside 0…360 (in the fixture `phi`
     goes from 4.0 to 359.8);
@@ -493,7 +498,8 @@ comes):
 ## Plausibility limits (T14, 2026-10-25)
 
 SWPC documents no fill value for the physical fields (that a missing value
-is always `null` is a **hypothesis**, see "Solar wind"). So the parsers do
+is always `null` is a **hypothesis**, and a reported plasma file has
+`-9999`, see "Solar wind"). So the parsers do
 not turn any value into `None`: a value beyond these limits makes the record
 **skipped** (`skipped` of the model, with the reason), and the other records
 are read. The limits are deliberately far beyond anything measured, to catch
