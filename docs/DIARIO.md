@@ -10,9 +10,12 @@ Riscritto da capo a ogni fine sessione, mai accodato.
   (PR #11), poi la **0.3.1** (tag `v0.3.1`) con T12, T19 e la ricopia.
   Il 2026-10-27 la T20 (PR #13) e la **0.3.2** (tag `v0.3.2`) con la sola
   T20. Poi la T17 rivista (D-024): `swpc_kit.http.check_response`,
-  `RateLimited`, la ricetta con politefetch nel README; in `[Unreleased]`.
-- **Prossimo passo**: la 0.4.0 con la T17. Poi nessuna tappa aperta: le
-  prossime vengono dall'uso.
+  `RateLimited`, la ricetta con politefetch nel README (PR #15), e la
+  **0.4.0** (tag `v0.4.0`) con la T17.
+- **Prossimo passo**: nessuna tappa aperta; le prossime vengono dall'uso.
+  Quando esce la 0.2 di politefetch, la ricetta `fetch_politely` passa al
+  suo modello nuovo (`response()` registra cosa ha risposto la fonte, il
+  verdetto passa da `accept()` / `reject(motivo)`, issue #28 di quel repo).
 - **Decisioni in sospeso**: niente. Il maintainer ha scelto (2026-10-27):
   i campi accessori restano obbligatori (D-015, D-017), perché i casi della
   prova d'uso erano costruiti e non visti in risposte di SWPC; la scala NOAA
