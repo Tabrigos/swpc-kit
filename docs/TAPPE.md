@@ -418,6 +418,26 @@ del suo riscontro è stata ricontrollata sul codice prima di tenerla buona.
 - Fuori da questa tappa: i metodi ereditati in `api.md` sono un difetto del
   modello comune, corretto con la sua ricopia.
 
+## T20 — Colonna assente e record difettosi insieme
+
+- [x] Fatta
+
+Quando: dopo la 0.3.1, prima della T17 (che aspetta la 0.2 di politefetch).
+Lo stesso utente della T19 ha visto `MissingField`, classe privata, dove
+la SKILL promette `UnexpectedContent`: una colonna assente da tutti i record
+dava `UnexpectedContent` solo se *ogni* record falliva per quella colonna, e
+un record con un altro difetto (i `-9999` di un minuto senza misura)
+bastava a far uscire il primo errore.
+
+- [x] `read_records`: un campo che il parser ha chiesto e che manca da tutti
+  i record è `UnexpectedContent`, qualunque altro errore abbiano gli altri
+  record. Test con il caso misto, in `_common` e sul vento solare.
+- [x] FONTI: l'ipotesi «`-9999` non compare nei campi fisici» non regge nel
+  plasma (file del 2026-07-16 riferito dall'utente).
+- Restano al maintainer: campi accessori assenti o vuoti letti come `None`
+  (cambierebbe D-015 e D-017) e la scala NOAA dei `CANCEL WARNING`, che
+  SWPC attacca alla riga prima.
+
 ## T17 — Trasporto educato su politefetch
 
 - [ ] Fatta

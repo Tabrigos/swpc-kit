@@ -164,6 +164,15 @@ def test_a_field_missing_from_every_record_is_unexpected() -> None:
         read_records([Record(0, {"a": 1}), Record(1, {"a": 2})], _kp)
 
 
+def test_a_field_missing_from_every_record_wins_over_other_errors() -> None:
+    # A record that also fails for another reason must not hide the new format.
+    def build(record: Record) -> float:
+        return record.get_float("v", maximum=9) + record.get_float("Kp")
+
+    with pytest.raises(UnexpectedContent, match="'Kp' missing from every"):
+        read_records([Record(0, {"v": 12}), Record(1, {"v": 1})], build)
+
+
 @pytest.mark.parametrize(
     ("value", "expected"), [(1, 1.0), (2.67, 2.67), ("2.67", 2.67)]
 )

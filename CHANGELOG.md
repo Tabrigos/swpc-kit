@@ -6,6 +6,13 @@ All notable changes to this project are listed here. The format follows
 
 ## [Unreleased]
 
+### Fixed
+
+- A field missing from every record raises `UnexpectedContent` even when
+  some records also fail for another reason (such as `-9999` in a minute
+  without a measurement). Before, the `ParseError` of the first record came
+  out.
+
 ## [0.3.1] - 2026-10-26
 
 ### Added
