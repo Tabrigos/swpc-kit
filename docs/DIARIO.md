@@ -8,16 +8,17 @@ Riscritto da capo a ogni fine sessione, mai accodato.
   pubblicata su PyPI** il 2026-10-26 (tag `v0.3.0`, release su GitHub). Lo
   stesso giorno la T19 (PR #10) e la ricopia del modello delle skill
   (PR #11), poi la **0.3.1** (tag `v0.3.1`) con T12, T19 e la ricopia.
-  Il 2026-10-27 la T20 (colonna assente con record difettosi), in
-  `[Unreleased]` del changelog.
-- **Prossimo passo**: T17, il trasporto educato su politefetch. Aspetta la
-  sua 0.2 (cadenza per chiave, `wait_up_to=`, `SourceNotReady` come
-  risposta, tetto orario: issue #12, #14, #13, #16 di quel repo); sulla
-  0.1.1 andrebbe riscritta.
-- **Decisioni in sospeso**: dalla prova d'uso, campi accessori assenti o
-  vuoti letti come `None` (cambierebbe D-015 e D-017: `"MinorProb": ""`
-  in `noaa-scales`, `a_running` null che scarta lo slot del Kp) e la scala
-  NOAA dei `CANCEL WARNING`, oggi `None`. Il maintainer ha scelto (2026-10-26): il
+  Il 2026-10-27 la T20 (PR #13) e la **0.3.2** (tag `v0.3.2`) con la sola
+  T20.
+- **Prossimo passo**: la T17 rivista dal maintainer il 2026-10-27, dopo una
+  revisione dell'architettura: niente extra `[polite]` né dipendenza da
+  politefetch, ma una funzione pubblica senza rete che legge una risposta
+  (stato, intestazioni, corpo) e un errore `RateLimited` per il 429; la
+  combinazione con politefetch è una ricetta negli esempi. Esce come 0.4.0.
+- **Decisioni in sospeso**: niente. Il maintainer ha scelto (2026-10-27):
+  i campi accessori restano obbligatori (D-015, D-017), perché i casi della
+  prova d'uso erano costruiti e non visti in risposte di SWPC; la scala NOAA
+  dei `CANCEL WARNING` resta `None`. Il maintainer ha scelto (2026-10-26): il
   429 resta `SourceNotReady` fino alla T17 e la documentazione lo dice un
   rifiuto (D-023). Il job `windows` è fra i controlli richiesti di `main`
   dal 2026-10-26, dopo il primo giro verde (D-022). Il
