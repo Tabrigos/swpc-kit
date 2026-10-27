@@ -40,6 +40,24 @@ class SourceNotReady(SwpcError):
     """
 
 
+class RateLimited(SourceNotReady):
+    """SWPC refused the request with ``429 Too Many Requests``.
+
+    A refusal, not a passing state: slow down, and do not try again in the
+    same run. A subclass of :class:`SourceNotReady`, so code that catches
+    that one still catches this.
+
+    Args:
+        message: What was refused.
+        retry_after: The ``Retry-After`` header as sent (seconds or an HTTP
+            date), or ``None`` if there was none.
+    """
+
+    def __init__(self, message: str, *, retry_after: str | None = None) -> None:
+        self.retry_after = retry_after
+        super().__init__(message)
+
+
 class UnexpectedContent(SwpcError):
     """The source answered with something other than the expected product.
 

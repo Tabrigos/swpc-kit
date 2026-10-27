@@ -438,22 +438,26 @@ bastava a far uscire il primo errore.
   (cambierebbe D-015 e D-017) e la scala NOAA dei `CANCEL WARNING`, che
   SWPC attacca alla riga prima.
 
-## T17 — Trasporto educato su politefetch
+## T17 — Le regole HTTP senza rete, e politefetch nel codice di chi chiama
 
-- [ ] Fatta
+- [x] Fatta
 
-Dopo la 0.3.0 e dopo che politefetch è su PyPI (D-016). Progetto concordato
-con l'agente di politefetch il 2026-10-25:
+Il progetto del 2026-10-25 (D-016: extra `swpc-kit[polite]` con un
+`PoliteTransport`) è stato rivisto dal maintainer il 2026-10-27 dopo una
+revisione scettica dell'architettura, e sostituito da D-024: il cancello
+avrebbe visto la richiesta e non il parsing, e i due pacchetti si sarebbero
+legati mentre sono entrambi in 0.x.
 
-- [ ] Extra `swpc-kit[polite]` che dipende da `politefetch` senza extra, e
-  `PoliteTransport` / `AsyncPoliteTransport` in swpc-kit che avvolgono un
-  `Transport` esistente dentro `gate.attempt(url)`. Niente codice di
-  swpc-kit dentro politefetch; httpx2 resta il client di swpc-kit.
-- [ ] Intervallo minimo per host (scelta del maintainer): il trasporto
-  aspetta l'intervallo invece di passare `Refused(MIN_INTERVAL)` a chi
-  chiama; il README dice quanti prodotti al minuto si leggono.
-- [ ] Un errore distinto per l'host congelato (fermo finché una persona non
-  sblocca) e per i rifiuti con `retry_after`: non `SourceNotReady`.
-- [ ] politefetch ricorda solo ETag e Last-Modified, non i corpi: per
-  riusare un `304` dopo un riavvio swpc-kit salva l'ultimo corpo buono per
-  URL, oppure non manda le intestazioni condizionali quando non ce l'ha.
+- [x] `swpc_kit.http.check_response(status, headers, *, url)`: le regole di
+  D-006 in una funzione pubblica, senza rete; il client la usa invece della
+  sua copia privata.
+- [x] `RateLimited(SourceNotReady)` con `retry_after` per il 429: la
+  promessa di D-023. README e SKILL non lo ritentano più (la ricetta
+  `fetch_with_retry` e la tabella degli errori lo facevano).
+- [x] README e SKILL documentano `transport=` e `check_response`; il README
+  ha la ricetta con un cancello di politefetch (`fetch_politely`), provata
+  in `tests/test_readme.py` con un cancello e un client finti: un corpo
+  rifiutato è un fallimento, mai una risposta, e senza una copia non si
+  mandano intestazioni condizionali.
+- Restano a politefetch, senza codice in swpc-kit: cadenza per chiave,
+  `wait_up_to=`, host congelato, l'esito «corpo a metà» della sua 0.2.

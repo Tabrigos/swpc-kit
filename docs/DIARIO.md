@@ -9,18 +9,15 @@ Riscritto da capo a ogni fine sessione, mai accodato.
   stesso giorno la T19 (PR #10) e la ricopia del modello delle skill
   (PR #11), poi la **0.3.1** (tag `v0.3.1`) con T12, T19 e la ricopia.
   Il 2026-10-27 la T20 (PR #13) e la **0.3.2** (tag `v0.3.2`) con la sola
-  T20.
-- **Prossimo passo**: la T17 rivista dal maintainer il 2026-10-27, dopo una
-  revisione dell'architettura: niente extra `[polite]` né dipendenza da
-  politefetch, ma una funzione pubblica senza rete che legge una risposta
-  (stato, intestazioni, corpo) e un errore `RateLimited` per il 429; la
-  combinazione con politefetch è una ricetta negli esempi. Esce come 0.4.0.
+  T20. Poi la T17 rivista (D-024): `swpc_kit.http.check_response`,
+  `RateLimited`, la ricetta con politefetch nel README; in `[Unreleased]`.
+- **Prossimo passo**: la 0.4.0 con la T17. Poi nessuna tappa aperta: le
+  prossime vengono dall'uso.
 - **Decisioni in sospeso**: niente. Il maintainer ha scelto (2026-10-27):
   i campi accessori restano obbligatori (D-015, D-017), perché i casi della
   prova d'uso erano costruiti e non visti in risposte di SWPC; la scala NOAA
-  dei `CANCEL WARNING` resta `None`. Il maintainer ha scelto (2026-10-26): il
-  429 resta `SourceNotReady` fino alla T17 e la documentazione lo dice un
-  rifiuto (D-023). Il job `windows` è fra i controlli richiesti di `main`
+  dei `CANCEL WARNING` resta `None`; niente extra `[polite]` (D-024). Il
+  job `windows` è fra i controlli richiesti di `main`
   dal 2026-10-26, dopo il primo giro verde (D-022). Il
   job `lowest` resta fuori dai richiesti (maintainer, 2026-10-26): per chi
   usa la libreria il solo minimo è httpx2 2.13, e il job lo prova lo stesso
@@ -325,3 +322,8 @@ Una riga per sessione: data, tappa, cosa è entrato, cosa resta.
   anche quando altri record falliscono per altro (i `-9999` di un minuto
   senza misura); in FONTI cade l'ipotesi «niente `-9999` nei campi fisici».
   Difetti iniettati 2, sopravvissuti 0. Resta: T17, dopo la 0.2 di politefetch.
+- 2026-10-27 — T17 rivista dopo una revisione scettica dell'architettura
+  (D-024 sostituisce D-016): `check_response` senza rete usata anche dal
+  client, `RateLimited` per il 429, `transport=` e la ricetta con
+  politefetch nel README, provata con un cancello finto. Difetti iniettati 3,
+  sopravvissuti 0. Resta: la 0.4.0.

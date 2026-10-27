@@ -6,6 +6,23 @@ All notable changes to this project are listed here. The format follows
 
 ## [Unreleased]
 
+### Added
+
+- `swpc_kit.http.check_response(status, headers, url=...)`: the client's
+  rules for reading an HTTP answer, with no network, for code that
+  downloads on its own before calling a parser.
+- `RateLimited`, a subclass of `SourceNotReady` raised for a `429`, with
+  `retry_after` (the `Retry-After` header).
+- README: `transport=` documented, and a recipe for downloading through a
+  politefetch gate.
+
+### Changed
+
+- A `429` from the client is now `RateLimited` (still a `SourceNotReady`),
+  with the message "HTTP 429 from URL: SWPC asks to slow down".
+- The README's retry recipe and the skill's error table no longer retry a
+  `429`: it is a refusal that waits for the next run.
+
 ## [0.3.2] - 2026-10-27
 
 ### Fixed

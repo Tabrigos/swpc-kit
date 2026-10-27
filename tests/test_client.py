@@ -27,6 +27,7 @@ from swpc_kit.client import (
 from swpc_kit.client._products import PLANETARY_K_INDEX
 from swpc_kit.errors import (
     ParseError,
+    RateLimited,
     SourceNotReady,
     StaleData,
     SwpcError,
@@ -404,6 +405,14 @@ def test_transient_statuses_are_not_ready(status: int) -> None:
     transport = FakeTransport([HttpResponse(status=status, headers={}, content=b"")])
     with pytest.raises(SourceNotReady, match=str(status)):
         Client(transport=transport).planetary_k_index()
+
+
+def test_a_429_is_rate_limited_and_says_where() -> None:
+    refused = HttpResponse(status=429, headers={"Retry-After": "600"}, content=b"")
+    with pytest.raises(RateLimited) as info:
+        Client(transport=FakeTransport([refused])).planetary_k_index()
+    assert info.value.retry_after == "600"
+    assert info.value.product == "planetary_k_index"
 
 
 @pytest.mark.parametrize("status", [400, 403, 404, 410])

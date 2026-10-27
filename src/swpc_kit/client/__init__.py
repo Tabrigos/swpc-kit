@@ -12,8 +12,10 @@ to the matching parser and, if asked, checks that the data is recent enough::
 
 Errors (all :class:`~swpc_kit.errors.SwpcError`):
 
+- :class:`~swpc_kit.errors.RateLimited`: ``429``, a refusal; slow down and
+  stop until the next run (a subclass of ``SourceNotReady``);
 - :class:`~swpc_kit.errors.SourceNotReady`: timeout, network failure,
-  ``408``/``425``/``429``/``5xx``, or truncated content; try again later;
+  ``408``/``425``/``5xx``, or truncated content; try again later;
 - :class:`~swpc_kit.errors.UnexpectedContent`: redirect (never followed),
   other status, HTML, or content no parser knows;
 - :class:`~swpc_kit.errors.ParseError`: known format, inconsistent value;

@@ -20,6 +20,7 @@ PACKAGES = [
 ]
 PUBLIC_MODULES = [
     "swpc_kit.errors",
+    "swpc_kit.http",
     "swpc_kit.codes",
     "swpc_kit.export.geojson",
     "swpc_kit.export.geotiff",
@@ -75,6 +76,7 @@ def test_top_level_exports_errors_and_version() -> None:
     assert set(swpc_kit.__all__) >= {
         "SwpcError",
         "SourceNotReady",
+        "RateLimited",
         "UnexpectedContent",
         "ParseError",
         "StaleData",

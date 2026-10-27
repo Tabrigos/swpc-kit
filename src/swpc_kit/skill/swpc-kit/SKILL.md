@@ -66,7 +66,7 @@ This example needs SWPC on the network (the tests run it against recorded files)
 ```python nocheck
 from datetime import timedelta
 
-from swpc_kit import SourceNotReady, StaleData, SwpcError
+from swpc_kit import RateLimited, SourceNotReady, StaleData, SwpcError
 from swpc_kit.client import Client
 
 with Client(max_age=timedelta(hours=6)) as client:
@@ -74,6 +74,8 @@ with Client(max_age=timedelta(hours=6)) as client:
         kp = client.planetary_k_index()
     except StaleData as exc:
         print("SWPC has nothing newer:", exc.data_time)
+    except RateLimited:
+        print("SWPC asks to slow down: stop until the next run")
     except SourceNotReady:
         print("SWPC is busy or unreachable: try again in a minute")
     except SwpcError as exc:
@@ -118,21 +120,46 @@ array-of-arrays JSON, and give the same model for both. Pass
 
 ## Download with your own code
 
+To keep the client but send requests another way, pass `transport=`: an
+object with `get(url, *, headers, timeout)` returning an `HttpResponse`, and
+`close()` (`aclose()` for `AsyncClient`); it must not follow redirects and
+must raise `SourceNotReady` when SWPC cannot be reached.
+
 If the program already downloads through a layer of its own (a scheduler,
-a rate limiter, a cache), keep it and use only the parsers. Read the HTTP
-answers as the client does:
+a rate limiter, a cache), keep it and use the parsers. First pass the
+status and headers to `check_response`, which reads them as the client does
+(no network), then parse the body:
 
-- 200: parse the body; a `SourceNotReady` from the parser is a file caught
-  mid-rewrite, so try again later.
-- 408, 425, 5xx, a timeout or a network failure: try again later, by the
-  rules of that layer. If it records failures and pauses the host, later
-  means its next run, never a loop in the same process.
-- 429: a refusal. Slow down, honour `Retry-After`, do not retry in the same
-  run.
-- A redirect, a 404 or another status, or an HTML page: stop; the product
-  moved or changed, or the URL is wrong.
+```python nocheck
+from pathlib import Path
 
-Measure the age on `data_time`, not on HTTP headers.
+from swpc_kit.http import check_response
+from swpc_kit.parse import parse_kyoto_dst
+
+# What your own download code got back.
+url = "https://services.swpc.noaa.gov/products/kyoto-dst.json"
+status, headers = 200, {"Content-Type": "application/json"}
+body = Path("kyoto-dst.json").read_bytes()
+
+check_response(status, headers, url=url)  # raises the typed error
+dst = parse_kyoto_dst(body, source_url=url)
+```
+
+- 200 that is not HTML: returns. A `SourceNotReady` from the parser is a
+  file caught mid-rewrite, so try again later.
+- 408, 425, 5xx: `SourceNotReady` (a timeout or network failure your code
+  sees first). Try again later, by the rules of that layer; if it records
+  failures and pauses the host, later means its next run, never a loop.
+- 429: `RateLimited`, a refusal. Slow down, honour `retry_after`, do not
+  retry in the same run.
+- A redirect, another status, or an HTML page: `UnexpectedContent`; stop,
+  the product moved or changed, or the URL is wrong.
+- 304: `ValueError`; reuse the copy your code holds.
+
+With a politefetch gate, tell the gate about a body the parser refused as
+a failure, never as an answer (its `ETag` would get a `304` for a broken
+file); the README has the recipe. Measure the age on `data_time`, not on
+HTTP headers.
 
 ## Errors
 
@@ -140,7 +167,8 @@ All errors are `SwpcError`. React to the class, not to the message text:
 
 | Error | Meaning | Whose fault | What to do |
 |---|---|---|---|
-| `SourceNotReady` | Timeout, network failure, HTTP 408/425/429/5xx, or a truncated file (SWPC rewrites files in place) | Nobody: a transient state of SWPC or of the network; a 429 is SWPC asking you to slow down | Retry a few times, waiting longer each time; if it persists, stop until the next run |
+| `RateLimited` | HTTP 429; `retry_after` is the `Retry-After` header or `None`. A subclass of `SourceNotReady`: catch it first | Nobody: SWPC asks you to slow down | Do not retry in this run; stop until the next one and run less often |
+| `SourceNotReady` | Timeout, network failure, HTTP 408/425/5xx, or a truncated file (SWPC rewrites files in place) | Nobody: a transient state of SWPC or of the network | Retry a few times, waiting longer each time; if it persists, stop until the next run |
 | `UnexpectedContent` | Redirect, other HTTP status (`status`, `location`), HTML page, unknown format, a field missing from every record (a new format) | SWPC moved or changed the product, or the URL is wrong | Do not retry in a loop; report it. If the product moved, see below |
 | `ParseError` | Known format, inconsistent value, and no record of the file could be read; `field`, `line` or `index` say where | The data SWPC served | Report it; do not patch the value |
 | `StaleData` | Content older than `max_age`; has `data_time`, `max_age`, `age` | Nobody: SWPC has not updated the product | Use it with a warning, or wait |
