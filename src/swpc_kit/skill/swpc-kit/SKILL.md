@@ -10,7 +10,7 @@ description: >-
   or radiation storm levels, or any data from services.swpc.noaa.gov, even if
   they do not name the library. Read it instead of the library's source code.
 metadata:
-  version: "0.3.2"
+  version: "0.4.0"
 ---
 
 # swpc-kit
