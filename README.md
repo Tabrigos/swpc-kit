@@ -344,7 +344,9 @@ host frozen after a `429`, all recorded across restarts. swpc-kit does not
 depend on it; the two meet in your code. The recipe needs politefetch 0.2
 or later. The gate hears the status of every answer, and for a good one
 your verdict on the body: it keeps the `ETag` only of a body you accepted,
-so the next conditional request never gets a `304` for a broken file.
+so the next conditional request never gets a `304` for a broken file. A
+page in place of the data (HTML, or a `2xx` other than `200`) is often a
+block or a maintenance page: it is a failure, so the gate slows down.
 
 ```python
 from swpc_kit import SourceNotReady, SwpcError
@@ -358,19 +360,29 @@ def fetch_politely(gate, http, url, parse, copy=None):
         headers = attempt.conditional_headers if copy is not None else {}
         response = http.get(url, headers=headers)
         status = response.status_code
-        # The gate reads every status: a 429 freezes, a 5xx pauses.
-        attempt.response(status, headers=response.headers)
         if status == 304 and copy is not None:
+            attempt.response(status, headers=response.headers)
             attempt.accept()
             return copy
         try:
             check_response(status, response.headers, url=url)
+        except SwpcError:
+            if 200 <= status < 300:
+                # A page in place of the data: a failure, not an answer.
+                attempt.failure(
+                    "unexpected_content", status=status, headers=response.headers
+                )
+            else:
+                # The gate reads the status: a 429 freezes, a 5xx pauses.
+                attempt.response(status, headers=response.headers)
+            raise
+        attempt.response(status, headers=response.headers)
+        try:
             model = parse(response.content, source_url=url)
         except SwpcError as error:
-            # Any 2xx is a good answer for the gate: say why you refused it.
-            if 200 <= status < 300:
-                ready = isinstance(error, SourceNotReady)
-                attempt.reject("not_ready" if ready else "unusable")
+            # The gate takes the 200 as a good answer: say why you refused it.
+            ready = isinstance(error, SourceNotReady)
+            attempt.reject("not_ready" if ready else "unusable")
             raise
         attempt.accept()
         return model

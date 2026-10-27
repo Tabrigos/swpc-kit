@@ -98,6 +98,9 @@ class FakeAttempt:
     def response(self, status: int, *, headers: object) -> None:
         self.calls.append(("response", status))
 
+    def failure(self, shape: str, *, status: int, headers: object) -> None:
+        self.calls.append(("failure", shape))
+
     def accept(self) -> None:
         self._verdict()
         self.calls.append(("accept", None))
@@ -108,11 +111,11 @@ class FakeAttempt:
         self.calls.append(("reject", reason))
 
     def _verdict(self) -> None:
-        statuses = [s for kind, s in self.calls if kind == "response"]
-        assert statuses, "a verdict needs an answer recorded with response()"
-        assert isinstance(statuses[-1], int)
-        assert 200 <= statuses[-1] < 300 or statuses[-1] == 304, statuses
-        assert not any(kind in {"accept", "reject"} for kind, _ in self.calls)
+        assert self.calls, "a verdict needs an answer recorded with response()"
+        kind, status = self.calls[-1]
+        assert kind == "response", self.calls
+        assert isinstance(status, int)
+        assert 200 <= status < 300 or status == 304, self.calls
 
 
 @dataclass
@@ -166,21 +169,30 @@ def test_politely_a_truncated_body_is_rejected_as_not_ready() -> None:
     assert gate.attempt_made.calls == [("response", 200), ("reject", "not_ready")]
 
 
-def test_politely_an_html_page_is_rejected_as_unusable() -> None:
+def test_politely_a_body_the_parser_refuses_is_rejected_as_unusable() -> None:
+    gate, http = FakeGate(), FakeHttp(FakeResponse(200, b"{}"))
+    with pytest.raises(UnexpectedContent):
+        _fetch_politely()(gate, http, KP_URL, parse_planetary_k_index)
+    assert gate.attempt_made.calls == [("response", 200), ("reject", "unusable")]
+
+
+def test_politely_an_html_page_is_a_failure() -> None:
+    # A page in place of the data is often a block: the gate must slow down,
+    # as politefetch's own fetchers do.
     page = FakeResponse(200, b"<html></html>", {"Content-Type": "text/html"})
     gate = FakeGate()
     with pytest.raises(UnexpectedContent):
         _fetch_politely()(gate, FakeHttp(page), KP_URL, parse_planetary_k_index)
-    assert gate.attempt_made.calls == [("response", 200), ("reject", "unusable")]
+    assert gate.attempt_made.calls == [("failure", "unexpected_content")]
 
 
 @pytest.mark.parametrize("status", [203, 204, 206])
-def test_politely_a_refused_2xx_is_rejected(status: int) -> None:
-    # The gate takes any 2xx as a good answer: only the verdict says no.
+def test_politely_a_2xx_other_than_200_is_a_failure(status: int) -> None:
+    # Refused for its status before the parser sees it, like the HTML page.
     gate, http = FakeGate(), FakeHttp(FakeResponse(status, KP_BODY))
     with pytest.raises(UnexpectedContent):
         _fetch_politely()(gate, http, KP_URL, parse_planetary_k_index)
-    assert gate.attempt_made.calls == [("response", status), ("reject", "unusable")]
+    assert gate.attempt_made.calls == [("failure", "unexpected_content")]
 
 
 def test_politely_a_429_reaches_the_gate_and_raises_rate_limited() -> None:

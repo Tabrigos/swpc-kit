@@ -24,8 +24,9 @@ All notable changes to this project are listed here. The format follows
 ### Changed
 
 - The README's politefetch recipe follows the verdict of politefetch 0.2:
-  every status goes to `attempt.response()`, then `attempt.accept()` for a
-  body the parser read and `attempt.reject()` for one it refused.
+  a status goes to `attempt.response()`, then `attempt.accept()` for a body
+  the parser read and `attempt.reject()` for one it refused. A `2xx` that is
+  HTML or not `200` stays a failure (`attempt.failure()`).
 
 ## [0.5.0] - 2026-10-30
 
