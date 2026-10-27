@@ -341,9 +341,10 @@ recent `Last-Modified` does not say that the data is new.
 [politefetch](https://pypi.org/project/politefetch/) keeps a program polite
 to a source: a daily cap, a minimum interval, a pause after failures, a
 host frozen after a `429`, all recorded across restarts. swpc-kit does not
-depend on it; the two meet in your code. The gate must hear about a body
-that the parser refused, without keeping its `ETag`: otherwise the next
-conditional request gets a `304` for a broken file.
+depend on it; the two meet in your code. The recipe needs politefetch 0.2
+or later. The gate hears the status of every answer, and for a good one
+your verdict on the body: it keeps the `ETag` only of a body you accepted,
+so the next conditional request never gets a `304` for a broken file.
 
 ```python
 from swpc_kit import SourceNotReady, SwpcError
@@ -357,24 +358,21 @@ def fetch_politely(gate, http, url, parse, copy=None):
         headers = attempt.conditional_headers if copy is not None else {}
         response = http.get(url, headers=headers)
         status = response.status_code
+        # The gate reads every status: a 429 freezes, a 5xx pauses.
+        attempt.response(status, headers=response.headers)
         if status == 304 and copy is not None:
-            attempt.response(status, headers=response.headers)
+            attempt.accept()
             return copy
         try:
             check_response(status, response.headers, url=url)
             model = parse(response.content, source_url=url)
         except SwpcError as error:
-            if not 200 <= status < 300:
-                # The gate reads the status: a 429 freezes, a 5xx pauses.
-                attempt.response(status, headers=response.headers)
-            else:
-                # The gate takes any 2xx as a good answer: a refused body is
-                # a failure instead, and its validators are not kept.
+            # Any 2xx is a good answer for the gate: say why you refused it.
+            if 200 <= status < 300:
                 ready = isinstance(error, SourceNotReady)
-                shape = "not_ready" if ready else "unexpected_content"
-                attempt.failure(shape, status=status, headers=response.headers)
+                attempt.reject("not_ready" if ready else "unusable")
             raise
-        attempt.response(status, headers=response.headers)
+        attempt.accept()
         return model
 ```
 

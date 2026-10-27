@@ -21,6 +21,12 @@ All notable changes to this project are listed here. The format follows
   also while it is in progress once SWPC has written it, `None` before.
   It is the last field, with a default, so existing code keeps working.
 
+### Changed
+
+- The README's politefetch recipe follows the verdict of politefetch 0.2:
+  every status goes to `attempt.response()`, then `attempt.accept()` for a
+  body the parser read and `attempt.reject()` for one it refused.
+
 ## [0.5.0] - 2026-10-30
 
 ### Added
