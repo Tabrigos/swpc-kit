@@ -6,6 +6,8 @@ All notable changes to this project are listed here. The format follows
 
 ## [Unreleased]
 
+## [0.3.2] - 2026-10-27
+
 ### Fixed
 
 - A field missing from every record raises `UnexpectedContent` even when
@@ -205,6 +207,7 @@ First version. Never published or tagged.
   declares.
 - Recorded fixtures and the tools that record them (`tools/`).
 
-[Unreleased]: https://github.com/Tabrigos/swpc-kit/compare/v0.3.1...HEAD
+[Unreleased]: https://github.com/Tabrigos/swpc-kit/compare/v0.3.2...HEAD
+[0.3.2]: https://github.com/Tabrigos/swpc-kit/releases/tag/v0.3.2
 [0.3.1]: https://github.com/Tabrigos/swpc-kit/releases/tag/v0.3.1
 [0.3.0]: https://github.com/Tabrigos/swpc-kit/releases/tag/v0.3.0
