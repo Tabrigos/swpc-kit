@@ -371,7 +371,7 @@ def record(
     for path, data, _ in pending:
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_bytes(data)
-    readme.write_text(new_readme, encoding="utf-8")
+    readme.write_text(new_readme, encoding="utf-8", newline="\n")
     return [row for *_, row in pending]
 
 
