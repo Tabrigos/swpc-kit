@@ -4,14 +4,16 @@ Raw SWPC content used by the tests. Tests read these files and never use the
 network. Data comes from NOAA SWPC (https://www.swpc.noaa.gov).
 
 Files are kept byte for byte as served (`.gitattributes` turns off line-ending
-conversion here), except the reductions described below. Three kinds of files
+conversion here), except the reductions described below. Four kinds of files
 live in `tests/fixtures/<product>/`:
 
 - `<YYYY-MM-DD>.<ext>`: **recorded** by `tools/record_fixtures.py` on that
   UTC date;
 - `<YYYY-MM-DD>-sample.<ext>`: **official sample** copied from SWPC, dated as
   listed on the SWPC server;
-- `<YYYY-MM-DD>-built.<ext>`: **built** for the tests, dated when built.
+- `<YYYY-MM-DD>-built.<ext>`: **built** for the tests, dated when built;
+- `<YYYY-MM-DD>-shared.<ext>`: **shared** by a user of the library, who
+  downloaded it from SWPC on that UTC date, copied unchanged.
 
 The whole directory must stay under 2 MiB (`tests/test_fixtures.py` checks it,
 and that every file is listed in this README).
@@ -49,6 +51,9 @@ original, which is not kept.
 | `dst/2026-10-15.json` | https://services.swpc.noaa.gov/products/kyoto-dst.json | 2026-10-15 17:57 | 7523 | |
 | `f107-30-day/2026-10-15.json` | https://services.swpc.noaa.gov/products/10cm-flux-30-day.json | 2026-10-15 17:57 | 1370 | |
 | `geomag-forecast/2026-10-15.txt` | https://services.swpc.noaa.gov/text/3-day-geomag-forecast.txt | 2026-10-15 17:57 | 879 | |
+| `goes-electrons-1-day/2026-10-29.json` | https://services.swpc.noaa.gov/json/goes/primary/integral-electrons-1-day.json | 2026-10-29 14:27 | 4738 | reduced from 29477 bytes: first 12 and last 12 groups by time_tag, plus every 12th |
+| `goes-flares-7-day/2026-10-29.json` | https://services.swpc.noaa.gov/json/goes/primary/xray-flares-7-day.json | 2026-10-29 14:27 | 20287 | |
+| `goes-flares-latest/2026-10-29.json` | https://services.swpc.noaa.gov/json/goes/primary/xray-flares-latest.json | 2026-10-29 14:27 | 420 | |
 | `goes-protons-1-day/2026-10-15.json` | https://services.swpc.noaa.gov/json/goes/primary/integral-protons-1-day.json | 2026-10-15 17:57 | 38825 | reduced from 241538 bytes: first 12 and last 12 groups by time_tag, plus every 12th |
 | `goes-xrays-1-day/2026-10-15.json` | https://services.swpc.noaa.gov/json/goes/primary/xrays-1-day.json | 2026-10-15 17:57 | 58813 | reduced from 655036 bytes: first 30 and last 30 groups by time_tag, plus every 20th |
 | `kp-1m/2026-10-15.json` | https://services.swpc.noaa.gov/json/planetary_k_index_1m.json | 2026-10-15 17:57 | 27925 | |
@@ -70,6 +75,17 @@ Example files published by SWPC with its Service Change Notices
 | `3-day-forecast/2022-09-22-sample.txt` | https://services.swpc.noaa.gov/text/scn/fy22-kp/10-102_three_day_forecast_sample.txt | 2022-09-22 | 1672 | issued 2022 Apr 28; Kp table with a `(G1)` annotation |
 | `kp-3h/2022-09-22-sample.json` | https://services.swpc.noaa.gov/text/scn/fy22-kp/10-102_noaa-planetary-k-index_sample.json | 2022-09-22 | 2723 | **old format**: array of arrays, quoted numbers, `time_tag` with `.000` |
 | `kp-forecast/2022-09-22-sample.json` | https://services.swpc.noaa.gov/text/scn/fy22-kp/10-102_noaa-planetary-k-index-forecast_sample.json | 2022-09-22 | 3870 | **old format**: array of arrays, quoted numbers, `time_tag` without `.000` |
+
+## Shared
+
+Files that a user of the library downloaded from SWPC for its own tests and
+shared with the project, copied unchanged: they hold cases the recorded files
+of the day do not have. The date is the UTC day of the download, as the
+content shows it.
+
+| File | Source | Downloaded on | Size (bytes) | Notes |
+|---|---|---|---|---|
+| `goes-flares-7-day/2026-08-28-shared.json` | https://services.swpc.noaa.gov/json/goes/primary/xray-flares-7-day.json | 2026-08-28 | 15755 | 41 flares, up to M6.9; four without `max_ratio` |
 
 ## Built
 

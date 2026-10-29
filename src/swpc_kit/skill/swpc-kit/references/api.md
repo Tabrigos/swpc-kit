@@ -39,7 +39,7 @@ HTTP client for SWPC products (`client` extra).
 
 ### `PRODUCTS`
 
-`(Product(name='planetary_k_index', url='https://services.swpc.noaa.gov/products/noaa-planetary-k-index.json', parse=<lambda>), Product(name='planetary_k_index_forecast', url='https://services.swpc.noaa.gov/products/noaa-planetary-k-index-forecast.json', parse=<lambda>), Product(name='planetary_k_index_1m', url='https://services.swpc.noaa.gov/json/planetary_k_index_1m.json', parse=<lambda>), Product(name='kyoto_dst', url='https://services.swpc.noaa.gov/products/kyoto-dst.json', parse=<lambda>), Product(name='f107_flux_30_day', url='https://services.swpc.noaa.gov/products/10cm-flux-30-day.json', parse=<lambda>), Product(name='noaa_scales', url='https://services.swpc.noaa.gov/products/noaa-scales.json', parse=<lambda>), Product(name='rtsw_mag_1m', url='https://services.swpc.noaa.gov/json/rtsw/rtsw_mag_1m.json', parse=<lambda>), Product(name='rtsw_wind_1m', url='https://services.swpc.noaa.gov/json/rtsw/rtsw_wind_1m.json', parse=<lambda>), Product(name='goes_xrays', url='https://services.swpc.noaa.gov/json/goes/primary/xrays-1-day.json', parse=<lambda>), Product(name='goes_integral_protons', url='https://services.swpc.noaa.gov/json/goes/primary/integral-protons-1-day.json', parse=<lambda>), Product(name='alerts', url='https://services.swpc.noaa.gov/products/alerts.json', parse=<lambda>), Product(name='three_day_forecast', url='https://services.swpc.noaa.gov/text/3-day-forecast.txt', parse=<lambda>), Product(name='geomagnetic_forecast', url='https://services.swpc.noaa.gov/text/3-day-geomag-forecast.txt', parse=<lambda>), Product(name='twenty_seven_day_outlook', url='https://services.swpc.noaa.gov/text/27-day-outlook.txt', parse=<lambda>), Product(name='ovation_aurora', url='https://services.swpc.noaa.gov/json/ovation_aurora_latest.json', parse=<lambda>), Product(name='drap_global_frequencies', url='https://services.swpc.noaa.gov/text/drap_global_frequencies.txt', parse=<lambda>))`
+`(Product(name='planetary_k_index', url='https://services.swpc.noaa.gov/products/noaa-planetary-k-index.json', parse=<lambda>), Product(name='planetary_k_index_forecast', url='https://services.swpc.noaa.gov/products/noaa-planetary-k-index-forecast.json', parse=<lambda>), Product(name='planetary_k_index_1m', url='https://services.swpc.noaa.gov/json/planetary_k_index_1m.json', parse=<lambda>), Product(name='kyoto_dst', url='https://services.swpc.noaa.gov/products/kyoto-dst.json', parse=<lambda>), Product(name='f107_flux_30_day', url='https://services.swpc.noaa.gov/products/10cm-flux-30-day.json', parse=<lambda>), Product(name='noaa_scales', url='https://services.swpc.noaa.gov/products/noaa-scales.json', parse=<lambda>), Product(name='rtsw_mag_1m', url='https://services.swpc.noaa.gov/json/rtsw/rtsw_mag_1m.json', parse=<lambda>), Product(name='rtsw_wind_1m', url='https://services.swpc.noaa.gov/json/rtsw/rtsw_wind_1m.json', parse=<lambda>), Product(name='goes_xrays', url='https://services.swpc.noaa.gov/json/goes/primary/xrays-1-day.json', parse=<lambda>), Product(name='goes_integral_protons', url='https://services.swpc.noaa.gov/json/goes/primary/integral-protons-1-day.json', parse=<lambda>), Product(name='goes_integral_electrons', url='https://services.swpc.noaa.gov/json/goes/primary/integral-electrons-1-day.json', parse=<lambda>), Product(name='goes_xray_flares', url='https://services.swpc.noaa.gov/json/goes/primary/xray-flares-7-day.json', parse=<lambda>), Product(name='goes_xray_flare_latest', url='https://services.swpc.noaa.gov/json/goes/primary/xray-flares-latest.json', parse=<lambda>), Product(name='alerts', url='https://services.swpc.noaa.gov/products/alerts.json', parse=<lambda>), Product(name='three_day_forecast', url='https://services.swpc.noaa.gov/text/3-day-forecast.txt', parse=<lambda>), Product(name='geomagnetic_forecast', url='https://services.swpc.noaa.gov/text/3-day-geomag-forecast.txt', parse=<lambda>), Product(name='twenty_seven_day_outlook', url='https://services.swpc.noaa.gov/text/27-day-outlook.txt', parse=<lambda>), Product(name='ovation_aurora', url='https://services.swpc.noaa.gov/json/ovation_aurora_latest.json', parse=<lambda>), Product(name='drap_global_frequencies', url='https://services.swpc.noaa.gov/text/drap_global_frequencies.txt', parse=<lambda>))`
 
 ### `AsyncClient`
 
@@ -59,6 +59,9 @@ Asynchronous client for SWPC products.
 - `.rtsw_wind_1m(*, max_age: timedelta | None = None) -> RtswWind1m`: Fetch the real-time solar wind plasma.
 - `.goes_xrays(*, max_age: timedelta | None = None) -> GoesXrays`: Fetch the GOES X-ray flux of the last day (primary satellite).
 - `.goes_integral_protons(*, max_age: timedelta | None = None) -> GoesIntegralProtons`: Fetch the GOES integral proton flux of the last day (primary satellite).
+- `.goes_integral_electrons(*, max_age: timedelta | None = None) -> GoesIntegralElectrons`: Fetch the GOES integral electron flux of the last day (primary satellite).
+- `.goes_xray_flares(*, max_age: timedelta | None = None) -> GoesFlares`: Fetch the GOES X-ray flares of the last 7 days (primary satellite).
+- `.goes_xray_flare_latest(*, max_age: timedelta | None = None) -> GoesLatestFlare`: Fetch the latest GOES X-ray flare and the class of the flux now.
 - `.alerts(*, max_age: timedelta | None = None) -> Alerts`: Fetch the alerts, warnings, watches and summaries.
 - `.three_day_forecast(*, max_age: timedelta | None = None) -> ThreeDayForecast`: Fetch the 3-day forecast.
 - `.geomagnetic_forecast(*, max_age: timedelta | None = None) -> GeomagneticForecast`: Fetch the 3-day geomagnetic forecast.
@@ -100,6 +103,9 @@ Synchronous client for SWPC products.
 - `.rtsw_wind_1m(*, max_age: timedelta | None = None) -> RtswWind1m`: Fetch the real-time solar wind plasma.
 - `.goes_xrays(*, max_age: timedelta | None = None) -> GoesXrays`: Fetch the GOES X-ray flux of the last day (primary satellite).
 - `.goes_integral_protons(*, max_age: timedelta | None = None) -> GoesIntegralProtons`: Fetch the GOES integral proton flux of the last day (primary satellite).
+- `.goes_integral_electrons(*, max_age: timedelta | None = None) -> GoesIntegralElectrons`: Fetch the GOES integral electron flux of the last day (primary satellite).
+- `.goes_xray_flares(*, max_age: timedelta | None = None) -> GoesFlares`: Fetch the GOES X-ray flares of the last 7 days (primary satellite).
+- `.goes_xray_flare_latest(*, max_age: timedelta | None = None) -> GoesLatestFlare`: Fetch the latest GOES X-ray flare and the class of the flux now.
 - `.alerts(*, max_age: timedelta | None = None) -> Alerts`: Fetch the alerts, warnings, watches and summaries.
 - `.three_day_forecast(*, max_age: timedelta | None = None) -> ThreeDayForecast`: Fetch the 3-day forecast.
 - `.geomagnetic_forecast(*, max_age: timedelta | None = None) -> GeomagneticForecast`: Fetch the 3-day geomagnetic forecast.
@@ -153,7 +159,7 @@ Protocol. Fetches a URL synchronously.
 
 Models: frozen, typed dataclasses for SWPC products.
 
-Re-exports: `AlertMessage` (swpc_kit.models.alerts), `Alerts` (swpc_kit.models.alerts), `DailyAp` (swpc_kit.models.bulletins), `DrapFrequencies` (swpc_kit.models.grids), `DstValue` (swpc_kit.models.indices), `F107Flux` (swpc_kit.models.indices), `F107Value` (swpc_kit.models.indices), `FlareClass` (swpc_kit.models.goes), `GeomagneticForecast` (swpc_kit.models.bulletins), `GeomagneticStormScale` (swpc_kit.models.indices), `GoesIntegralProtons` (swpc_kit.models.goes), `GoesXrays` (swpc_kit.models.goes), `Grid` (swpc_kit.models.grids), `GridProduct` (swpc_kit.models.grids), `Kp1mValue` (swpc_kit.models.indices), `KpForecastStatus` (swpc_kit.models.indices), `KpForecastValue` (swpc_kit.models.indices), `KpPeriod` (swpc_kit.models.bulletins), `KpValue` (swpc_kit.models.indices), `KyotoDst` (swpc_kit.models.indices), `MessageField` (swpc_kit.models.alerts), `MessageKind` (swpc_kit.models.alerts), `NoaaScale` (swpc_kit.models.alerts), `NoaaScales` (swpc_kit.models.indices), `NoaaScalesDay` (swpc_kit.models.indices), `OutlookDay` (swpc_kit.models.bulletins), `OvationAurora` (swpc_kit.models.grids), `PlanetaryKIndex` (swpc_kit.models.indices), `PlanetaryKIndex1m` (swpc_kit.models.indices), `PlanetaryKIndexForecast` (swpc_kit.models.indices), `ProtonSample` (swpc_kit.models.goes), `RadioBlackoutScale` (swpc_kit.models.indices), `RtswMag1m` (swpc_kit.models.solar_wind), `RtswMagSample` (swpc_kit.models.solar_wind), `RtswSource` (swpc_kit.models.solar_wind), `RtswWind1m` (swpc_kit.models.solar_wind), `RtswWindSample` (swpc_kit.models.solar_wind), `ScaleCategory` (swpc_kit.models.alerts), `SkippedRecord` (swpc_kit.models.records), `SolarRadiationScale` (swpc_kit.models.indices), `ThreeDayForecast` (swpc_kit.models.bulletins), `TwentySevenDayOutlook` (swpc_kit.models.bulletins), `XrayBand` (swpc_kit.models.goes), `XraySample` (swpc_kit.models.goes), `field_key` (swpc_kit.models.alerts), `wrap_longitude` (swpc_kit.models.grids).
+Re-exports: `AlertMessage` (swpc_kit.models.alerts), `Alerts` (swpc_kit.models.alerts), `DailyAp` (swpc_kit.models.bulletins), `DrapFrequencies` (swpc_kit.models.grids), `DstValue` (swpc_kit.models.indices), `ElectronSample` (swpc_kit.models.goes), `F107Flux` (swpc_kit.models.indices), `F107Value` (swpc_kit.models.indices), `FlareClass` (swpc_kit.models.goes), `GeomagneticForecast` (swpc_kit.models.bulletins), `GeomagneticStormScale` (swpc_kit.models.indices), `GoesFlare` (swpc_kit.models.goes), `GoesFlares` (swpc_kit.models.goes), `GoesIntegralElectrons` (swpc_kit.models.goes), `GoesIntegralProtons` (swpc_kit.models.goes), `GoesLatestFlare` (swpc_kit.models.goes), `GoesXrays` (swpc_kit.models.goes), `Grid` (swpc_kit.models.grids), `GridProduct` (swpc_kit.models.grids), `Kp1mValue` (swpc_kit.models.indices), `KpForecastStatus` (swpc_kit.models.indices), `KpForecastValue` (swpc_kit.models.indices), `KpPeriod` (swpc_kit.models.bulletins), `KpValue` (swpc_kit.models.indices), `KyotoDst` (swpc_kit.models.indices), `MessageField` (swpc_kit.models.alerts), `MessageKind` (swpc_kit.models.alerts), `NoaaScale` (swpc_kit.models.alerts), `NoaaScales` (swpc_kit.models.indices), `NoaaScalesDay` (swpc_kit.models.indices), `OutlookDay` (swpc_kit.models.bulletins), `OvationAurora` (swpc_kit.models.grids), `PlanetaryKIndex` (swpc_kit.models.indices), `PlanetaryKIndex1m` (swpc_kit.models.indices), `PlanetaryKIndexForecast` (swpc_kit.models.indices), `ProtonSample` (swpc_kit.models.goes), `RadioBlackoutScale` (swpc_kit.models.indices), `RtswMag1m` (swpc_kit.models.solar_wind), `RtswMagSample` (swpc_kit.models.solar_wind), `RtswSource` (swpc_kit.models.solar_wind), `RtswWind1m` (swpc_kit.models.solar_wind), `RtswWindSample` (swpc_kit.models.solar_wind), `ScaleCategory` (swpc_kit.models.alerts), `SkippedRecord` (swpc_kit.models.records), `SolarRadiationScale` (swpc_kit.models.indices), `ThreeDayForecast` (swpc_kit.models.bulletins), `TwentySevenDayOutlook` (swpc_kit.models.bulletins), `XrayBand` (swpc_kit.models.goes), `XraySample` (swpc_kit.models.goes), `field_key` (swpc_kit.models.alerts), `wrap_longitude` (swpc_kit.models.grids).
 
 ## `swpc_kit.models.indices`
 
@@ -482,7 +488,7 @@ One-minute solar wind plasma of the last 24 hours.
 
 ## `swpc_kit.models.goes`
 
-Models for the GOES X-ray flux and integral proton flux.
+Models for the GOES X-ray flux, integral particle flux and flare lists.
 
 ### `FlareClass`
 
@@ -496,6 +502,7 @@ A solar flare class, such as `M2.5` (a flux of 2.5e-5 W/m²).
 | `multiplier` | `float` | Flux divided by the lower bound of the letter's decade, 0 to 9.9 for A to M, 0 or more for X. |
 
 - `.from_flux(flux: float) -> FlareClass`: Return the class of a 0.1-0.8 nm flux in W/m².
+- `.parse(text: str) -> FlareClass`: Return the class written as text, such as `"M2.5"`.
 - `.flux` (property): The flux the class stands for, in W/m² (M2.5 is 2.5e-5).
 
 ### `XrayBand`
@@ -571,6 +578,88 @@ GOES integral proton flux above each energy threshold.
 - `.thresholds` (property): The energy thresholds in the content, in MeV, ascending.
 - `.series(threshold_mev: float) -> tuple[ProtonSample, ...]`: Return the values above `threshold_mev`, oldest first.
 - `.latest(threshold_mev: float) -> ProtonSample | None`: Return the most recent value above `threshold_mev`, or `None`.
+
+### `ElectronSample`
+
+`ElectronSample(time: datetime, satellite: int, energy: str, threshold_mev: float, flux: float | None)`
+
+One GOES integral electron flux value above one energy threshold.
+
+| Field | Type | Meaning |
+|---|---|---|
+| `time` | `datetime` | Time of the value. |
+| `satellite` | `int` | GOES satellite number, such as 19. |
+| `energy` | `str` | Threshold as written in the source, such as `">=2 MeV"`. |
+| `threshold_mev` | `float` | The threshold in MeV, such as 2.0. |
+| `flux` | `float \| None` | Integral flux in pfu (particles cm⁻² s⁻¹ sr⁻¹), or `None`. |
+
+### `GoesIntegralElectrons`
+
+`GoesIntegralElectrons(values: tuple[ElectronSample, ...], source_url: str, skipped: tuple[SkippedRecord, ...] = ())`
+
+GOES integral electron flux above each energy threshold.
+
+| Field | Type | Meaning |
+|---|---|---|
+| `values` | `tuple[ElectronSample, ...]` | The values of every threshold, oldest first; values with the same time keep the order of the source file. |
+| `source_url` | `str` | Where the content came from. |
+| `skipped` | `tuple[SkippedRecord, ...]` | The records that could not be read, in source order. |
+
+- `.data_time` (property): Time of the most recent value, of any threshold.
+- `.thresholds` (property): The energy thresholds in the content, in MeV, ascending.
+- `.series(threshold_mev: float) -> tuple[ElectronSample, ...]`: Return the values above `threshold_mev`, oldest first.
+- `.latest(threshold_mev: float) -> ElectronSample | None`: Return the most recent value above `threshold_mev`, or `None`.
+
+### `GoesFlare`
+
+`GoesFlare(begin_time: datetime, begin_class: FlareClass, max_time: datetime, max_class: FlareClass, max_flux: float, end_time: datetime | None, end_class: FlareClass | None, satellite: int)`
+
+One X-ray flare seen by GOES, with its classes as SWPC writes them.
+
+| Field | Type | Meaning |
+|---|---|---|
+| `begin_time` | `datetime` | When the flare began. |
+| `begin_class` | `FlareClass` | The class of the flux when it began. |
+| `max_time` | `datetime` | When the 0.1-0.8 nm flux peaked (so far, for a flare in progress). |
+| `max_class` | `FlareClass` | The class of the peak, such as `M6.9`. |
+| `max_flux` | `float` | The 0.1-0.8 nm flux at the peak, in W/m² (`max_xrlong`). |
+| `end_time` | `datetime \| None` | When the flare ended, or `None` while it is in progress. |
+| `end_class` | `FlareClass \| None` | The class of the flux when it ended, or `None` while it is in progress. |
+| `satellite` | `int` | GOES satellite number, such as 18. |
+
+- `.ongoing` (property): Whether the flare is still in progress (it has no end yet).
+
+### `GoesFlares`
+
+`GoesFlares(values: tuple[GoesFlare, ...], source_url: str, skipped: tuple[SkippedRecord, ...] = ())`
+
+The X-ray flares of the last days, such as `xray-flares-7-day.json`.
+
+| Field | Type | Meaning |
+|---|---|---|
+| `values` | `tuple[GoesFlare, ...]` | The flares, oldest first by `begin_time`; empty when no flare happened in the period. |
+| `source_url` | `str` | Where the content came from. |
+| `skipped` | `tuple[SkippedRecord, ...]` | The records that could not be read, in source order. |
+
+- `.data_time` (property): When the most recent flare began, or `None` with no flares.
+- `.latest() -> GoesFlare | None`: Return the flare that began last, or `None` with no flares.
+- `.strongest() -> GoesFlare | None`: Return the flare with the highest peak, or `None` with no flares.
+
+### `GoesLatestFlare`
+
+`GoesLatestFlare(time: datetime, satellite: int, current_class: FlareClass, flare: GoesFlare, source_url: str)`
+
+The latest flare and the class of the flux now (`xray-flares-latest.json`).
+
+| Field | Type | Meaning |
+|---|---|---|
+| `time` | `datetime` | When the file was written, the time of `current_class`. |
+| `satellite` | `int` | GOES satellite number, such as 18. |
+| `current_class` | `FlareClass` | The class of the 0.1-0.8 nm flux at `time`. |
+| `flare` | `GoesFlare` | The flare in progress, or the last one if none is. |
+| `source_url` | `str` | Where the content came from. |
+
+- `.data_time` (property): When the file was written (its `time_tag`).
 
 ## `swpc_kit.models.alerts`
 
@@ -874,7 +963,7 @@ A record of the source that the parser could not read.
 
 Parsers: pure functions from raw SWPC content to models.
 
-Re-exports: `parse_27_day_outlook` (swpc_kit.parse.bulletins), `parse_alerts` (swpc_kit.parse.alerts), `parse_drap_global_frequencies` (swpc_kit.parse.grids), `parse_f107_flux_30_day` (swpc_kit.parse.indices), `parse_geomagnetic_forecast` (swpc_kit.parse.bulletins), `parse_goes_integral_protons` (swpc_kit.parse.goes), `parse_goes_xrays` (swpc_kit.parse.goes), `parse_kyoto_dst` (swpc_kit.parse.indices), `parse_noaa_scales` (swpc_kit.parse.indices), `parse_ovation_aurora` (swpc_kit.parse.grids), `parse_planetary_k_index` (swpc_kit.parse.indices), `parse_planetary_k_index_1m` (swpc_kit.parse.indices), `parse_planetary_k_index_forecast` (swpc_kit.parse.indices), `parse_rtsw_mag_1m` (swpc_kit.parse.solar_wind), `parse_rtsw_wind_1m` (swpc_kit.parse.solar_wind), `parse_three_day_forecast` (swpc_kit.parse.bulletins).
+Re-exports: `parse_27_day_outlook` (swpc_kit.parse.bulletins), `parse_alerts` (swpc_kit.parse.alerts), `parse_drap_global_frequencies` (swpc_kit.parse.grids), `parse_f107_flux_30_day` (swpc_kit.parse.indices), `parse_geomagnetic_forecast` (swpc_kit.parse.bulletins), `parse_goes_integral_electrons` (swpc_kit.parse.goes), `parse_goes_integral_protons` (swpc_kit.parse.goes), `parse_goes_xray_flare_latest` (swpc_kit.parse.goes), `parse_goes_xray_flares` (swpc_kit.parse.goes), `parse_goes_xrays` (swpc_kit.parse.goes), `parse_kyoto_dst` (swpc_kit.parse.indices), `parse_noaa_scales` (swpc_kit.parse.indices), `parse_ovation_aurora` (swpc_kit.parse.grids), `parse_planetary_k_index` (swpc_kit.parse.indices), `parse_planetary_k_index_1m` (swpc_kit.parse.indices), `parse_planetary_k_index_forecast` (swpc_kit.parse.indices), `parse_rtsw_mag_1m` (swpc_kit.parse.solar_wind), `parse_rtsw_wind_1m` (swpc_kit.parse.solar_wind), `parse_three_day_forecast` (swpc_kit.parse.bulletins).
 
 ## `swpc_kit.parse.indices`
 
@@ -918,7 +1007,7 @@ Parse `rtsw_wind_1m.json` (one-minute plasma, every source).
 
 ## `swpc_kit.parse.goes`
 
-Parsers for the GOES X-ray and integral proton products.
+Parsers for the GOES X-ray, integral proton and electron, and flare products.
 
 ### `parse_goes_xrays(raw: str | bytes, *, source_url: str = 'https://services.swpc.noaa.gov/json/goes/primary/xrays-1-day.json') -> GoesXrays`
 
@@ -927,6 +1016,18 @@ Parse a GOES X-ray flux file, such as `xrays-1-day.json`.
 ### `parse_goes_integral_protons(raw: str | bytes, *, source_url: str = 'https://services.swpc.noaa.gov/json/goes/primary/integral-protons-1-day.json') -> GoesIntegralProtons`
 
 Parse a GOES integral proton file, such as `integral-protons-1-day.json`.
+
+### `parse_goes_integral_electrons(raw: str | bytes, *, source_url: str = 'https://services.swpc.noaa.gov/json/goes/primary/integral-electrons-1-day.json') -> GoesIntegralElectrons`
+
+Parse a GOES integral electron file, such as `integral-electrons-1-day.json`.
+
+### `parse_goes_xray_flares(raw: str | bytes, *, source_url: str = 'https://services.swpc.noaa.gov/json/goes/primary/xray-flares-7-day.json') -> GoesFlares`
+
+Parse a GOES flare list, such as `xray-flares-7-day.json`.
+
+### `parse_goes_xray_flare_latest(raw: str | bytes, *, source_url: str = 'https://services.swpc.noaa.gov/json/goes/primary/xray-flares-latest.json') -> GoesLatestFlare`
+
+Parse `xray-flares-latest.json`: the latest flare and the class now.
 
 ## `swpc_kit.parse.alerts`
 

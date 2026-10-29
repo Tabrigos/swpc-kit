@@ -35,6 +35,9 @@ The library uses only the standard library, GeoTIFF export included; the
 | Real-time solar wind, plasma | `parse_rtsw_wind_1m` | `rtsw_wind_1m` |
 | GOES X-ray flux | `parse_goes_xrays` | `goes_xrays` |
 | GOES integral protons | `parse_goes_integral_protons` | `goes_integral_protons` |
+| GOES integral electrons | `parse_goes_integral_electrons` | `goes_integral_electrons` |
+| GOES X-ray flares, 7 days | `parse_goes_xray_flares` | `goes_xray_flares` |
+| GOES latest X-ray flare | `parse_goes_xray_flare_latest` | `goes_xray_flare_latest` |
 | Alerts, warnings, watches | `parse_alerts` | `alerts` |
 | 3-day forecast | `parse_three_day_forecast` | `three_day_forecast` |
 | Geomagnetic forecast | `parse_geomagnetic_forecast` | `geomagnetic_forecast` |

@@ -1,20 +1,25 @@
-"""Models for the GOES X-ray flux and integral proton flux.
+"""Models for the GOES X-ray flux, integral particle flux and flare lists.
 
-The GOES products of SWPC hold one record per time and per band: two X-ray
-bands every minute, eight integral proton energy thresholds every five
-minutes. The models keep the records as they come and give access by band
-or threshold. The flare class (A, B, C, M, X) is computed from the flux of
-the 0.1-0.8 nm band.
+The GOES flux products of SWPC hold one record per time and per band: two
+X-ray bands every minute, eight integral proton energy thresholds and one
+electron threshold every five minutes. The models keep the records as they
+come and give access by band or threshold. The flare class (A, B, C, M, X)
+is computed from the flux of the 0.1-0.8 nm band.
+
+The flare lists hold one record per flare, with the classes as SWPC writes
+them; a flare in progress has no end yet (D-025).
 
 Times are UTC (the source writes them with ``Z``).
 """
 
 import math
+import re
 from dataclasses import dataclass
 from datetime import datetime
 from decimal import ROUND_FLOOR, Decimal
 from enum import StrEnum
 from itertools import pairwise
+from typing import Protocol
 
 from swpc_kit.models._checks import check_utc, check_values
 from swpc_kit.models.records import SkippedRecord
@@ -24,6 +29,7 @@ from swpc_kit.models.records import SkippedRecord
 _LETTERS = ("A", "B", "C", "M", "X")
 _BASE = {letter: Decimal(f"1e-{8 - i}") for i, letter in enumerate(_LETTERS)}
 _TENTH = Decimal("0.1")
+_CLASS_TEXT = re.compile(r"([ABCMX])([0-9]+(?:\.[0-9]+)?)")
 
 
 @dataclass(frozen=True, slots=True, order=True)
@@ -78,6 +84,21 @@ class FlareClass:
         )
         multiplier = (exact / _BASE[letter]).quantize(_TENTH, rounding=ROUND_FLOOR)
         return cls(letter, float(multiplier))
+
+    @classmethod
+    def parse(cls, text: str) -> "FlareClass":
+        """Return the class written as text, such as ``"M2.5"``.
+
+        This is how the flare lists of SWPC write classes: a letter, then
+        the multiplier.
+
+        Raises:
+            ValueError: If the text is not a flare class.
+        """
+        match = _CLASS_TEXT.fullmatch(text)
+        if match is None:
+            raise ValueError(f"not a flare class: {text!r}")
+        return cls(match.group(1), float(match.group(2)))
 
     @property
     def flux(self) -> float:
@@ -214,8 +235,43 @@ class ProtonSample:
         check_utc("time", self.time)
 
 
+class _ThresholdSample(Protocol):
+    @property
+    def time(self) -> datetime: ...
+
+    @property
+    def threshold_mev(self) -> float: ...
+
+
+class _IntegralSeries[S: _ThresholdSample]:
+    """Access by energy threshold, shared by the GOES integral products."""
+
+    __slots__ = ()
+
+    values: tuple[S, ...]
+
+    @property
+    def data_time(self) -> datetime:
+        """Time of the most recent value, of any threshold."""
+        return max(v.time for v in self.values)
+
+    @property
+    def thresholds(self) -> tuple[float, ...]:
+        """The energy thresholds in the content, in MeV, ascending."""
+        return tuple(sorted({v.threshold_mev for v in self.values}))
+
+    def series(self, threshold_mev: float) -> tuple[S, ...]:
+        """Return the values above ``threshold_mev``, oldest first."""
+        return tuple(v for v in self.values if v.threshold_mev == threshold_mev)
+
+    def latest(self, threshold_mev: float) -> S | None:
+        """Return the most recent value above ``threshold_mev``, or ``None``."""
+        series = self.series(threshold_mev)
+        return max(series, key=lambda v: v.time) if series else None
+
+
 @dataclass(frozen=True, slots=True)
-class GoesIntegralProtons:
+class GoesIntegralProtons(_IntegralSeries[ProtonSample]):
     """GOES integral proton flux above each energy threshold.
 
     Attributes:
@@ -232,21 +288,149 @@ class GoesIntegralProtons:
     def __post_init__(self) -> None:
         check_values(self.values)
 
+
+# --- Integral electrons ------------------------------------------------------
+
+
+@dataclass(frozen=True, slots=True)
+class ElectronSample:
+    """One GOES integral electron flux value above one energy threshold.
+
+    Attributes:
+        time: Time of the value.
+        satellite: GOES satellite number, such as 19.
+        energy: Threshold as written in the source, such as ``">=2 MeV"``.
+        threshold_mev: The threshold in MeV, such as 2.0.
+        flux: Integral flux in pfu (particles cm⁻² s⁻¹ sr⁻¹), or ``None``.
+    """
+
+    time: datetime
+    satellite: int
+    energy: str
+    threshold_mev: float
+    flux: float | None
+
+    def __post_init__(self) -> None:
+        check_utc("time", self.time)
+
+
+@dataclass(frozen=True, slots=True)
+class GoesIntegralElectrons(_IntegralSeries[ElectronSample]):
+    """GOES integral electron flux above each energy threshold.
+
+    Attributes:
+        values: The values of every threshold, oldest first; values with the
+            same time keep the order of the source file.
+        source_url: Where the content came from.
+        skipped: The records that could not be read, in source order.
+    """
+
+    values: tuple[ElectronSample, ...]
+    source_url: str
+    skipped: tuple[SkippedRecord, ...] = ()
+
+    def __post_init__(self) -> None:
+        check_values(self.values)
+
+
+# --- Flares ------------------------------------------------------------------
+
+
+@dataclass(frozen=True, slots=True)
+class GoesFlare:
+    """One X-ray flare seen by GOES, with its classes as SWPC writes them.
+
+    Attributes:
+        begin_time: When the flare began.
+        begin_class: The class of the flux when it began.
+        max_time: When the 0.1-0.8 nm flux peaked (so far, for a flare in
+            progress).
+        max_class: The class of the peak, such as ``M6.9``.
+        max_flux: The 0.1-0.8 nm flux at the peak, in W/m² (``max_xrlong``).
+        end_time: When the flare ended, or ``None`` while it is in progress.
+        end_class: The class of the flux when it ended, or ``None`` while it
+            is in progress.
+        satellite: GOES satellite number, such as 18.
+    """
+
+    begin_time: datetime
+    begin_class: FlareClass
+    max_time: datetime
+    max_class: FlareClass
+    max_flux: float
+    end_time: datetime | None
+    end_class: FlareClass | None
+    satellite: int
+
+    def __post_init__(self) -> None:
+        check_utc("begin_time", self.begin_time)
+        check_utc("max_time", self.max_time)
+        check_utc("end_time", self.end_time)
+
+    @property
+    def ongoing(self) -> bool:
+        """Whether the flare is still in progress (it has no end yet)."""
+        return self.end_time is None
+
+
+@dataclass(frozen=True, slots=True)
+class GoesFlares:
+    """The X-ray flares of the last days, such as ``xray-flares-7-day.json``.
+
+    Attributes:
+        values: The flares, oldest first by ``begin_time``; empty when no
+            flare happened in the period.
+        source_url: Where the content came from.
+        skipped: The records that could not be read, in source order.
+    """
+
+    values: tuple[GoesFlare, ...]
+    source_url: str
+    skipped: tuple[SkippedRecord, ...] = ()
+
+    @property
+    def data_time(self) -> datetime | None:
+        """When the most recent flare began, or ``None`` with no flares.
+
+        The file holds no other time: a quiet Sun makes it look old, so a
+        ``max_age`` on this product measures the time since the last flare.
+        """
+        return max((f.begin_time for f in self.values), default=None)
+
+    def latest(self) -> GoesFlare | None:
+        """Return the flare that began last, or ``None`` with no flares."""
+        return max(self.values, key=lambda f: f.begin_time, default=None)
+
+    def strongest(self) -> GoesFlare | None:
+        """Return the flare with the highest peak, or ``None`` with no flares.
+
+        On a tie the earliest one wins.
+        """
+        return max(self.values, key=lambda f: f.max_flux, default=None)
+
+
+@dataclass(frozen=True, slots=True)
+class GoesLatestFlare:
+    """The latest flare and the class of the flux now (``xray-flares-latest.json``).
+
+    Attributes:
+        time: When the file was written, the time of ``current_class``.
+        satellite: GOES satellite number, such as 18.
+        current_class: The class of the 0.1-0.8 nm flux at ``time``.
+        flare: The flare in progress, or the last one if none is.
+        source_url: Where the content came from.
+    """
+
+    time: datetime
+    satellite: int
+    current_class: FlareClass
+    flare: GoesFlare
+    source_url: str
+
+    def __post_init__(self) -> None:
+        check_utc("time", self.time)
+
     @property
     def data_time(self) -> datetime:
-        """Time of the most recent value, of any threshold."""
-        return max(v.time for v in self.values)
-
-    @property
-    def thresholds(self) -> tuple[float, ...]:
-        """The energy thresholds in the content, in MeV, ascending."""
-        return tuple(sorted({v.threshold_mev for v in self.values}))
-
-    def series(self, threshold_mev: float) -> tuple[ProtonSample, ...]:
-        """Return the values above ``threshold_mev``, oldest first."""
-        return tuple(v for v in self.values if v.threshold_mev == threshold_mev)
-
-    def latest(self, threshold_mev: float) -> ProtonSample | None:
-        """Return the most recent value above ``threshold_mev``, or ``None``."""
-        series = self.series(threshold_mev)
-        return max(series, key=lambda v: v.time) if series else None
+        """When the file was written (its ``time_tag``)."""
+        return self.time

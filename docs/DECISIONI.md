@@ -506,3 +506,30 @@ scelte già prese e sparse fra `SPEC.md`, `docs/FONTI.md` e il diario; la data
   semver. Chi cattura `SourceNotReady` continua a prendere anche il 429;
   chi vuole fermarsi lo cattura prima come `RateLimited`. Il client resta
   senza attesa su `Retry-After` e con gli ETag in memoria.
+
+## D-025 — Un campo vuoto per significato è `None`, nelle sole forme viste
+
+- **Data e tappa**: 2026-10-29, T21 (scelta del maintainer, sui riscontri
+  di un utente della libreria). Precisa D-015 e D-017, non le sostituisce.
+- **Contesto**: nei prodotti nuovi alcuni campi sono vuoti per un motivo
+  che ha senso. Un flare in corso non ha ancora fine: un utente ha visto
+  `end_time` valere `"Unk"` ed `end_class` `null` nel file `latest` del
+  12/09/2026, e il suo lettore, andato in errore, ha lasciato fermo un
+  pannello per 15-18 ore proprio durante il flare. Con D-015 e D-017 così
+  come sono, un campo che non si legge scarta il record: il flare in corso
+  sarebbe finito in `skipped`.
+- **Decisione**: un campo è facoltativo nel modello (`None`) solo quando
+  il vuoto ha un significato del prodotto (la fine di un flare non ancora
+  finito). Diventano `None` solo le forme vuote viste in un file vero,
+  elencate campo per campo nel parser e in `docs/FONTI.md`, ognuna con il
+  suo test. Ogni altro valore che non si legge scarta il record, come
+  prima. `"Unk"` non è una sentinella nel senso di D-017: non sta al posto
+  di una misura sbagliata, dice uno stato.
+- **Alternative scartate**: tutto obbligatorio (il flare in corso negli
+  scarti, cioè il guasto dell'utente in piccolo); ogni `null` dei campi
+  accessori diventa `None` (un campo che sparisce per un cambio di formato
+  passerebbe in silenzio, contro D-015 e D-017).
+- **Conseguenze**: una forma vuota nuova (un `"N/A"`, un `""`) scarta il
+  record finché qualcuno non la vede in un file vero e la aggiunge, con la
+  fixture o la fonte. Chi legge un modello controlla `None` solo sui campi
+  che lo dichiarano.

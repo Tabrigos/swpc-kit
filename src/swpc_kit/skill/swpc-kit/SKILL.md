@@ -3,7 +3,8 @@ name: swpc-kit
 description: >-
   How to get NOAA SWPC space weather data in Python with the swpc-kit library:
   planetary K index (Kp), Dst, F10.7, NOAA G/S/R storm scales, real-time solar
-  wind (Bz, speed, density), GOES X-ray flares and protons, SWPC alerts and
+  wind (Bz, speed, density), GOES X-ray flux and flare lists, protons and
+  electrons, SWPC alerts and
   warnings, 3-day and 27-day forecasts, OVATION aurora and D-RAP grids, with
   GeoJSON/GeoTIFF export. Use it when code imports swpc_kit, or the user
   wants current or forecast geomagnetic activity, aurora chances, solar flare
@@ -46,8 +47,11 @@ the JSON, GeoJSON and GeoTIFF exports, which use only the standard library.
 | Solar radio flux F10.7 | `f107_flux_30_day` | `values[-1].flux` (sfu) |
 | Solar wind magnetic field (Bz, Bt) | `rtsw_mag_1m` | `latest_active().bz_gsm`, `.bt` |
 | Solar wind speed and density | `rtsw_wind_1m` | `latest_active().proton_speed`, `.proton_density` |
-| Solar flares | `goes_xrays` | `latest()`, `peak()`, and `.flare_class` of a sample |
+| X-ray flux, flare class now | `goes_xrays` | `latest()`, `peak()`, and `.flare_class` of a sample |
+| Flares of the last 7 days | `goes_xray_flares` | `values`, `latest()`, `strongest()`: `max_class`, `max_time`, `ongoing` |
+| Flare in progress or last one | `goes_xray_flare_latest` | `flare.ongoing`, `flare.max_class`, `current_class` |
 | Radiation storm, protons | `goes_integral_protons` | `latest(10).flux` (pfu at ≥10 MeV) |
+| Energetic electrons | `goes_integral_electrons` | `latest(2).flux` (pfu at ≥2 MeV) |
 | Alerts, warnings, watches | `alerts` | `messages` (newest first): `kind`, `code`, `valid_to`, `noaa_scale`, `info` |
 | SWPC's 3-day forecast | `three_day_forecast` | `kp`, `greatest_expected_kp`, `s1_or_greater`, `r1_r2` |
 | Geomagnetic forecast (Ap) | `geomagnetic_forecast` | see `references/api.md` |
@@ -193,10 +197,15 @@ read, and the client logs a warning on the `swpc_kit.client` logger. So
 
 - **Impossible** means beyond limits far wider than any measurement: Dst
   -2000 to 500 nT, F10.7 30 to 5000 sfu, solar wind field ±1000 nT and
-  speed up to 5000 km/s, X-ray flux up to 0.1 W/m², protons up to 1e8 pfu.
+  speed up to 5000 km/s, X-ray flux (and the peak of a flare) up to
+  0.1 W/m², protons and electrons up to 1e8 pfu.
 - **Every field of the model** must be in every record, as JSON null when the
   model allows `None` (only the undocumented solar wind flags may be
-  absent). A field missing from *every* record is a new format:
+  absent). A flare in progress has `end_time` and `end_class` `None`: only
+  the pair seen in a real file counts (`end_time` `"Unk"` with `end_class`
+  JSON null); one of them alone, or any other unreadable value, skips the
+  flare. A field missing from *every* record is
+  a new format:
   `UnexpectedContent`, not a file of skipped records.
 - **Strict products**: the bulletins, the grids and `noaa-scales.json` are
   tables, so one wrong line or value is a `ParseError` for the whole file,
@@ -216,7 +225,10 @@ read, and the client logs a warning on the `swpc_kit.client` logger. So
   the file, except `Alerts.messages`, which is newest first like the
   source.
 - An empty `alerts.json` is valid (no recent alerts): `messages` is empty and
-  `data_time` is `None`, so `max_age` never rejects it.
+  `data_time` is `None`, so `max_age` never rejects it. The same holds for
+  an empty flare list.
+- For the flare list `data_time` is when the last flare began: a quiet Sun
+  makes it old, so do not put a `max_age` on it.
 
 ## Traps
 
@@ -230,7 +242,8 @@ read, and the client logs a warning on the `swpc_kit.client` logger. So
   (2.67 is "3-"); `planetary_k_index_1m` is a 1-minute estimate with a label
   such as `"3M"`. Storm levels: Kp 5 is G1, up to Kp 9 for G5.
 - **Flare class** is computed only from the 0.1-0.8 nm band, truncated to one
-  decimal: `FlareClass.from_flux(2.5e-5)` is `M2.5`.
+  decimal: `FlareClass.from_flux(2.5e-5)` is `M2.5`. The flare lists give
+  the classes as SWPC writes them (`FlareClass.parse("M2.5")`).
 - **Grid lookups.** `grid.value_near(latitude, longitude)` gives the cell
   that holds any point, or `None` outside the grid; `value_at` wants the
   exact centre of a cell and raises `KeyError` otherwise. Both accept

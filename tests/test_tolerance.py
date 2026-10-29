@@ -18,7 +18,9 @@ from swpc_kit.models import SkippedRecord
 from swpc_kit.parse import (
     parse_alerts,
     parse_f107_flux_30_day,
+    parse_goes_integral_electrons,
     parse_goes_integral_protons,
+    parse_goes_xray_flares,
     parse_goes_xrays,
     parse_kyoto_dst,
     parse_planetary_k_index,
@@ -57,6 +59,13 @@ PRODUCTS = [
     (parse_rtsw_wind_1m, "rtsw-wind-1m/2026-10-15.json", "proton_density", -1),
     (parse_goes_xrays, "goes-xrays-1-day/2026-10-15.json", "flux", "x"),
     (parse_goes_integral_protons, "goes-protons-1-day/2026-10-15.json", "energy", "x"),
+    (
+        parse_goes_integral_electrons,
+        "goes-electrons-1-day/2026-10-29.json",
+        "energy",
+        "x",
+    ),
+    (parse_goes_xray_flares, "goes-flares-7-day/2026-10-29.json", "max_class", "Q1"),
     (parse_alerts, "alerts/2026-10-15.json", "issue_datetime", "13 Oct 2026"),
 ]
 IDS = [name.split("/")[0] for _, name, _, _ in PRODUCTS]
@@ -142,6 +151,18 @@ def test_a_repeated_time_skips_the_second_record() -> None:
             "goes-protons-1-day/2026-10-15.json",
             "flux",
             1e9,
+        ),
+        (
+            parse_goes_integral_electrons,
+            "goes-electrons-1-day/2026-10-29.json",
+            "flux",
+            1e9,
+        ),
+        (
+            parse_goes_xray_flares,
+            "goes-flares-7-day/2026-10-29.json",
+            "max_xrlong",
+            1.0,
         ),
     ],
 )

@@ -278,6 +278,8 @@ def test_record_writes_files_and_readme(tmp_path: Path) -> None:
     readme = (tmp_path / "README.md").read_text(encoding="utf-8")
     assert "`kp-3h/2026-10-15.json`" in readme
     assert "`rtsw/2026-10-15.json`" in readme
+    # LF on every system: on Windows text mode would write CRLF.
+    assert b"\r\n" not in (tmp_path / "README.md").read_bytes()
 
 
 def test_record_writes_nothing_when_a_download_is_bad(tmp_path: Path) -> None:

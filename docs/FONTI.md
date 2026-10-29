@@ -191,6 +191,55 @@ texts end with `\n`. The server sends `Last-Modified`, `ETag` and
   `secondary/` directory have the same format as the primary's one-day
   files (the only ones recorded); the parsers accept them with
   `source_url=`.
+- `integral-electrons-1-day.json` (T21, reduced fixture
+  `goes-electrons-1-day/2026-10-29.json`), **verified**: the shape of the
+  protons, `{"time_tag":…,"satellite":19,"flux":1622.5,"energy":">=2 MeV"}`,
+  ascending order, 5-minute step, a single energy (`>=2 MeV`). The
+  electrons come from satellite 19, the protons and X-rays recorded on
+  2026-10-15 from 18: each file names its own. A file shared by a user
+  (2026-08-28) has the same shape.
+
+### Flare lists (T21, 2026-10-29)
+
+- `xray-flares-7-day.json` (fixture `goes-flares-7-day/2026-10-29.json`,
+  54 flares, and `2026-08-28-shared.json`, 41 flares up to M6.9, shared by
+  a user), **verified**: one object per flare, ordered by `begin_time`,
+  with `time_tag` equal to `begin_time`. Fields: `begin_time`,
+  `begin_class`, `max_time`, `max_class`, `max_xrlong` (the peak flux in
+  W/m²), `max_ratio`, `max_ratio_time`, `current_int_xrlong`, `end_time`,
+  `end_class`, `satellite`. Classes are text such as `"M6.9"`.
+- `xray-flares-latest.json` (fixture `goes-flares-latest/2026-10-29.json`),
+  **verified**: an array of one object, the same fields plus
+  `current_class`, `current_ratio`, and a `time_tag` that is the time of
+  the file (2026-10-29 14:24 for a flare that ended on 10-28 13:03). With no
+  flare in progress it holds the last one.
+- **Verified** on both 7-day fixtures (95 flares): `begin_time` ≤
+  `max_time` ≤ `end_time`, and `max_class` is the class of `max_xrlong`
+  truncated to one decimal (as `FlareClass.from_flux`). The parser skips a
+  flare whose times are out of order; it does not check the class against
+  the flux.
+- `max_ratio` and `max_ratio_time` are `null` in 20 of 54 flares, and
+  `max_ratio_time` is `"Unk"` with `max_ratio` `null` in the recorded
+  `latest` of an ended flare. The models leave both fields out, with
+  `current_ratio` and `current_int_xrlong`, whose meaning SWPC does not
+  document.
+- **A flare in progress** (D-025): `end_time` is `"Unk"` and `end_class`
+  `null`, as seen by a user in a `latest` file of 2026-09-12 (a partial
+  sample of 6 fields, not kept as a fixture; the case is built in the tests
+  on the recorded record). These two forms, together and only them, become
+  `None`; one without the other skips the flare, since every ended flare of
+  the fixtures has both fields.
+  **Hypothesis**: the other fields of a flare in progress (`begin_*`,
+  `max_time`, `max_class`, `max_xrlong`, `current_class`) are filled as
+  for an ended flare, with the peak so far: no file recorded during a flare
+  has all its fields (the sample of 2026-09-12 has 6 of 15, and the live
+  file read on 2026-10-29 14:46 UTC held an ended flare). If they come as
+  `null`, the `latest` file of a flare in progress is a `ParseError` and
+  the flare is skipped from the 7-day list. **Hypothesis** too: the 7-day
+  list writes a flare in progress the same way; no recorded list has one. Other forms (`null` in `end_time`, `"Unk"` in
+  `max_time`) are not seen and skip the flare.
+- **Hypothesis**: with no flare in 7 days the list is `[]`; the parser
+  reads it as no flares, as for the alerts.
 - **Verified** on the SWPC pages (read on 2026-10-16):
   - `products/goes-proton-flux`: the `integral-protons` files give integral
     fluxes averaged over 5 minutes in protons/(cm² s sr) (= pfu) for the
@@ -500,7 +549,9 @@ comes):
 SWPC documents no fill value for the physical fields (that a missing value
 is always `null` is a **hypothesis**, and a reported plasma file has
 `-9999`, see "Solar wind"). So the parsers do
-not turn any value into `None`: a value beyond these limits makes the record
+not turn any value into `None` (the only exception is a value that does not
+exist yet, such as the end of a flare in progress, D-025): a value beyond
+these limits makes the record
 **skipped** (`skipped` of the model, with the reason), and the other records
 are read. The limits are deliberately far beyond anything measured, to catch
 fill values such as `99999` or `-99999` and changes of unit, never a real
@@ -512,8 +563,9 @@ extreme. They are **choices**, not documented by SWPC:
 | F10.7 | 30 to 5000 sfu | the quiet Sun stays above about 60 sfu; flare-enhanced daily values stay well below 5000 |
 | RTSW field strength `bt` and each component | ±1000 nT | at L1 the field rarely exceeds 100 nT |
 | RTSW proton and alpha speed | up to 5000 km/s | the fastest solar wind measured is below 3000 km/s |
-| GOES X-ray flux (`flux`, `observed_flux`) | up to 0.1 W/m² (X1000) | about 35 times the strongest flare recorded (X28, 2.8e-3 W/m², November 2003) |
+| GOES X-ray flux (`flux`, `observed_flux`) and flare peak (`max_xrlong`, also above 0) | up to 0.1 W/m² (X1000) | about 35 times the strongest flare recorded (X28, 2.8e-3 W/m², November 2003) |
 | GOES integral proton flux | up to 1e8 pfu | the largest events stay below 1e6 pfu, even at ≥1 MeV |
+| GOES integral electron flux | up to 1e8 pfu | the same limit as the protons; the recorded fixtures stay below 3e3 pfu at ≥2 MeV |
 
 Consistency checks, also by record:
 

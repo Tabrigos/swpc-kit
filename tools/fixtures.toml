@@ -51,6 +51,20 @@ name = "goes-protons-1-day"
 url = "https://services.swpc.noaa.gov/json/goes/primary/integral-protons-1-day.json"
 reduce = { group = "time_tag", head = 12, tail = 12, every = 12 }
 
+[[product]]
+name = "goes-electrons-1-day"
+url = "https://services.swpc.noaa.gov/json/goes/primary/integral-electrons-1-day.json"
+reduce = { group = "time_tag", head = 12, tail = 12, every = 12 }
+
+# GOES flares: one record per flare over 7 days, and the latest one.
+[[product]]
+name = "goes-flares-7-day"
+url = "https://services.swpc.noaa.gov/json/goes/primary/xray-flares-7-day.json"
+
+[[product]]
+name = "goes-flares-latest"
+url = "https://services.swpc.noaa.gov/json/goes/primary/xray-flares-latest.json"
+
 # Alerts
 [[product]]
 name = "alerts"

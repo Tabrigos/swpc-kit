@@ -83,6 +83,12 @@ The exact names are decided in the stages; this is the framework.
 | Bulletins | 3-day forecast, geomagnetic forecast, 27-day outlook | T5 |
 | Grids | OVATION aurora, D-RAP | T6 |
 
+Added later:
+
+| Group | Products | Stage |
+|---|---|---|
+| GOES | integral electrons, X-ray flares of 7 days and the latest one (a flare in progress has no end, D-025) | T21 |
+
 ## Errors
 
 A hierarchy under `SwpcError`:

@@ -23,6 +23,7 @@ from swpc_kit.models.bulletins import (
     ThreeDayForecast,
     TwentySevenDayOutlook,
 )
+from swpc_kit.models.goes import GoesLatestFlare
 from swpc_kit.models.grids import Grid
 from swpc_kit.models.indices import NoaaScales
 
@@ -36,6 +37,8 @@ _ROWS: dict[type, str] = {
     ThreeDayForecast: "kp",
     GeomagneticForecast: "kp",
 }
+# The products of one record, which is the product itself.
+_ONE_ROW = (GoesLatestFlare,)
 
 
 def _is_model(value: object) -> bool:
@@ -114,6 +117,8 @@ def _flat(kind: type, value: object, prefix: str) -> Iterator[tuple[str, Any]]:
 
 
 def _rows(data: object) -> Sequence[Any]:
+    if isinstance(data, _ONE_ROW):
+        return (data,)
     if _is_model(data):
         rows = getattr(data, _ROWS.get(type(data), "values"), None)
         if isinstance(rows, tuple):
@@ -139,9 +144,10 @@ def to_records(data: object) -> list[dict[str, Any]]:
 
     The records of a product are its ``values``; for the alerts its
     ``messages``; for the NOAA scales and the 27-day outlook its ``days``;
-    for the 3-day and geomagnetic forecasts the Kp periods (``kp``); for a
-    grid or a gridded product its cells, ``latitude``, ``longitude`` and
-    ``value``, with the longitudes as delivered.
+    for the 3-day and geomagnetic forecasts the Kp periods (``kp``); for
+    the latest flare one row, the product itself; for a grid or a gridded
+    product its cells, ``latitude``, ``longitude`` and ``value``, with the
+    longitudes as delivered.
 
     Args:
         data: A product, a grid, or a sequence of records of one kind (such
