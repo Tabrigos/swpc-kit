@@ -15,6 +15,7 @@ from datetime import datetime
 from decimal import ROUND_FLOOR, Decimal
 from enum import StrEnum
 from itertools import pairwise
+from typing import Protocol
 
 from swpc_kit.models._checks import check_utc, check_values
 from swpc_kit.models.records import SkippedRecord
@@ -214,8 +215,43 @@ class ProtonSample:
         check_utc("time", self.time)
 
 
+class _ThresholdSample(Protocol):
+    @property
+    def time(self) -> datetime: ...
+
+    @property
+    def threshold_mev(self) -> float: ...
+
+
+class _IntegralSeries[S: _ThresholdSample]:
+    """Access by energy threshold, shared by the GOES integral products."""
+
+    __slots__ = ()
+
+    values: tuple[S, ...]
+
+    @property
+    def data_time(self) -> datetime:
+        """Time of the most recent value, of any threshold."""
+        return max(v.time for v in self.values)
+
+    @property
+    def thresholds(self) -> tuple[float, ...]:
+        """The energy thresholds in the content, in MeV, ascending."""
+        return tuple(sorted({v.threshold_mev for v in self.values}))
+
+    def series(self, threshold_mev: float) -> tuple[S, ...]:
+        """Return the values above ``threshold_mev``, oldest first."""
+        return tuple(v for v in self.values if v.threshold_mev == threshold_mev)
+
+    def latest(self, threshold_mev: float) -> S | None:
+        """Return the most recent value above ``threshold_mev``, or ``None``."""
+        series = self.series(threshold_mev)
+        return max(series, key=lambda v: v.time) if series else None
+
+
 @dataclass(frozen=True, slots=True)
-class GoesIntegralProtons:
+class GoesIntegralProtons(_IntegralSeries[ProtonSample]):
     """GOES integral proton flux above each energy threshold.
 
     Attributes:
@@ -231,22 +267,3 @@ class GoesIntegralProtons:
 
     def __post_init__(self) -> None:
         check_values(self.values)
-
-    @property
-    def data_time(self) -> datetime:
-        """Time of the most recent value, of any threshold."""
-        return max(v.time for v in self.values)
-
-    @property
-    def thresholds(self) -> tuple[float, ...]:
-        """The energy thresholds in the content, in MeV, ascending."""
-        return tuple(sorted({v.threshold_mev for v in self.values}))
-
-    def series(self, threshold_mev: float) -> tuple[ProtonSample, ...]:
-        """Return the values above ``threshold_mev``, oldest first."""
-        return tuple(v for v in self.values if v.threshold_mev == threshold_mev)
-
-    def latest(self, threshold_mev: float) -> ProtonSample | None:
-        """Return the most recent value above ``threshold_mev``, or ``None``."""
-        series = self.series(threshold_mev)
-        return max(series, key=lambda v: v.time) if series else None
