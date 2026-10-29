@@ -461,3 +461,40 @@ legati mentre sono entrambi in 0.x.
   mandano intestazioni condizionali.
 - Restano a politefetch, senza codice in swpc-kit: cadenza per chiave,
   `wait_up_to=`, host congelato, l'esito «corpo a metà» della sua 0.2.
+
+## T21 — Elenco dei flare ed elettroni GOES
+
+- [x] Fatta
+
+Quando: dopo la 0.4.0. Un utente della libreria legge già questi prodotti
+con codice suo e li adotterebbe per primi; il caso che conta è il flare in
+corso, che col suo lettore aveva lasciato fermo un pannello per ore. Il
+maintainer ha scelto due tappe (questa, poi la T22) e D-025.
+
+- [x] `parse_goes_integral_electrons` e `goes_integral_electrons`: stessa
+  forma dei protoni; i metodi per soglia stanno in una base comune
+  (refactoring a parte, `api.md` invariato).
+- [x] `parse_goes_xray_flares` (7 giorni) e `parse_goes_xray_flare_latest`,
+  con i metodi del client: `GoesFlare` con le classi come le scrive SWPC
+  (`FlareClass.parse`), `GoesFlares` (vuoto senza flare, `data_time`
+  `None`), `GoesLatestFlare` con `current_class`.
+- [x] D-025: un flare in corso ha `end_time` ed `end_class` `None`, solo
+  nelle forme viste (`"Unk"`, `null`); ogni altra forma scarta il record.
+  Un flare con i tempi fuori ordine è scartato.
+- [x] Fixture registrate il 2026-10-29 e, per i flare M, una lista
+  condivisa dall'utente (tipo nuovo `-shared` nel README delle fixture).
+- [x] `to_records` di un prodotto di un solo record dà una riga.
+- [x] Fuori tappa, commit a parte: il registratore scriveva il README
+  delle fixture con CRLF su Windows.
+
+## T22 — Probabilità e regioni solari
+
+- [ ] Fatta
+
+Dopo la T21, come 0.6.0, con i riscontri dello stesso utente
+(`solar_probabilities.json`, `solar_regions.json`): probabilità solo
+l'ultima riga, file dal più recente al più vecchio, date senza fuso,
+`polar_cap_absorption` è un colore; regioni dell'ultimo `observed_date`,
+le regioni senza macchie con i campi delle macchie `null` (D-025),
+`location` con un asterisco. Fixture condivise del 2026-07-15/16 e
+2026-08-28.

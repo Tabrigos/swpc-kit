@@ -9,7 +9,7 @@ import pytest
 FIXTURES = Path(__file__).parent / "fixtures"
 README = FIXTURES / "README.md"
 MAX_TOTAL_BYTES = 2 * 1024 * 1024
-NAME = re.compile(r"\d{4}-\d{2}-\d{2}(-sample|-built)?\.(json|txt)")
+NAME = re.compile(r"\d{4}-\d{2}-\d{2}(-sample|-built|-shared)?\.(json|txt)")
 
 FILES = sorted(
     p.relative_to(FIXTURES).as_posix()

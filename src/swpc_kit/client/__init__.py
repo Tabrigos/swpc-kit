@@ -70,7 +70,10 @@ from swpc_kit.models.bulletins import (
     TwentySevenDayOutlook,
 )
 from swpc_kit.models.goes import (
+    GoesFlares,
+    GoesIntegralElectrons,
     GoesIntegralProtons,
+    GoesLatestFlare,
     GoesXrays,
 )
 from swpc_kit.models.grids import (
@@ -261,6 +264,25 @@ class Client(BaseClient):
         """Fetch the GOES integral proton flux of the last day (primary satellite)."""
         return self.fetch(p.GOES_INTEGRAL_PROTONS, max_age=max_age)
 
+    def goes_integral_electrons(
+        self, *, max_age: timedelta | None = None
+    ) -> GoesIntegralElectrons:
+        """Fetch the GOES integral electron flux of the last day (primary satellite)."""
+        return self.fetch(p.GOES_INTEGRAL_ELECTRONS, max_age=max_age)
+
+    def goes_xray_flares(self, *, max_age: timedelta | None = None) -> GoesFlares:
+        """Fetch the GOES X-ray flares of the last 7 days (primary satellite).
+
+        ``max_age`` here measures the time since the last flare began.
+        """
+        return self.fetch(p.GOES_XRAY_FLARES, max_age=max_age)
+
+    def goes_xray_flare_latest(
+        self, *, max_age: timedelta | None = None
+    ) -> GoesLatestFlare:
+        """Fetch the latest GOES X-ray flare and the class of the flux now."""
+        return self.fetch(p.GOES_XRAY_FLARE_LATEST, max_age=max_age)
+
     def alerts(self, *, max_age: timedelta | None = None) -> Alerts:
         """Fetch the alerts, warnings, watches and summaries."""
         return self.fetch(p.ALERTS, max_age=max_age)
@@ -448,6 +470,25 @@ class AsyncClient(BaseClient):
     ) -> GoesIntegralProtons:
         """Fetch the GOES integral proton flux of the last day (primary satellite)."""
         return await self.fetch(p.GOES_INTEGRAL_PROTONS, max_age=max_age)
+
+    async def goes_integral_electrons(
+        self, *, max_age: timedelta | None = None
+    ) -> GoesIntegralElectrons:
+        """Fetch the GOES integral electron flux of the last day (primary satellite)."""
+        return await self.fetch(p.GOES_INTEGRAL_ELECTRONS, max_age=max_age)
+
+    async def goes_xray_flares(self, *, max_age: timedelta | None = None) -> GoesFlares:
+        """Fetch the GOES X-ray flares of the last 7 days (primary satellite).
+
+        ``max_age`` here measures the time since the last flare began.
+        """
+        return await self.fetch(p.GOES_XRAY_FLARES, max_age=max_age)
+
+    async def goes_xray_flare_latest(
+        self, *, max_age: timedelta | None = None
+    ) -> GoesLatestFlare:
+        """Fetch the latest GOES X-ray flare and the class of the flux now."""
+        return await self.fetch(p.GOES_XRAY_FLARE_LATEST, max_age=max_age)
 
     async def alerts(self, *, max_age: timedelta | None = None) -> Alerts:
         """Fetch the alerts, warnings, watches and summaries."""

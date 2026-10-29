@@ -135,6 +135,8 @@ def test_to_records_gives_one_flat_row_per_record(
     records = to_records(model)
     if hasattr(model, "grid"):
         assert len(records) == len(model.grid.latitudes) * len(model.grid.longitudes)
+    elif name == "goes_xray_flare_latest":
+        assert len(records) == 1  # a product of one record is its own row
     else:
         assert len(records) == len(getattr(model, ROWS.get(name, "values")))
     assert records
@@ -166,6 +168,17 @@ def test_to_records_flattens_nested_models(models: dict[str, Any]) -> None:
     assert record["r_minor_prob"] == day.r.minor_prob
     assert record["s_prob"] == day.s.prob
     assert "g" not in record
+
+
+def test_to_records_of_the_flares_splits_each_class(models: dict[str, Any]) -> None:
+    flares = models["goes_xray_flares"]
+    first = to_records(flares)[0]
+    assert (first["max_class_letter"], first["max_class_multiplier"]) == ("C", 1.4)
+    (latest,) = to_records(models["goes_xray_flare_latest"])
+    assert latest["current_class_letter"] == "B"
+    assert latest["flare_max_class_multiplier"] == 6.4
+    assert latest["flare_end_time"] == datetime(2026, 10, 28, 13, 3, tzinfo=UTC)
+    assert latest["source_url"].endswith("xray-flares-latest.json")
 
 
 def test_to_records_flattens_an_absent_nested_model_to_none(

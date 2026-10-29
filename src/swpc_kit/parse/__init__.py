@@ -13,7 +13,10 @@ from swpc_kit.parse.bulletins import (
     parse_three_day_forecast,
 )
 from swpc_kit.parse.goes import (
+    parse_goes_integral_electrons,
     parse_goes_integral_protons,
+    parse_goes_xray_flare_latest,
+    parse_goes_xray_flares,
     parse_goes_xrays,
 )
 from swpc_kit.parse.grids import (
@@ -39,7 +42,10 @@ __all__ = [
     "parse_drap_global_frequencies",
     "parse_f107_flux_30_day",
     "parse_geomagnetic_forecast",
+    "parse_goes_integral_electrons",
     "parse_goes_integral_protons",
+    "parse_goes_xray_flare_latest",
+    "parse_goes_xray_flares",
     "parse_goes_xrays",
     "parse_kyoto_dst",
     "parse_noaa_scales",

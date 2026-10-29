@@ -11,15 +11,20 @@ Riscritto da capo a ogni fine sessione, mai accodato.
   Il 2026-10-27 la T20 (PR #13) e la **0.3.2** (tag `v0.3.2`) con la sola
   T20. Poi la T17 rivista (D-024): `swpc_kit.http.check_response`,
   `RateLimited`, la ricetta con politefetch nel README (PR #15), e la
-  **0.4.0** (tag `v0.4.0`) con la T17.
-- **Prossimo passo**: nessuna tappa aperta; le prossime vengono dall'uso.
-  Quando esce la 0.2 di politefetch, la ricetta `fetch_politely` passa al
-  suo modello nuovo (`response()` registra cosa ha risposto la fonte, il
-  verdetto passa da `accept()` / `reject(motivo)`, issue #28 di quel repo).
-- **Decisioni in sospeso**: niente. Il maintainer ha scelto (2026-10-27):
-  i campi accessori restano obbligatori (D-015, D-017), perché i casi della
-  prova d'uso erano costruiti e non visti in risposte di SWPC; la scala NOAA
-  dei `CANCEL WARNING` resta `None`; niente extra `[polite]` (D-024). Il
+  **0.4.0** (tag `v0.4.0`, su PyPI il 2026-10-28) con la T17. Il
+  2026-10-29 la **T21**: elettroni GOES ed elenco dei flare (7 giorni e
+  `latest`), con D-025.
+- **Prossimo passo**: la 0.5.0 con la T21, poi la T22 (probabilità e
+  regioni solari, 0.6.0). Quando esce la 0.2 di politefetch, la ricetta
+  `fetch_politely` passa al suo modello nuovo (`response()` registra cosa
+  ha risposto la fonte, il verdetto passa da `accept()` / `reject(motivo)`,
+  issue #28 di quel repo).
+- **Decisioni in sospeso**: niente. Il maintainer ha scelto (2026-10-29)
+  D-025: un campo vuoto per significato (la fine di un flare in corso) è
+  `None`, nelle sole forme viste in un file vero; gli altri campi
+  accessori restano obbligatori (D-015, D-017). In precedenza (2026-10-27):
+  la scala NOAA dei `CANCEL WARNING` resta `None`; niente extra `[polite]`
+  (D-024). Il
   job `windows` è fra i controlli richiesti di `main`
   dal 2026-10-26, dopo il primo giro verde (D-022). Il
   job `lowest` resta fuori dai richiesti (maintainer, 2026-10-26): per chi
@@ -330,3 +335,10 @@ Una riga per sessione: data, tappa, cosa è entrato, cosa resta.
   client, `RateLimited` per il 429, `transport=` e la ricetta con
   politefetch nel README, provata con un cancello finto. Difetti iniettati 3,
   sopravvissuti 0. Resta: la 0.4.0.
+- 2026-10-29 — T21: elettroni GOES (base comune per soglia con i protoni,
+  refactoring a parte con `api.md` invariato), elenco dei flare di 7 giorni
+  e `latest` con D-025 (`"Unk"` e `null` della fine di un flare in corso →
+  `None`, altre forme scartano il record), fixture registrate più una lista
+  condivisa da un utente (`-shared`). Difetti iniettati 21, sopravvissuti 1,
+  equivalente (lettere della regex già controllate da `FlareClass`). Resta:
+  la 0.5.0, poi la T22.

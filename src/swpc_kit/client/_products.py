@@ -16,9 +16,15 @@ from swpc_kit.parse.bulletins import (
     parse_three_day_forecast,
 )
 from swpc_kit.parse.goes import (
+    GOES_INTEGRAL_ELECTRONS_1_DAY_URL,
     GOES_INTEGRAL_PROTONS_1_DAY_URL,
+    GOES_XRAY_FLARE_LATEST_URL,
+    GOES_XRAY_FLARES_7_DAY_URL,
     GOES_XRAYS_1_DAY_URL,
+    parse_goes_integral_electrons,
     parse_goes_integral_protons,
+    parse_goes_xray_flare_latest,
+    parse_goes_xray_flares,
     parse_goes_xrays,
 )
 from swpc_kit.parse.grids import (
@@ -96,6 +102,21 @@ GOES_INTEGRAL_PROTONS = Product(
     GOES_INTEGRAL_PROTONS_1_DAY_URL,
     lambda raw, url: parse_goes_integral_protons(raw, source_url=url),
 )
+GOES_INTEGRAL_ELECTRONS = Product(
+    "goes_integral_electrons",
+    GOES_INTEGRAL_ELECTRONS_1_DAY_URL,
+    lambda raw, url: parse_goes_integral_electrons(raw, source_url=url),
+)
+GOES_XRAY_FLARES = Product(
+    "goes_xray_flares",
+    GOES_XRAY_FLARES_7_DAY_URL,
+    lambda raw, url: parse_goes_xray_flares(raw, source_url=url),
+)
+GOES_XRAY_FLARE_LATEST = Product(
+    "goes_xray_flare_latest",
+    GOES_XRAY_FLARE_LATEST_URL,
+    lambda raw, url: parse_goes_xray_flare_latest(raw, source_url=url),
+)
 ALERTS = Product(
     "alerts", ALERTS_URL, lambda raw, url: parse_alerts(raw, source_url=url)
 )
@@ -136,6 +157,9 @@ PRODUCTS: tuple[Product[Any], ...] = (
     RTSW_WIND_1M,
     GOES_XRAYS,
     GOES_INTEGRAL_PROTONS,
+    GOES_INTEGRAL_ELECTRONS,
+    GOES_XRAY_FLARES,
+    GOES_XRAY_FLARE_LATEST,
     ALERTS,
     THREE_DAY_FORECAST,
     GEOMAGNETIC_FORECAST,

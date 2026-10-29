@@ -6,6 +6,21 @@ All notable changes to this project are listed here. The format follows
 
 ## [Unreleased]
 
+### Added
+
+- GOES integral electrons: `parse_goes_integral_electrons`,
+  `Client.goes_integral_electrons` and `GoesIntegralElectrons`, with the
+  same access by threshold as the protons (`series`, `latest`).
+- GOES X-ray flare lists: `parse_goes_xray_flares` and
+  `Client.goes_xray_flares` for the flares of 7 days (`GoesFlares`, with
+  `latest()` and `strongest()`), `parse_goes_xray_flare_latest` and
+  `Client.goes_xray_flare_latest` for the flare in progress or the last one
+  with the class of the flux now (`GoesLatestFlare`). A flare in progress
+  has `end_time` and `end_class` `None`; an empty list is valid, with
+  `data_time` `None`.
+- `FlareClass.parse("M2.5")`, for classes written as text.
+- `to_records` of the latest flare gives one row, the product itself.
+
 ## [0.4.0] - 2026-10-27
 
 ### Added
