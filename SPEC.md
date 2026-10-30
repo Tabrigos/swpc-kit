@@ -87,7 +87,7 @@ Added later:
 
 | Group | Products | Stage |
 |---|---|---|
-| GOES | integral electrons, X-ray flares of 7 days and the latest one (a flare in progress has no end, D-025) | T21 |
+| GOES | integral electrons, X-ray flares of 7 days and the latest one (a flare in progress has only its beginning, D-026) | T21 |
 
 ## Errors
 

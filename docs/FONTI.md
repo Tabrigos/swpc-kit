@@ -223,21 +223,29 @@ texts end with `\n`. The server sends `Last-Modified`, `ETag` and
   `latest` of an ended flare. The models leave both fields out, with
   `current_ratio` and `current_int_xrlong`, whose meaning SWPC does not
   document.
-- **A flare in progress** (D-025): `end_time` is `"Unk"` and `end_class`
-  `null`, as seen by a user in a `latest` file of 2026-09-12 (a partial
-  sample of 6 fields, not kept as a fixture; the case is built in the tests
-  on the recorded record). These two forms, together and only them, become
-  `None`; one without the other skips the flare, since every ended flare of
-  the fixtures has both fields.
-  **Hypothesis**: the other fields of a flare in progress (`begin_*`,
-  `max_time`, `max_class`, `max_xrlong`, `current_class`) are filled as
-  for an ended flare, with the peak so far: no file recorded during a flare
-  has all its fields (the sample of 2026-09-12 has 6 of 15, and the live
-  file read on 2026-10-29 14:46 UTC held an ended flare). If they come as
-  `null`, the `latest` file of a flare in progress is a `ParseError` and
-  the flare is skipped from the 7-day list. **Hypothesis** too: the 7-day
-  list writes a flare in progress the same way; no recorded list has one. Other forms (`null` in `end_time`, `"Unk"` in
-  `max_time`) are not seen and skip the flare.
+- **A flare in progress** (D-026), **verified** on the fixture
+  `goes-flares-latest/2026-10-30-live.json`, read on 2026-10-30 at 13:22
+  UTC (`time_tag` 13:19) during a flare that began at 13:08: the record has
+  `begin_time`, `begin_class` and `current_class`; `max_time` and
+  `end_time` are `"Unk"`, `max_class`, `max_xrlong` and `end_class` are
+  `null` (and `max_ratio_time` is `"Unk"`, `max_ratio` `null`). The parser
+  reads the latest flare as in progress (`flare` `None`) only with all five
+  fields in these forms; with only some of them empty the record is read
+  as an ended flare and the first empty field is a `ParseError`. The form
+  of D-025, an empty end with a peak (`end_time` `"Unk"` with `end_class`
+  `null`, from a user's partial sample of 2026-09-12 with 6 of 15 fields),
+  was never seen whole and is no longer read.
+- **Observed**, files not kept: the same file read every 5 minutes after
+  that. With `time_tag` 13:24 it still had the same empty form, although
+  the peak later came out at 13:22, so the peak is not written as it goes.
+  With `time_tag` 13:29 it held the ended flare (peak 13:22 at B7.3, end
+  13:28 at B4.7), all five fields filled together.
+- **Verified** on the fixture `goes-flares-7-day/2026-10-30-live.json`,
+  read at the same moment as the `latest` one: the flare in progress is
+  not in the 7-day list. **Observed**, file not kept: the list read at
+  13:33 had it, ended. So `GoesFlare` is always an ended flare; a record
+  without a peak or an end is skipped (and if it were the only record, the
+  list would be a `ParseError`, as any list with no readable flare).
 - **Hypothesis**: with no flare in 7 days the list is `[]`; the parser
   reads it as no flares, as for the alerts.
 - **Verified** on the SWPC pages (read on 2026-10-16):
@@ -550,7 +558,7 @@ SWPC documents no fill value for the physical fields (that a missing value
 is always `null` is a **hypothesis**, and a reported plasma file has
 `-9999`, see "Solar wind"). So the parsers do
 not turn any value into `None` (the only exception is a value that does not
-exist yet, such as the end of a flare in progress, D-025): a value beyond
+exist yet, such as the peak and end of a flare in progress, D-026): a value beyond
 these limits makes the record
 **skipped** (`skipped` of the model, with the reason), and the other records
 are read. The limits are deliberately far beyond anything measured, to catch

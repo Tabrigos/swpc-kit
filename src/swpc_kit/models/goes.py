@@ -6,8 +6,9 @@ electron threshold every five minutes. The models keep the records as they
 come and give access by band or threshold. The flare class (A, B, C, M, X)
 is computed from the flux of the 0.1-0.8 nm band.
 
-The flare lists hold one record per flare, with the classes as SWPC writes
-them; a flare in progress has no end yet (D-025).
+The flare lists hold one record per ended flare, with the classes as SWPC
+writes them. Only the latest flare can be in progress, and then it has no
+peak and no end yet (D-026).
 
 Times are UTC (the source writes them with ``Z``).
 """
@@ -338,18 +339,16 @@ class GoesIntegralElectrons(_IntegralSeries[ElectronSample]):
 
 @dataclass(frozen=True, slots=True)
 class GoesFlare:
-    """One X-ray flare seen by GOES, with its classes as SWPC writes them.
+    """One ended X-ray flare seen by GOES, with its classes as SWPC writes them.
 
     Attributes:
         begin_time: When the flare began.
         begin_class: The class of the flux when it began.
-        max_time: When the 0.1-0.8 nm flux peaked (so far, for a flare in
-            progress).
+        max_time: When the 0.1-0.8 nm flux peaked.
         max_class: The class of the peak, such as ``M6.9``.
         max_flux: The 0.1-0.8 nm flux at the peak, in W/m² (``max_xrlong``).
-        end_time: When the flare ended, or ``None`` while it is in progress.
-        end_class: The class of the flux when it ended, or ``None`` while it
-            is in progress.
+        end_time: When the flare ended.
+        end_class: The class of the flux when it ended.
         satellite: GOES satellite number, such as 18.
     """
 
@@ -358,19 +357,14 @@ class GoesFlare:
     max_time: datetime
     max_class: FlareClass
     max_flux: float
-    end_time: datetime | None
-    end_class: FlareClass | None
+    end_time: datetime
+    end_class: FlareClass
     satellite: int
 
     def __post_init__(self) -> None:
         check_utc("begin_time", self.begin_time)
         check_utc("max_time", self.max_time)
         check_utc("end_time", self.end_time)
-
-    @property
-    def ongoing(self) -> bool:
-        """Whether the flare is still in progress (it has no end yet)."""
-        return self.end_time is None
 
 
 @dataclass(frozen=True, slots=True)
@@ -413,22 +407,42 @@ class GoesFlares:
 class GoesLatestFlare:
     """The latest flare and the class of the flux now (``xray-flares-latest.json``).
 
+    While a flare is in progress SWPC writes only its beginning: the peak and
+    the end come together when it ends (D-026).
+
     Attributes:
         time: When the file was written, the time of ``current_class``.
         satellite: GOES satellite number, such as 18.
         current_class: The class of the 0.1-0.8 nm flux at ``time``.
-        flare: The flare in progress, or the last one if none is.
+        begin_time: When the latest flare began, in progress or not.
+        begin_class: The class of the flux when it began.
+        flare: The latest flare once it has ended, or ``None`` while it is
+            in progress.
         source_url: Where the content came from.
     """
 
     time: datetime
     satellite: int
     current_class: FlareClass
-    flare: GoesFlare
+    begin_time: datetime
+    begin_class: FlareClass
+    flare: GoesFlare | None
     source_url: str
 
     def __post_init__(self) -> None:
         check_utc("time", self.time)
+        check_utc("begin_time", self.begin_time)
+        flare = self.flare
+        if flare is not None and (flare.begin_time, flare.begin_class) != (
+            self.begin_time,
+            self.begin_class,
+        ):
+            raise ValueError("begin_time and begin_class must be those of flare")
+
+    @property
+    def ongoing(self) -> bool:
+        """Whether the latest flare is still in progress (no peak, no end)."""
+        return self.flare is None
 
     @property
     def data_time(self) -> datetime:

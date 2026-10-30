@@ -180,7 +180,7 @@ class Record:
         """Whether ``field`` holds one of ``forms``.
 
         The forms are the ways the source writes a value that does not exist
-        yet (D-025). Only the forms seen in a real file belong here: any
+        yet (D-025, D-026). Only the forms seen in a real file belong here: any
         other value goes through the accessors and is read or refused as
         usual.
         """

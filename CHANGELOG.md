@@ -16,7 +16,9 @@ All notable changes to this project are listed here. The format follows
   `latest()` and `strongest()`), `parse_goes_xray_flare_latest` and
   `Client.goes_xray_flare_latest` for the flare in progress or the last one
   with the class of the flux now (`GoesLatestFlare`). A flare in progress
-  has `end_time` and `end_class` `None`; an empty list is valid, with
+  has only its beginning, as SWPC writes it: `begin_time` and `begin_class`
+  are always there, `flare` is `None` until it ends (`ongoing`), and the
+  7-day list holds ended flares only. An empty list is valid, with
   `data_time` `None`.
 - `FlareClass.parse("M2.5")`, for classes written as text.
 - `to_records` of the latest flare gives one row, the product itself.
