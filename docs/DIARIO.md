@@ -13,16 +13,18 @@ Riscritto da capo a ogni fine sessione, mai accodato.
   `RateLimited`, la ricetta con politefetch nel README (PR #15), e la
   **0.4.0** (tag `v0.4.0`, su PyPI il 2026-10-28) con la T17. Il
   2026-10-29 la **T21**: elettroni GOES ed elenco dei flare (7 giorni e
-  `latest`), con D-025.
+  `latest`), con D-025; il 2026-10-30 D-026 la sostituisce, sul flare in
+  corso registrato dal vivo.
 - **Prossimo passo**: la 0.5.0 con la T21, poi la T22 (probabilità e
   regioni solari, 0.6.0). Quando esce la 0.2 di politefetch, la ricetta
   `fetch_politely` passa al suo modello nuovo (`response()` registra cosa
   ha risposto la fonte, il verdetto passa da `accept()` / `reject(motivo)`,
   issue #28 di quel repo).
 - **Decisioni in sospeso**: niente. Il maintainer ha scelto (2026-10-29)
-  D-025: un campo vuoto per significato (la fine di un flare in corso) è
-  `None`, nelle sole forme viste in un file vero; gli altri campi
-  accessori restano obbligatori (D-015, D-017). In precedenza (2026-10-27):
+  D-025: un campo vuoto per significato è `None`, nelle sole forme viste in
+  un file vero; gli altri campi accessori restano obbligatori (D-015,
+  D-017). Il 2026-10-30 D-026: un flare in corso ha solo l'inizio, e solo
+  nel file `latest`. In precedenza (2026-10-27):
   la scala NOAA dei `CANCEL WARNING` resta `None`; niente extra `[polite]`
   (D-024). Il
   job `windows` è fra i controlli richiesti di `main`
@@ -342,3 +344,9 @@ Una riga per sessione: data, tappa, cosa è entrato, cosa resta.
   condivisa da un utente (`-shared`). Difetti iniettati 21, sopravvissuti 1,
   equivalente (lettere della regex già controllate da `FlareClass`). Resta:
   la 0.5.0, poi la T22.
+- 2026-10-30 — Flare in corso registrato dal vivo (B7.3, 13:08-13:28 UTC):
+  picco e fine vuoti insieme finché il flare non finisce, la lista di 7
+  giorni lo aggiunge solo finito. D-026 sostituisce D-025: `GoesFlare` è
+  sempre finito, `GoesLatestFlare` ha l'inizio e `flare` `None` in corso.
+  Due fixture nuove. Difetti iniettati 10, sopravvissuti 1 (controllo UTC
+  di `begin_time`), coperto da un test visto rosso. Resta: la 0.5.0.

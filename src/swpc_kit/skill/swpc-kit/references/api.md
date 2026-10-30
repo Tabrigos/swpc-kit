@@ -612,22 +612,20 @@ GOES integral electron flux above each energy threshold.
 
 ### `GoesFlare`
 
-`GoesFlare(begin_time: datetime, begin_class: FlareClass, max_time: datetime, max_class: FlareClass, max_flux: float, end_time: datetime | None, end_class: FlareClass | None, satellite: int)`
+`GoesFlare(begin_time: datetime, begin_class: FlareClass, max_time: datetime, max_class: FlareClass, max_flux: float, end_time: datetime, end_class: FlareClass, satellite: int)`
 
-One X-ray flare seen by GOES, with its classes as SWPC writes them.
+One ended X-ray flare seen by GOES, with its classes as SWPC writes them.
 
 | Field | Type | Meaning |
 |---|---|---|
 | `begin_time` | `datetime` | When the flare began. |
 | `begin_class` | `FlareClass` | The class of the flux when it began. |
-| `max_time` | `datetime` | When the 0.1-0.8 nm flux peaked (so far, for a flare in progress). |
+| `max_time` | `datetime` | When the 0.1-0.8 nm flux peaked. |
 | `max_class` | `FlareClass` | The class of the peak, such as `M6.9`. |
 | `max_flux` | `float` | The 0.1-0.8 nm flux at the peak, in W/m² (`max_xrlong`). |
-| `end_time` | `datetime \| None` | When the flare ended, or `None` while it is in progress. |
-| `end_class` | `FlareClass \| None` | The class of the flux when it ended, or `None` while it is in progress. |
+| `end_time` | `datetime` | When the flare ended. |
+| `end_class` | `FlareClass` | The class of the flux when it ended. |
 | `satellite` | `int` | GOES satellite number, such as 18. |
-
-- `.ongoing` (property): Whether the flare is still in progress (it has no end yet).
 
 ### `GoesFlares`
 
@@ -647,7 +645,7 @@ The X-ray flares of the last days, such as `xray-flares-7-day.json`.
 
 ### `GoesLatestFlare`
 
-`GoesLatestFlare(time: datetime, satellite: int, current_class: FlareClass, flare: GoesFlare, source_url: str)`
+`GoesLatestFlare(time: datetime, satellite: int, current_class: FlareClass, begin_time: datetime, begin_class: FlareClass, flare: GoesFlare | None, source_url: str)`
 
 The latest flare and the class of the flux now (`xray-flares-latest.json`).
 
@@ -656,9 +654,12 @@ The latest flare and the class of the flux now (`xray-flares-latest.json`).
 | `time` | `datetime` | When the file was written, the time of `current_class`. |
 | `satellite` | `int` | GOES satellite number, such as 18. |
 | `current_class` | `FlareClass` | The class of the 0.1-0.8 nm flux at `time`. |
-| `flare` | `GoesFlare` | The flare in progress, or the last one if none is. |
+| `begin_time` | `datetime` | When the latest flare began, in progress or not. |
+| `begin_class` | `FlareClass` | The class of the flux when it began. |
+| `flare` | `GoesFlare \| None` | The latest flare once it has ended, or `None` while it is in progress. |
 | `source_url` | `str` | Where the content came from. |
 
+- `.ongoing` (property): Whether the latest flare is still in progress (no peak, no end).
 - `.data_time` (property): When the file was written (its `time_tag`).
 
 ## `swpc_kit.models.alerts`

@@ -48,8 +48,8 @@ the JSON, GeoJSON and GeoTIFF exports, which use only the standard library.
 | Solar wind magnetic field (Bz, Bt) | `rtsw_mag_1m` | `latest_active().bz_gsm`, `.bt` |
 | Solar wind speed and density | `rtsw_wind_1m` | `latest_active().proton_speed`, `.proton_density` |
 | X-ray flux, flare class now | `goes_xrays` | `latest()`, `peak()`, and `.flare_class` of a sample |
-| Flares of the last 7 days | `goes_xray_flares` | `values`, `latest()`, `strongest()`: `max_class`, `max_time`, `ongoing` |
-| Flare in progress or last one | `goes_xray_flare_latest` | `flare.ongoing`, `flare.max_class`, `current_class` |
+| Flares of the last 7 days (ended ones) | `goes_xray_flares` | `values`, `latest()`, `strongest()`: `max_class`, `max_time` |
+| Flare in progress or last one | `goes_xray_flare_latest` | `ongoing`, `begin_time`, `current_class`; `flare.max_class` once ended |
 | Radiation storm, protons | `goes_integral_protons` | `latest(10).flux` (pfu at ≥10 MeV) |
 | Energetic electrons | `goes_integral_electrons` | `latest(2).flux` (pfu at ≥2 MeV) |
 | Alerts, warnings, watches | `alerts` | `messages` (newest first): `kind`, `code`, `valid_to`, `noaa_scale`, `info` |
@@ -201,10 +201,12 @@ read, and the client logs a warning on the `swpc_kit.client` logger. So
   0.1 W/m², protons and electrons up to 1e8 pfu.
 - **Every field of the model** must be in every record, as JSON null when the
   model allows `None` (only the undocumented solar wind flags may be
-  absent). A flare in progress has `end_time` and `end_class` `None`: only
-  the pair seen in a real file counts (`end_time` `"Unk"` with `end_class`
-  JSON null); one of them alone, or any other unreadable value, skips the
-  flare. A field missing from *every* record is
+  absent). A flare in progress has only its beginning: the latest flare has
+  `flare` `None` (`ongoing`) only when its peak and end fields are all
+  empty as SWPC writes them, and the 7-day list holds ended flares only, so
+  a flare there without a peak or an end is skipped (like any record, it is
+  a `ParseError` when no flare of the list can be read). A field missing from
+  *every* record is
   a new format:
   `UnexpectedContent`, not a file of skipped records.
 - **Strict products**: the bulletins, the grids and `noaa-scales.json` are

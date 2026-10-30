@@ -4,11 +4,14 @@ Raw SWPC content used by the tests. Tests read these files and never use the
 network. Data comes from NOAA SWPC (https://www.swpc.noaa.gov).
 
 Files are kept byte for byte as served (`.gitattributes` turns off line-ending
-conversion here), except the reductions described below. Four kinds of files
+conversion here), except the reductions described below. Five kinds of files
 live in `tests/fixtures/<product>/`:
 
 - `<YYYY-MM-DD>.<ext>`: **recorded** by `tools/record_fixtures.py` on that
   UTC date;
+- `<YYYY-MM-DD>-live.<ext>`: **live**, downloaded on that UTC date at the
+  moment a rare case was happening, kept as served (the recorder never
+  writes these names, so a new recording cannot replace them);
 - `<YYYY-MM-DD>-sample.<ext>`: **official sample** copied from SWPC, dated as
   listed on the SWPC server;
 - `<YYYY-MM-DD>-built.<ext>`: **built** for the tests, dated when built;
@@ -86,6 +89,17 @@ content shows it.
 | File | Source | Downloaded on | Size (bytes) | Notes |
 |---|---|---|---|---|
 | `goes-flares-7-day/2026-08-28-shared.json` | https://services.swpc.noaa.gov/json/goes/primary/xray-flares-7-day.json | 2026-08-28 | 15755 | 41 flares, up to M6.9; four without `max_ratio` |
+
+## Live
+
+Files downloaded while a rare case was happening, by a one-off script that
+read the product every 5 minutes with the recorder's User-Agent, kept byte
+for byte as served.
+
+| File | Source | Downloaded (UTC) | Size (bytes) | Notes |
+|---|---|---|---|---|
+| `goes-flares-7-day/2026-10-30-live.json` | https://services.swpc.noaa.gov/json/goes/primary/xray-flares-7-day.json | 2026-10-30 13:22 | 15307 | same moment as the latest file below: the flare in progress is not in the list |
+| `goes-flares-latest/2026-10-30-live.json` | https://services.swpc.noaa.gov/json/goes/primary/xray-flares-latest.json | 2026-10-30 13:22 | 365 | a flare in progress (begin 13:08 UTC): no peak, no end yet |
 
 ## Built
 

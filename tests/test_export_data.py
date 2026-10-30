@@ -6,6 +6,7 @@ import json
 from dataclasses import fields, is_dataclass
 from datetime import UTC, date, datetime
 from enum import Enum
+from pathlib import Path
 from typing import Any
 
 import pytest
@@ -22,7 +23,9 @@ from swpc_kit.models import (
     ThreeDayForecast,
     TwentySevenDayOutlook,
 )
+from swpc_kit.parse import parse_goes_xray_flare_latest
 
+FIXTURES = Path(__file__).parent / "fixtures"
 NAMES = [p.name for p in PRODUCTS]
 
 
@@ -179,6 +182,12 @@ def test_to_records_of_the_flares_splits_each_class(models: dict[str, Any]) -> N
     assert latest["flare_max_class_multiplier"] == 6.4
     assert latest["flare_end_time"] == datetime(2026, 10, 28, 13, 3, tzinfo=UTC)
     assert latest["source_url"].endswith("xray-flares-latest.json")
+    raw = (FIXTURES / "goes-flares-latest/2026-10-30-live.json").read_bytes()
+    (ongoing,) = to_records(parse_goes_xray_flare_latest(raw))
+    assert list(ongoing) == list(latest)
+    assert ongoing["begin_class_multiplier"] == 2.5
+    assert ongoing["flare_max_class_multiplier"] is None
+    assert ongoing["flare_end_time"] is None
 
 
 def test_to_records_flattens_an_absent_nested_model_to_none(

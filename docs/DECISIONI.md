@@ -533,3 +533,34 @@ scelte già prese e sparse fra `SPEC.md`, `docs/FONTI.md` e il diario; la data
   record finché qualcuno non la vede in un file vero e la aggiunge, con la
   fixture o la fonte. Chi legge un modello controlla `None` solo sui campi
   che lo dichiarano.
+
+## D-026 — Un flare in corso ha solo l'inizio, e solo nel file `latest`
+
+- **Data e tappa**: 2026-10-30, dopo la T21 e prima della 0.5.0 (scelta del
+  maintainer sui file registrati durante un flare). Sostituisce D-025 per
+  il flare in corso; il principio di D-025 (solo le forme viste) resta.
+- **Contesto**: D-025 leggeva un flare in corso come fine vuota (`end_time`
+  `"Unk"` con `end_class` `null`) e picco presente, da un campione parziale
+  di 6 campi. Il 30/10/2026 un sorvegliante ha letto `xray-flares-latest.json`
+  ogni 5 minuti durante un flare B (inizio 13:08, fine 13:28 UTC): alle
+  13:19 e alle 13:24 erano vuoti anche `max_time` (`"Unk"`), `max_class` e
+  `max_xrlong` (`null`); alle 13:29 i cinque campi si sono riempiti insieme.
+  La lista di 7 giorni letta alle 13:22 non aveva il flare, quella delle
+  13:33 sì. Con D-025 il file `latest` andava in `ParseError` per tutta la
+  durata del flare.
+- **Decisione**: `GoesFlare` è un flare finito, con tutti i campi
+  obbligatori, ed è ciò che contiene la lista di 7 giorni. `GoesLatestFlare`
+  porta sempre `begin_time` e `begin_class`, e `flare` vale `None` mentre il
+  flare è in corso (`ongoing`). È in corso solo il record con i cinque
+  campi del picco e della fine tutti nelle forme viste; con una parte sola
+  vuota il record si legge come un flare finito e il primo campo vuoto è
+  l'errore.
+- **Alternative scartate**: un solo `GoesFlare` con i cinque campi
+  facoltativi (chi legge la lista controllerebbe `None` su campi che lì non
+  mancano mai); `SourceNotReady` durante il flare (l'utente resterebbe senza
+  dati proprio quando servono).
+- **Conseguenze**: la forma di D-025 (fine vuota, picco presente) non si
+  legge più: non è mai stata vista intera. Un flare in corso nella lista di
+  7 giorni finirebbe in `skipped`, visibile (o in `ParseError`, se fosse il
+  solo record, come ogni lista senza flare leggibili). Un picco "finora" non c'è: chi
+  lo vuole guarda `current_class` o il flusso X di `goes_xrays`.

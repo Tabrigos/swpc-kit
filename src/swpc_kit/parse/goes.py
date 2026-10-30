@@ -6,9 +6,10 @@ every record, sort them oldest first (records with the same time keep the
 file order) and turn ``null`` into ``None``.
 
 The flare files are arrays of objects, one per flare: the flares of 7 days,
-or one record with the latest flare and the class of the flux now. A value
-that does not exist yet (the end of a flare in progress) is ``None`` only in
-the forms seen in a real file (D-025).
+or one record with the latest flare and the class of the flux now. The list
+holds ended flares only; the latest flare can be in progress, and then its
+peak and end do not exist yet: they are read as absent only in the forms
+seen in a real file, all together (D-026).
 
 The default URLs are the files of the primary satellite: the one-day files
 for the fluxes. The ``6-hour``, ``3-day`` and ``7-day`` flux files and the
@@ -58,10 +59,15 @@ _MAX_XRAY_FLUX = 0.1  # W/m² (X1000), about 35 times the strongest flare
 _MAX_PROTON_FLUX = 1e8  # pfu
 _MAX_ELECTRON_FLUX = 1e8  # pfu, as for protons; the fixtures stay below 3e3
 
-# The forms of a value that does not exist yet (D-025), as seen in a real
-# `latest` file of a flare in progress (2026-09-12, docs/FONTI.md).
-_NO_END_TIME = ("Unk",)
-_NO_END_CLASS = (None,)
+# The peak and end of a flare in progress, which do not exist yet (D-026),
+# as seen in the live `latest` file of 2026-10-30 (docs/FONTI.md).
+_IN_PROGRESS = {
+    "max_time": "Unk",
+    "max_class": None,
+    "max_xrlong": None,
+    "end_time": "Unk",
+    "end_class": None,
+}
 
 
 def _xray_sample(r: Record) -> XraySample:
@@ -196,18 +202,12 @@ def _flare(r: Record) -> GoesFlare:
     max_flux = r.get_float("max_xrlong", maximum=_MAX_XRAY_FLUX)
     if max_flux <= 0:
         raise r.error(f"expected a positive flux, got {max_flux}", "max_xrlong")
-    no_end_time = r.is_empty("end_time", _NO_END_TIME)
-    no_end_class = r.is_empty("end_class", _NO_END_CLASS)
-    if no_end_time != no_end_class:
-        # Seen only together: alone, one says "in progress", the other not.
-        field = "end_time" if no_end_time else "end_class"
-        raise r.error("empty without the other end field", field)
-    end_time = None if no_end_time else r.get_time("end_time")
-    end_class = None if no_end_class else _class(r, "end_class")
+    end_time = r.get_time("end_time")
+    end_class = _class(r, "end_class")
     satellite = r.get_int("satellite", minimum=0)
     if max_time < begin_time:
         raise r.error(f"peak at {max_time} before the beginning", "max_time")
-    if end_time is not None and end_time < max_time:
+    if end_time < max_time:
         raise r.error(f"end at {end_time} before the peak", "end_time")
     return GoesFlare(
         begin_time=begin_time,
@@ -226,8 +226,7 @@ def parse_goes_xray_flares(
 ) -> GoesFlares:
     """Parse a GOES flare list, such as ``xray-flares-7-day.json``.
 
-    A flare in progress has ``end_time`` and ``end_class`` ``None``, from
-    ``"Unk"`` and ``null`` together; a record with only one of them, or
+    The list holds ended flares only: a record without a peak or an end, or
     whose peak comes before its beginning, or its end before its peak, is
     skipped.
 
@@ -250,11 +249,21 @@ def parse_goes_xray_flares(
 
 
 def _latest(r: Record) -> GoesLatestFlare:
+    time = r.get_time("time_tag")
+    satellite = r.get_int("satellite", minimum=0)
+    current_class = _class(r, "current_class")
+    begin_time = r.get_time("begin_time")
+    begin_class = _class(r, "begin_class")
+    # In progress only with every field empty: any other mix is read as an
+    # ended flare, so the first empty field is the error.
+    in_progress = all(r.is_empty(f, (form,)) for f, form in _IN_PROGRESS.items())
     return GoesLatestFlare(
-        time=r.get_time("time_tag"),
-        satellite=r.get_int("satellite", minimum=0),
-        current_class=_class(r, "current_class"),
-        flare=_flare(r),
+        time=time,
+        satellite=satellite,
+        current_class=current_class,
+        begin_time=begin_time,
+        begin_class=begin_class,
+        flare=None if in_progress else _flare(r),
         source_url="",  # set by the parser, which knows it
     )
 
@@ -265,7 +274,11 @@ def parse_goes_xray_flare_latest(
     """Parse ``xray-flares-latest.json``: the latest flare and the class now.
 
     The file holds one record: the flare in progress, or the last one if
-    none is, with the class of the flux when the file was written.
+    none is, with the class of the flux when the file was written. A flare
+    in progress has ``flare`` ``None``: its ``max_time``, ``max_class``,
+    ``max_xrlong``, ``end_time`` and ``end_class`` are ``"Unk"`` or
+    ``null``, all of them; a record with only some of them empty is a
+    ``ParseError``.
 
     Args:
         raw: The content.

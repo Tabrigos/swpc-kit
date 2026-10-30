@@ -1,4 +1,5 @@
 import json
+from dataclasses import replace
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
@@ -18,10 +19,8 @@ FIXTURES = Path(__file__).parent / "fixtures"
 FLARES = "goes-flares-7-day/2026-10-29.json"
 SHARED = "goes-flares-7-day/2026-08-28-shared.json"
 LATEST = "goes-flares-latest/2026-10-29.json"
-
-# The forms a flare in progress was seen with in a real `latest` file
-# (2026-09-12, a partial sample shared by a user of the library).
-IN_PROGRESS = {"end_time": "Unk", "end_class": None}
+# Saved on 2026-10-30 at 13:22 UTC, during a flare in progress.
+LATEST_IN_PROGRESS = "goes-flares-latest/2026-10-30-live.json"
 
 
 def fixture(name: str) -> bytes:
@@ -47,8 +46,8 @@ def flare_record(**changes: Any) -> dict[str, Any]:
     return record
 
 
-def latest_record(**changes: Any) -> dict[str, Any]:
-    (record,) = records(LATEST)
+def latest_record(name: str = LATEST, **changes: Any) -> dict[str, Any]:
+    (record,) = records(name)
     record.update(changes)
     return record
 
@@ -94,7 +93,6 @@ def test_flares_fixture() -> None:
     latest = flares.latest()
     assert latest is not None
     assert latest.begin_time == utc(2026, 10, 28, 12, 38)
-    assert not latest.ongoing
 
 
 def test_flares_strongest() -> None:
@@ -113,7 +111,6 @@ def test_every_flare_of_the_fixtures_is_read_in_order(name: str) -> None:
     assert flares.skipped == ()
     assert len(flares.values) == len(records(name))
     for flare in flares.values:
-        assert flare.end_time is not None
         assert flare.begin_time <= flare.max_time <= flare.end_time
         assert FlareClass.from_flux(flare.max_flux) == flare.max_class
     begins = [f.begin_time for f in flares.values]
@@ -134,25 +131,16 @@ def test_no_flare_in_seven_days_is_an_empty_list() -> None:
     assert flares.strongest() is None
 
 
-def test_a_flare_in_progress_has_no_end() -> None:
-    flares = parse_goes_xray_flares(dump(flare_record(**IN_PROGRESS)))
-    (flare,) = flares.values
-    assert flare.end_time is None
-    assert flare.end_class is None
-    assert flare.ongoing
-    assert flare.max_class == FlareClass("B", 6.4)
-
-
 @pytest.mark.parametrize(
     ("changes", "field"),
     [
-        # Empty forms not seen in a real file stay unreadable (D-025).
+        # The list holds ended flares only (D-026): no empty form is read.
+        ({"end_time": "Unk", "end_class": None}, "end_time"),
+        ({"end_time": "Unk"}, "end_time"),
+        ({"end_class": None}, "end_class"),
         ({"end_time": None}, "end_time"),
         ({"end_time": ""}, "end_time"),
         ({"end_class": "Unk"}, "end_class"),
-        # Seen only as a pair: one alone says in progress, the other not.
-        ({"end_time": "Unk"}, "end_time"),
-        ({"end_class": None}, "end_class"),
         ({"max_time": "Unk"}, "max_time"),
         ({"max_class": None}, "max_class"),
         ({"begin_class": None}, "begin_class"),
@@ -201,6 +189,8 @@ def test_latest_fixture() -> None:
         time=utc(2026, 10, 29, 14, 24),
         satellite=18,
         current_class=FlareClass("B", 2.1),
+        begin_time=utc(2026, 10, 28, 12, 38),
+        begin_class=FlareClass("B", 3.2),
         flare=GoesFlare(
             begin_time=utc(2026, 10, 28, 12, 38),
             begin_class=FlareClass("B", 3.2),
@@ -214,27 +204,51 @@ def test_latest_fixture() -> None:
         source_url=GOES_XRAY_FLARE_LATEST_URL,
     )
     assert latest.data_time == utc(2026, 10, 29, 14, 24)
+    assert not latest.ongoing
 
 
 def test_latest_flare_in_progress() -> None:
-    latest = parse_goes_xray_flare_latest(dump(latest_record(**IN_PROGRESS)))
-    assert latest.flare.ongoing
-    assert latest.flare.end_time is None
-    assert latest.current_class == FlareClass("B", 2.1)
+    # Peak and end come only when the flare has ended (D-026).
+    latest = parse_goes_xray_flare_latest(fixture(LATEST_IN_PROGRESS))
+    assert latest == GoesLatestFlare(
+        time=utc(2026, 10, 30, 13, 19),
+        satellite=18,
+        current_class=FlareClass("B", 5.8),
+        begin_time=utc(2026, 10, 30, 13, 8),
+        begin_class=FlareClass("B", 2.5),
+        flare=None,
+        source_url=GOES_XRAY_FLARE_LATEST_URL,
+    )
+    assert latest.ongoing
+    assert latest.data_time == utc(2026, 10, 30, 13, 19)
 
 
 @pytest.mark.parametrize(
-    ("changes", "field"),
+    ("name", "changes", "field"),
     [
-        ({"current_class": None}, "current_class"),
-        ({"current_class": "Q2"}, "current_class"),
-        ({"time_tag": "Unk"}, "time_tag"),
-        ({"end_time": None}, "end_time"),
+        (LATEST, {"current_class": None}, "current_class"),
+        (LATEST, {"current_class": "Q2"}, "current_class"),
+        (LATEST, {"time_tag": "Unk"}, "time_tag"),
+        (LATEST, {"begin_class": None}, "begin_class"),
+        (LATEST, {"end_time": None}, "end_time"),
+        # The end alone empty was never seen: only all five fields together
+        # say that the flare is in progress (D-026).
+        (LATEST, {"end_time": "Unk", "end_class": None}, "end_time"),
+        (LATEST_IN_PROGRESS, {"max_time": "2026-10-30T13:22:00Z"}, "max_class"),
+        (LATEST_IN_PROGRESS, {"max_class": "B7.3"}, "max_time"),
+        (LATEST_IN_PROGRESS, {"max_xrlong": 7.3e-07}, "max_time"),
+        (LATEST_IN_PROGRESS, {"end_time": "2026-10-30T13:28:00Z"}, "max_time"),
+        (LATEST_IN_PROGRESS, {"end_class": "B4.7"}, "max_time"),
+        (LATEST_IN_PROGRESS, {"max_time": None}, "max_time"),
+        (LATEST_IN_PROGRESS, {"begin_class": None}, "begin_class"),
+        (LATEST_IN_PROGRESS, {"begin_time": "Unk"}, "begin_time"),
     ],
 )
-def test_latest_unreadable_values(changes: dict[str, Any], field: str) -> None:
+def test_latest_unreadable_values(
+    name: str, changes: dict[str, Any], field: str
+) -> None:
     with pytest.raises(ParseError) as info:
-        parse_goes_xray_flare_latest(dump(latest_record(**changes)))
+        parse_goes_xray_flare_latest(dump(latest_record(name, **changes)))
     assert info.value.field == field
 
 
@@ -266,3 +280,15 @@ def test_naive_time_cannot_be_built() -> None:
             end_class=flare.end_class,
             satellite=18,
         )
+    in_progress = parse_goes_xray_flare_latest(fixture(LATEST_IN_PROGRESS))
+    with pytest.raises(ValueError, match="UTC"):
+        replace(in_progress, begin_time=naive)
+
+
+def test_latest_flare_begins_with_its_flare() -> None:
+    latest = parse_goes_xray_flare_latest(fixture(LATEST))
+    with pytest.raises(ValueError, match="begin"):
+        replace(latest, begin_time=utc(2026, 10, 28, 12, 39))
+    with pytest.raises(ValueError, match="begin"):
+        replace(latest, begin_class=FlareClass("B", 3.3))
+    replace(latest, flare=None)  # in progress: no flare to agree with
