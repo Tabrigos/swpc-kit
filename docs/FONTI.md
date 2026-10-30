@@ -228,18 +228,30 @@ texts end with `\n`. The server sends `Last-Modified`, `ETag` and
   UTC (`time_tag` 13:19) during a flare that began at 13:08: the record has
   `begin_time`, `begin_class` and `current_class`; `max_time` and
   `end_time` are `"Unk"`, `max_class`, `max_xrlong` and `end_class` are
-  `null` (and `max_ratio_time` is `"Unk"`, `max_ratio` `null`). The parser
-  reads the latest flare as in progress (`flare` `None`) only with all five
-  fields in these forms; with only some of them empty the record is read
-  as an ended flare and the first empty field is a `ParseError`. The form
-  of D-025, an empty end with a peak (`end_time` `"Unk"` with `end_class`
-  `null`, from a user's partial sample of 2026-09-12 with 6 of 15 fields),
-  was never seen whole and is no longer read.
-- **Observed**, files not kept: the same file read every 5 minutes after
-  that. With `time_tag` 13:24 it still had the same empty form, although
-  the peak later came out at 13:22, so the peak is not written as it goes.
-  With `time_tag` 13:29 it held the ended flare (peak 13:22 at B7.3, end
-  13:28 at B4.7), all five fields filled together.
+  `null` (and `max_ratio_time` is `"Unk"`, `max_ratio` `null`).
+- **Observed** by a user of the library, record not kept whole: the
+  `latest` file of 2026-09-12 during a flare that began at 05:15 had
+  `max_time` `"2026-09-12T05:26:00Z"` already written, with `end_time` and
+  `max_ratio_time` `"Unk"`, `max_ratio` and `end_class` `null`. So a flare
+  in progress can have its peak written and its end unknown. `max_class`
+  and `max_xrlong` of that record are not known: the user's page showed
+  the peak at B5.2, so `max_class` was probably written too
+  (**hypothesis**: the page may have computed it from the flux).
+- The parser (D-027) reads the latest flare as in progress (`flare`
+  `None`) when `end_time` is `"Unk"` and `end_class` `null`, the forms seen
+  in both records, and then does not read the peak, empty or written (its
+  three fields must be there). With only one of the two empty the record
+  is read as an ended flare, and the `ParseError` is on its first empty
+  field, peak before end.
+- **Observed**, files not kept: the 2026-10-30 file read every 5 minutes
+  after that. With `time_tag` 13:24 it still had the same empty form,
+  although the peak later came out at 13:22, so the peak is not written as
+  it happens. With `time_tag` 13:29 it held the ended flare (peak 13:22 at
+  B7.3, end 13:28 at B4.7), all five fields filled together.
+- **Hypothesis**: SWPC writes the peak some minutes after it, once the flux
+  has been falling for a while; in a short flare such as that B7.3 the end
+  comes about as soon, in a longer one the peak is written first, as on
+  2026-09-12.
 - **Verified** on the fixture `goes-flares-7-day/2026-10-30-live.json`,
   read at the same moment as the `latest` one: the flare in progress is
   not in the 7-day list. **Observed**, file not kept: the list read at
@@ -558,7 +570,7 @@ SWPC documents no fill value for the physical fields (that a missing value
 is always `null` is a **hypothesis**, and a reported plasma file has
 `-9999`, see "Solar wind"). So the parsers do
 not turn any value into `None` (the only exception is a value that does not
-exist yet, such as the peak and end of a flare in progress, D-026): a value beyond
+exist yet, such as the end of a flare in progress, D-027): a value beyond
 these limits makes the record
 **skipped** (`skipped` of the model, with the reason), and the other records
 are read. The limits are deliberately far beyond anything measured, to catch

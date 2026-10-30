@@ -208,7 +208,7 @@ def test_latest_fixture() -> None:
 
 
 def test_latest_flare_in_progress() -> None:
-    # Peak and end come only when the flare has ended (D-026).
+    # The end comes only when the flare has ended (D-026).
     latest = parse_goes_xray_flare_latest(fixture(LATEST_IN_PROGRESS))
     assert latest == GoesLatestFlare(
         time=utc(2026, 10, 30, 13, 19),
@@ -224,6 +224,48 @@ def test_latest_flare_in_progress() -> None:
 
 
 @pytest.mark.parametrize(
+    "peak",
+    [
+        # The peak written before the end, as in a user's record of
+        # 2026-09-12 (docs/FONTI.md): max_class and max_xrlong unknown there.
+        {
+            "max_time": "2026-10-30T13:22:00Z",
+            "max_class": "B7.3",
+            "max_xrlong": 7.3e-07,
+        },
+        {"max_time": "2026-10-30T13:22:00Z"},
+        # The peak is not read while the flare is in progress (D-027).
+        {"max_time": None},
+        {"max_class": "Q1.0"},
+    ],
+)
+def test_latest_flare_in_progress_whatever_its_peak(peak: dict[str, Any]) -> None:
+    raw = dump(latest_record(LATEST_IN_PROGRESS, **peak))
+    assert parse_goes_xray_flare_latest(raw) == parse_goes_xray_flare_latest(
+        fixture(LATEST_IN_PROGRESS)
+    )
+
+
+@pytest.mark.parametrize("field", ["max_time", "max_class", "max_xrlong"])
+def test_latest_flare_in_progress_without_a_peak_field(field: str) -> None:
+    # Not read, but a field missing from the only record is a new format.
+    record = latest_record(LATEST_IN_PROGRESS)
+    del record[field]
+    with pytest.raises(UnexpectedContent, match=field):
+        parse_goes_xray_flare_latest(dump(record))
+
+
+def test_latest_ended_flare_with_its_end_emptied_is_in_progress() -> None:
+    raw = dump(latest_record(end_time="Unk", end_class=None))
+    latest = parse_goes_xray_flare_latest(raw)
+    assert latest.ongoing
+    assert (latest.begin_time, latest.begin_class) == (
+        utc(2026, 10, 28, 12, 38),
+        FlareClass("B", 3.2),
+    )
+
+
+@pytest.mark.parametrize(
     ("name", "changes", "field"),
     [
         (LATEST, {"current_class": None}, "current_class"),
@@ -231,15 +273,14 @@ def test_latest_flare_in_progress() -> None:
         (LATEST, {"time_tag": "Unk"}, "time_tag"),
         (LATEST, {"begin_class": None}, "begin_class"),
         (LATEST, {"end_time": None}, "end_time"),
-        # The end alone empty was never seen: only all five fields together
-        # say that the flare is in progress (D-026).
-        (LATEST, {"end_time": "Unk", "end_class": None}, "end_time"),
-        (LATEST_IN_PROGRESS, {"max_time": "2026-10-30T13:22:00Z"}, "max_class"),
-        (LATEST_IN_PROGRESS, {"max_class": "B7.3"}, "max_time"),
-        (LATEST_IN_PROGRESS, {"max_xrlong": 7.3e-07}, "max_time"),
+        # Only both end fields empty say that the flare is in progress
+        # (D-027): one of them alone is read as an ended flare.
+        (LATEST, {"end_time": "Unk"}, "end_time"),
+        (LATEST, {"end_class": None}, "end_class"),
+        (LATEST, {"end_time": "Unk", "end_class": "B4.7"}, "end_time"),
+        (LATEST, {"end_time": None, "end_class": None}, "end_time"),
         (LATEST_IN_PROGRESS, {"end_time": "2026-10-30T13:28:00Z"}, "max_time"),
         (LATEST_IN_PROGRESS, {"end_class": "B4.7"}, "max_time"),
-        (LATEST_IN_PROGRESS, {"max_time": None}, "max_time"),
         (LATEST_IN_PROGRESS, {"begin_class": None}, "begin_class"),
         (LATEST_IN_PROGRESS, {"begin_time": "Unk"}, "begin_time"),
     ],

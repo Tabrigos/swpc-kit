@@ -564,3 +564,32 @@ scelte già prese e sparse fra `SPEC.md`, `docs/FONTI.md` e il diario; la data
   7 giorni finirebbe in `skipped`, visibile (o in `ParseError`, se fosse il
   solo record, come ogni lista senza flare leggibili). Un picco "finora" non c'è: chi
   lo vuole guarda `current_class` o il flusso X di `goes_xrays`.
+
+## D-027 — Un flare in corso è la fine vuota, con il picco vuoto o già scritto
+
+- **Data e tappa**: 2026-10-30, prima della 0.5.0 (scelta del maintainer,
+  sul riscontro dell'utente del 12/09). Sostituisce D-026 nel solo criterio
+  del flare in corso; il resto di D-026 resta.
+- **Contesto**: D-026 leggeva in corso solo il record con i cinque campi
+  del picco e della fine vuoti insieme, come nel file del 30/10. Il record
+  del 12/09 riportato dall'utente aveva però `max_time` già scritto (05:26,
+  inizio 05:15) con `end_time` `"Unk"` ed `end_class` `null`: con D-026
+  sarebbe stato un `ParseError` su tutto il `latest`, il guasto del 12/09
+  di nuovo, e proprio sui flare lunghi. Le forme viste sono due, picco
+  vuoto e picco scritto; in entrambe la fine è vuota.
+- **Decisione**: è in corso il record con `end_time` `"Unk"` ed
+  `end_class` `null`, e allora i campi del picco devono esserci ma non si
+  leggono, vuoti o scritti. Con uno solo dei due campi della fine vuoto il
+  record si legge come un flare finito, e l'errore è il primo campo vuoto
+  nell'ordine di lettura (il picco prima della fine).
+- **Alternative scartate**: tenere D-026 e aspettare di vedere la forma
+  intera (la 0.5.0 uscirebbe con un guasto noto); il picco già scritto in
+  campi facoltativi di `GoesLatestFlare` (di quel record non si conoscono
+  `max_class` e `max_xrlong`: andrebbero accettati vuoti o pieni senza
+  averli visti).
+- **Conseguenze**: un picco già scritto non arriva all'utente finché il
+  flare non finisce; si potrà aggiungere come campo facoltativo senza
+  rompere nessuno, quando un file vero ne mostrerà la forma. Un valore
+  sbagliato nei campi del picco di un flare in corso passa inosservato,
+  perché non si legge; un campo del picco che manca è `UnexpectedContent`,
+  come ogni campo che manca.

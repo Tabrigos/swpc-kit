@@ -659,7 +659,7 @@ The latest flare and the class of the flux now (`xray-flares-latest.json`).
 | `flare` | `GoesFlare \| None` | The latest flare once it has ended, or `None` while it is in progress. |
 | `source_url` | `str` | Where the content came from. |
 
-- `.ongoing` (property): Whether the latest flare is still in progress (no peak, no end).
+- `.ongoing` (property): Whether the latest flare is still in progress (no end yet).
 - `.data_time` (property): When the file was written (its `time_tag`).
 
 ## `swpc_kit.models.alerts`

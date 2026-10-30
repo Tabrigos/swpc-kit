@@ -8,7 +8,7 @@ is computed from the flux of the 0.1-0.8 nm band.
 
 The flare lists hold one record per ended flare, with the classes as SWPC
 writes them. Only the latest flare can be in progress, and then it has no
-peak and no end yet (D-026).
+end yet; its peak, even when already written, is not read (D-027).
 
 Times are UTC (the source writes them with ``Z``).
 """
@@ -407,8 +407,9 @@ class GoesFlares:
 class GoesLatestFlare:
     """The latest flare and the class of the flux now (``xray-flares-latest.json``).
 
-    While a flare is in progress SWPC writes only its beginning: the peak and
-    the end come together when it ends (D-026).
+    While a flare is in progress SWPC has not written its end yet, and its
+    peak can be empty or already written: only the beginning is read
+    (D-027).
 
     Attributes:
         time: When the file was written, the time of ``current_class``.
@@ -441,7 +442,7 @@ class GoesLatestFlare:
 
     @property
     def ongoing(self) -> bool:
-        """Whether the latest flare is still in progress (no peak, no end)."""
+        """Whether the latest flare is still in progress (no end yet)."""
         return self.flare is None
 
     @property

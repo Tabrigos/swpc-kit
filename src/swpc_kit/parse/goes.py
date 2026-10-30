@@ -8,8 +8,8 @@ file order) and turn ``null`` into ``None``.
 The flare files are arrays of objects, one per flare: the flares of 7 days,
 or one record with the latest flare and the class of the flux now. The list
 holds ended flares only; the latest flare can be in progress, and then its
-peak and end do not exist yet: they are read as absent only in the forms
-seen in a real file, all together (D-026).
+end does not exist yet: it is read as absent only in the forms seen in a
+real file, both together, and the peak is not read (D-026, D-027).
 
 The default URLs are the files of the primary satellite: the one-day files
 for the fluxes. The ``6-hour``, ``3-day`` and ``7-day`` flux files and the
@@ -59,15 +59,12 @@ _MAX_XRAY_FLUX = 0.1  # W/m² (X1000), about 35 times the strongest flare
 _MAX_PROTON_FLUX = 1e8  # pfu
 _MAX_ELECTRON_FLUX = 1e8  # pfu, as for protons; the fixtures stay below 3e3
 
-# The peak and end of a flare in progress, which do not exist yet (D-026),
-# as seen in the live `latest` file of 2026-10-30 (docs/FONTI.md).
-_IN_PROGRESS = {
-    "max_time": "Unk",
-    "max_class": None,
-    "max_xrlong": None,
-    "end_time": "Unk",
-    "end_class": None,
-}
+# The end of a flare in progress, which does not exist yet (D-027), as seen
+# in the `latest` file with the peak empty (2026-10-30) and written
+# (2026-09-12, docs/FONTI.md).
+_IN_PROGRESS = {"end_time": "Unk", "end_class": None}
+# The peak of a flare in progress: not read, but its fields must be there.
+_PEAK = ("max_time", "max_class", "max_xrlong")
 
 
 def _xray_sample(r: Record) -> XraySample:
@@ -254,9 +251,14 @@ def _latest(r: Record) -> GoesLatestFlare:
     current_class = _class(r, "current_class")
     begin_time = r.get_time("begin_time")
     begin_class = _class(r, "begin_class")
-    # In progress only with every field empty: any other mix is read as an
-    # ended flare, so the first empty field is the error.
+    # In progress only with both end fields empty, and then the peak is not
+    # read; one of them alone is read as an ended flare, so the first empty
+    # field, peak before end, is the error.
     in_progress = all(r.is_empty(f, (form,)) for f, form in _IN_PROGRESS.items())
+    if in_progress:
+        for field in _PEAK:
+            if field not in r.data:
+                raise r.missing(field)
     return GoesLatestFlare(
         time=time,
         satellite=satellite,
@@ -275,10 +277,10 @@ def parse_goes_xray_flare_latest(
 
     The file holds one record: the flare in progress, or the last one if
     none is, with the class of the flux when the file was written. A flare
-    in progress has ``flare`` ``None``: its ``max_time``, ``max_class``,
-    ``max_xrlong``, ``end_time`` and ``end_class`` are ``"Unk"`` or
-    ``null``, all of them; a record with only some of them empty is a
-    ``ParseError``.
+    in progress has ``flare`` ``None``: its ``end_time`` is ``"Unk"`` and
+    its ``end_class`` ``null``, both of them, and its peak, empty or
+    already written, is not read; a record with only one of them empty is
+    read as an ended flare, a ``ParseError`` on its first empty field.
 
     Args:
         raw: The content.
