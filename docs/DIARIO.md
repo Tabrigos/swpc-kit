@@ -24,7 +24,8 @@ Riscritto da capo a ogni fine sessione, mai accodato.
   D-025: un campo vuoto per significato è `None`, nelle sole forme viste in
   un file vero; gli altri campi accessori restano obbligatori (D-015,
   D-017). Il 2026-10-30 D-026: un flare in corso ha solo l'inizio, e solo
-  nel file `latest`. In precedenza (2026-10-27):
+  nel file `latest`; poi D-027: è in corso con la fine vuota, picco vuoto
+  o già scritto, che non si legge. In precedenza (2026-10-27):
   la scala NOAA dei `CANCEL WARNING` resta `None`; niente extra `[polite]`
   (D-024). Il
   job `windows` è fra i controlli richiesti di `main`
@@ -350,3 +351,10 @@ Una riga per sessione: data, tappa, cosa è entrato, cosa resta.
   sempre finito, `GoesLatestFlare` ha l'inizio e `flare` `None` in corso.
   Due fixture nuove. Difetti iniettati 10, sopravvissuti 1 (controllo UTC
   di `begin_time`), coperto da un test visto rosso. Resta: la 0.5.0.
+- 2026-10-30 — D-027 sostituisce D-026 nel criterio del flare in corso
+  (D-026 era già su `main`, nessuna versione uscita): il record del 12/09
+  di un utente aveva il picco già scritto e la fine ignota, che con i
+  cinque campi vuoti insieme sarebbe tornato `ParseError`. Ora è in corso
+  la fine vuota (`end_time` `"Unk"`, `end_class` `null`) e il picco non si
+  legge, ma i suoi campi devono esserci. Difetti iniettati 13,
+  sopravvissuti 0.

@@ -201,9 +201,10 @@ read, and the client logs a warning on the `swpc_kit.client` logger. So
   0.1 W/m², protons and electrons up to 1e8 pfu.
 - **Every field of the model** must be in every record, as JSON null when the
   model allows `None` (only the undocumented solar wind flags may be
-  absent). A flare in progress has only its beginning: the latest flare has
-  `flare` `None` (`ongoing`) only when its peak and end fields are all
-  empty as SWPC writes them, and the 7-day list holds ended flares only, so
+  absent). A flare in progress is read by its beginning only: the latest
+  flare has `flare` `None` (`ongoing`) when both its end fields are empty
+  as SWPC writes them, even if its peak is already written, and the 7-day
+  list holds ended flares only, so
   a flare there without a peak or an end is skipped (like any record, it is
   a `ParseError` when no flare of the list can be read). A field missing from
   *every* record is
