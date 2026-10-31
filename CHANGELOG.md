@@ -6,6 +6,8 @@ All notable changes to this project are listed here. The format follows
 
 ## [Unreleased]
 
+## [0.5.0] - 2026-10-30
+
 ### Added
 
 - GOES integral electrons: `parse_goes_integral_electrons`,
@@ -18,8 +20,8 @@ All notable changes to this project are listed here. The format follows
   with the class of the flux now (`GoesLatestFlare`). A flare in progress
   is read by its beginning only: `begin_time` and `begin_class` are always
   there, `flare` is `None` until SWPC writes its end (`ongoing`), even when
-  its peak is already written, and the 7-day list holds ended flares only. An empty list is valid, with
-  `data_time` `None`.
+  its peak is already written, and the 7-day list holds ended flares only.
+  An empty list is valid, with `data_time` `None`.
 - `FlareClass.parse("M2.5")`, for classes written as text.
 - `to_records` of the latest flare gives one row, the product itself.
 
@@ -243,7 +245,8 @@ First version. Never published or tagged.
   declares.
 - Recorded fixtures and the tools that record them (`tools/`).
 
-[Unreleased]: https://github.com/Tabrigos/swpc-kit/compare/v0.4.0...HEAD
+[Unreleased]: https://github.com/Tabrigos/swpc-kit/compare/v0.5.0...HEAD
+[0.5.0]: https://github.com/Tabrigos/swpc-kit/releases/tag/v0.5.0
 [0.4.0]: https://github.com/Tabrigos/swpc-kit/releases/tag/v0.4.0
 [0.3.2]: https://github.com/Tabrigos/swpc-kit/releases/tag/v0.3.2
 [0.3.1]: https://github.com/Tabrigos/swpc-kit/releases/tag/v0.3.1
