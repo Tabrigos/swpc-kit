@@ -14,9 +14,9 @@ Riscritto da capo a ogni fine sessione, mai accodato.
   **0.4.0** (tag `v0.4.0`, su PyPI il 2026-10-28) con la T17. Il
   2026-10-29 la **T21**: elettroni GOES ed elenco dei flare (7 giorni e
   `latest`), con D-025; il 2026-10-30 D-026 la sostituisce, sul flare in
-  corso registrato dal vivo.
-- **Prossimo passo**: la 0.5.0 con la T21, poi la T22 (probabilità e
-  regioni solari, 0.6.0). Quando esce la 0.2 di politefetch, la ricetta
+  corso registrato dal vivo (PR #18), e D-027 ne corregge il criterio, sul
+  picco già scritto (PR #19); poi la **0.5.0** (tag `v0.5.0`) con la T21.
+- **Prossimo passo**: la T22 (probabilità e regioni solari, 0.6.0). Quando esce la 0.2 di politefetch, la ricetta
   `fetch_politely` passa al suo modello nuovo (`response()` registra cosa
   ha risposto la fonte, il verdetto passa da `accept()` / `reject(motivo)`,
   issue #28 di quel repo).

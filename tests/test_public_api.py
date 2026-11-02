@@ -82,4 +82,4 @@ def test_top_level_exports_errors_and_version() -> None:
         "StaleData",
         "__version__",
     }
-    assert swpc_kit.__version__ == "0.4.0"
+    assert swpc_kit.__version__ == "0.5.0"
