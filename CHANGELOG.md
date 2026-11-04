@@ -6,6 +6,18 @@ All notable changes to this project are listed here. The format follows
 
 ## [Unreleased]
 
+### Added
+
+- Solar flare and proton probabilities: `parse_solar_probabilities`,
+  `Client.solar_probabilities` and `SolarProbabilities`, one
+  `SolarProbability` per day of issue (oldest first, `latest()`), with the
+  C, M, X and 10 MeV proton probabilities for three days and the polar cap
+  absorption colour.
+- Solar active regions: `parse_solar_regions`, `Client.solar_regions` and
+  `SolarRegions`, one `SolarRegion` per region and day, with `days()`,
+  `on(day)` and `latest_day()`. A region without spots has its sunspot
+  fields `None`.
+
 ## [0.5.0] - 2026-10-30
 
 ### Added

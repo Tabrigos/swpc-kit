@@ -489,7 +489,7 @@ maintainer ha scelto due tappe (questa, poi la T22) e D-025.
 
 ## T22 — Probabilità e regioni solari
 
-- [ ] Fatta
+- [x] Fatta
 
 Dopo la T21, come 0.6.0, con i riscontri dello stesso utente
 (`solar_probabilities.json`, `solar_regions.json`): probabilità solo
@@ -498,3 +498,19 @@ l'ultima riga, file dal più recente al più vecchio, date senza fuso,
 le regioni senza macchie con i campi delle macchie `null` (D-025),
 `location` con un asterisco. Fixture condivise del 2026-07-15/16 e
 2026-08-28.
+
+- [x] `parse_solar_probabilities` e `solar_probabilities`: una
+  `SolarProbability` per giorno di emissione, dal più vecchio, con
+  `latest()`; le probabilità come tuple di tre giorni, come nella
+  previsione geomagnetica; `day` è un `date`.
+- [x] `parse_solar_regions` e `solar_regions`: una `SolarRegion` per
+  regione e giorno, con `days()`, `on(day)` e `latest_day()`; i cinque
+  campi delle macchie `None` solo vuoti tutti insieme, nelle forme viste
+  (`null`, e `""` per le due classi; D-028); `location` com'è scritta, asterisco
+  compreso; fuori dal modello i campi senza significato documentato.
+- [x] Fixture registrate il 2026-11-04 (le regioni intere, 175 record) e
+  le probabilità condivise dall'utente (2026-08-28). Le regioni condivise
+  (15-16/07) no: riformattate e ridotte, non sono il file servito; i loro
+  casi stanno tutti nel file registrato.
+- [x] Modulo nuovo `solar` (modelli e parser), per non far crescere
+  `goes.py`.

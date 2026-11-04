@@ -88,6 +88,7 @@ Added later:
 | Group | Products | Stage |
 |---|---|---|
 | GOES | integral electrons, X-ray flares of 7 days and the latest one (a flare in progress is read by its beginning only, D-026, D-027) | T21 |
+| Sun | flare and proton probabilities, active regions (a region without spots has its five spot fields `None`, D-025, D-028) | T22 |
 
 ## Errors
 

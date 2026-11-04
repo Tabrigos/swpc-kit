@@ -65,6 +65,15 @@ url = "https://services.swpc.noaa.gov/json/goes/primary/xray-flares-7-day.json"
 name = "goes-flares-latest"
 url = "https://services.swpc.noaa.gov/json/goes/primary/xray-flares-latest.json"
 
+# Solar probabilities (one row per day of issue) and active regions.
+[[product]]
+name = "solar-probabilities"
+url = "https://services.swpc.noaa.gov/json/solar_probabilities.json"
+
+[[product]]
+name = "solar-regions"
+url = "https://services.swpc.noaa.gov/json/solar_regions.json"
+
 # Alerts
 [[product]]
 name = "alerts"

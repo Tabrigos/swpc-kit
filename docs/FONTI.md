@@ -280,6 +280,56 @@ texts end with `\n`. The server sends `Last-Modified`, `ETag` and
   thresholds. The class is computed only on the 0.1–0.8 nm band; X has no
   ceiling (1.2e-3 → X12.0).
 
+## Solar probabilities and regions (T22, 2026-11-04)
+
+- `json/solar_probabilities.json` (fixture
+  `solar-probabilities/2026-11-04.json`, and `2026-08-28-shared.json`
+  shared by a user), **verified** on both: an array of 31 objects, one per
+  day, **newest first**, days unique. Fields: `date`
+  (`"2026-11-04T00:00:00"`, midnight without a zone), `c_class_1_day` to
+  `_3_day`, the same for `m_class`, `x_class` and `10mev_protons`
+  (integers), and `polar_cap_absorption`, a word (`"green"` in all 62
+  rows). The parser reads `date` as a UTC day only in that form, the
+  numbers as percent from 0 to 100, and `polar_cap_absorption` as any
+  non-empty text.
+- **Hypothesis**: the three values are the probabilities for the three days
+  after the day of issue, as in the 3-day forecast; the file does not say
+  which dates they are, so the model keeps them as day 1, 2, 3. Other
+  colours of `polar_cap_absorption` (such as yellow and red) are likely but
+  not seen.
+- `json/solar_regions.json` (fixture `solar-regions/2026-11-04.json`, 175
+  records over 31 days, 2026-10-05 to 11-04), **verified**: one object per
+  region and day of observation, newest day first, no region twice in a
+  day, 29 fields, the same in every record. Checked on all 175 records:
+  - `location` (`"S06E40"`) agrees with `latitude` (north positive) and
+    `longitude`, which is **east positive**: `N17W41` has `longitude` -41.
+    Beyond 99° west the text is cut and ends with `*` (`"S19W0*"` for
+    -108, 9 records); the model keeps `location` as written.
+  - `first_date` (`"2026-11-02T07:20:01"`, no zone) is the same in every
+    day of a region.
+  - The five sunspot fields are all present or all empty: 114 records with
+    spots; 60 with `spot_class`, `mag_class`, `area`, `extent` and
+    `number_spots` all `null`; one (region 4562 on 10-30) with `""` in the
+    two classes and `null` in the other three. The parser reads them as
+    absent only all five together, each in one of those forms (D-025,
+    D-028); a record with only some of them empty is skipped.
+  - `status` is `"f"` (154), `"d"` (19, only at longitudes -92 to -109,
+    near or past the west limb) or `null` (2, region 4562 on 10-29 and
+    11-04, without spots).
+- **Hypothesis**: `area` is in millionths of the solar hemisphere and
+  `extent` in degrees, `spot_class` is the McIntosh class and `mag_class`
+  the Mount Wilson class, as in the SRS report the file seems to come from;
+  `status` `"d"` may mean a region that has rotated off the disk. The JSON
+  file has no documentation of its own.
+- Left out of the model: `old_carrington_longitude`, `mag_string` and
+  `proton_events` (`null` in all 175 records for the last two), `s_flares`,
+  `impulse_flares_1` to `_4` and `protons`, whose meaning SWPC does not
+  document for this file.
+- The file shared by a user for the regions (2026-07-15/16, 8 records) is
+  not a fixture: it was re-indented with CRLF and cut down, so it is not
+  the file as served. Its cases (regions without spots, a location with
+  `*`) are all in the recorded file.
+
 ## Alerts
 
 - `/products/alerts.json` (fixture `alerts/2026-10-15.json`), **verified**:
@@ -570,7 +620,8 @@ SWPC documents no fill value for the physical fields (that a missing value
 is always `null` is a **hypothesis**, and a reported plasma file has
 `-9999`, see "Solar wind"). So the parsers do
 not turn any value into `None` (the only exception is a value that does not
-exist yet, such as the end of a flare in progress, D-027): a value beyond
+exist yet, such as the end of a flare in progress, D-027, or the spots of a
+region without spots, D-025): a value beyond
 these limits makes the record
 **skipped** (`skipped` of the model, with the reason), and the other records
 are read. The limits are deliberately far beyond anything measured, to catch
@@ -586,6 +637,9 @@ extreme. They are **choices**, not documented by SWPC:
 | GOES X-ray flux (`flux`, `observed_flux`) and flare peak (`max_xrlong`, also above 0) | up to 0.1 W/m² (X1000) | about 35 times the strongest flare recorded (X28, 2.8e-3 W/m², November 2003) |
 | GOES integral proton flux | up to 1e8 pfu | the largest events stay below 1e6 pfu, even at ≥1 MeV |
 | GOES integral electron flux | up to 1e8 pfu | the same limit as the protons; the recorded fixtures stay below 3e3 pfu at ≥2 MeV |
+| Solar flare and proton probabilities | 0 to 100 | percent |
+| Region `latitude`, `longitude`, `carrington_longitude` | ±90°, ±180°, 0 to 360° | heliographic degrees; the recorded longitudes go from -109 to 75 |
+| Region counts and areas (`region`, `area`, `extent`, `number_spots`, `*_xray_events`) | 0 or more | |
 
 Consistency checks, also by record:
 

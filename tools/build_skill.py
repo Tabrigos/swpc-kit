@@ -47,7 +47,7 @@ PACKAGE = "swpc_kit"
 SKILL_NAME = "swpc-kit"
 """The directory of the skill inside ``<package>/skill/``."""
 
-_GROUPS = ["indices", "solar_wind", "goes", "alerts", "bulletins", "grids"]
+_GROUPS = ["indices", "solar_wind", "goes", "solar", "alerts", "bulletins", "grids"]
 
 MODULES: list[str] = [
     "swpc_kit",

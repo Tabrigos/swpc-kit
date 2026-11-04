@@ -4,7 +4,7 @@ description: >-
   How to get NOAA SWPC space weather data in Python with the swpc-kit library:
   planetary K index (Kp), Dst, F10.7, NOAA G/S/R storm scales, real-time solar
   wind (Bz, speed, density), GOES X-ray flux and flare lists, protons and
-  electrons, SWPC alerts and
+  electrons, flare probabilities and active regions, SWPC alerts and
   warnings, 3-day and 27-day forecasts, OVATION aurora and D-RAP grids, with
   GeoJSON/GeoTIFF export. Use it when code imports swpc_kit, or the user
   wants current or forecast geomagnetic activity, aurora chances, solar flare
@@ -52,6 +52,8 @@ the JSON, GeoJSON and GeoTIFF exports, which use only the standard library.
 | Flare in progress or last one | `goes_xray_flare_latest` | `ongoing`, `begin_time`, `current_class`; `flare.max_class` once ended |
 | Radiation storm, protons | `goes_integral_protons` | `latest(10).flux` (pfu at ≥10 MeV) |
 | Energetic electrons | `goes_integral_electrons` | `latest(2).flux` (pfu at ≥2 MeV) |
+| Chance of C, M, X flares, proton event | `solar_probabilities` | `latest()`: `m_class`, `x_class`, `proton_10mev` (percent for 3 days) |
+| Active regions on the Sun | `solar_regions` | `latest_day()`: `region`, `location`, `spot_class`, `m_flare_probability` |
 | Alerts, warnings, watches | `alerts` | `messages` (newest first): `kind`, `code`, `valid_to`, `noaa_scale`, `info` |
 | SWPC's 3-day forecast | `three_day_forecast` | `kp`, `greatest_expected_kp`, `s1_or_greater`, `r1_r2` |
 | Geomagnetic forecast (Ap) | `geomagnetic_forecast` | see `references/api.md` |
@@ -188,7 +190,8 @@ Until a new version of swpc-kit knows the new address, pass it with
 
 ## Records that could not be read
 
-The products made of records (indices, solar wind, GOES, alerts) are read
+The products made of records (indices, solar wind, GOES, solar probabilities
+and regions, alerts) are read
 record by record. A record with an impossible value (Dst 99999, a field of
 -99999 nT), a time already seen or a missing field goes to `skipped` (each a
 `SkippedRecord` with `index`, `field` and `reason`); the other records are
@@ -198,7 +201,8 @@ read, and the client logs a warning on the `swpc_kit.client` logger. So
 - **Impossible** means beyond limits far wider than any measurement: Dst
   -2000 to 500 nT, F10.7 30 to 5000 sfu, solar wind field ±1000 nT and
   speed up to 5000 km/s, X-ray flux (and the peak of a flare) up to
-  0.1 W/m², protons and electrons up to 1e8 pfu.
+  0.1 W/m², protons and electrons up to 1e8 pfu, probabilities 0 to 100
+  percent, region latitude ±90° and longitude ±180°.
 - **Every field of the model** must be in every record, as JSON null when the
   model allows `None` (only the undocumented solar wind flags may be
   absent). A flare in progress is read by its beginning only: the latest
@@ -206,7 +210,9 @@ read, and the client logs a warning on the `swpc_kit.client` logger. So
   as SWPC writes them, even if its peak is already written, and the 7-day
   list holds ended flares only, so
   a flare there without a peak or an end is skipped (like any record, it is
-  a `ParseError` when no flare of the list can be read). A field missing from
+  a `ParseError` when no flare of the list can be read). A region without
+  spots has `spot_class`, `mag_class`, `area`, `extent` and `number_spots`
+  `None`. A field missing from
   *every* record is
   a new format:
   `UnexpectedContent`, not a file of skipped records.
@@ -232,6 +238,11 @@ read, and the client logs a warning on the `swpc_kit.client` logger. So
   an empty flare list.
 - For the flare list `data_time` is when the last flare began: a quiet Sun
   makes it old, so do not put a `max_age` on it.
+- The solar probabilities and regions are by day (`day` is a Python date):
+  their `data_time` is 00:00 UTC of the latest day, so a `max_age` under
+  a day rejects them for part of every day. `SolarRegions.values` holds
+  every region of every day; `latest_day()` gives the regions of the last
+  day only.
 
 ## Traps
 

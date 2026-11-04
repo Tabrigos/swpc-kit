@@ -15,8 +15,10 @@ Riscritto da capo a ogni fine sessione, mai accodato.
   2026-10-29 la **T21**: elettroni GOES ed elenco dei flare (7 giorni e
   `latest`), con D-025; il 2026-10-30 D-026 la sostituisce, sul flare in
   corso registrato dal vivo (PR #18), e D-027 ne corregge il criterio, sul
-  picco già scritto (PR #19); poi la **0.5.0** (tag `v0.5.0`) con la T21.
-- **Prossimo passo**: la T22 (probabilità e regioni solari, 0.6.0). Quando esce la 0.2 di politefetch, la ricetta
+  picco già scritto (PR #19); poi la **0.5.0** (tag `v0.5.0`, su PyPI il
+  2026-11-02) con la T21. Il 2026-11-04 la **T22**: probabilità e regioni
+  solari (modulo `solar`), in `[Unreleased]`.
+- **Prossimo passo**: la 0.6.0 con la T22. Poi nessuna tappa aperta. Quando esce la 0.2 di politefetch, la ricetta
   `fetch_politely` passa al suo modello nuovo (`response()` registra cosa
   ha risposto la fonte, il verdetto passa da `accept()` / `reject(motivo)`,
   issue #28 di quel repo).
@@ -358,3 +360,13 @@ Una riga per sessione: data, tappa, cosa è entrato, cosa resta.
   la fine vuota (`end_time` `"Unk"`, `end_class` `null`) e il picco non si
   legge, ma i suoi campi devono esserci. Difetti iniettati 13,
   sopravvissuti 0.
+- 2026-11-04 — T22: probabilità e regioni solari nel modulo nuovo `solar`.
+  Fixture registrate (le regioni intere, 175 record) e le probabilità
+  condivise dall'utente; le sue regioni no, perché riformattate e ridotte.
+  Forme vuote delle macchie viste nel file vero: `null` e `""` per le due
+  classi, sempre tutti e cinque i campi insieme (D-028). Revisione fresca:
+  6 rilievi veri corretti (forme miste lette campo per campo, `location`
+  vuota, limiti senza test, ipotesi date per fatti nelle docstring, README,
+  SPEC). Difetti iniettati 33, sopravvissuti 0, dopo due test aggiunti e
+  visti rossi (giorno `20261104`, che `date.fromisoformat` accetta; `area`
+  `""` in una regione senza macchie). Resta: la 0.6.0.

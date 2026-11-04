@@ -4,7 +4,8 @@ Every time is a ``datetime`` in UTC. Each top-level model exposes
 ``data_time`` (the most recent time declared by the content), ``source_url``,
 and ``issued``, ``observed``, ``valid_from`` or ``valid_to`` where the source
 provides them. The models are re-exported here from their modules:
-``indices``, ``solar_wind``, ``goes``, ``alerts``, ``bulletins``, ``grids``.
+``indices``, ``solar_wind``, ``goes``, ``solar``, ``alerts``, ``bulletins``,
+``grids``.
 """
 
 from swpc_kit.models.alerts import (
@@ -63,6 +64,12 @@ from swpc_kit.models.indices import (
     SolarRadiationScale,
 )
 from swpc_kit.models.records import SkippedRecord
+from swpc_kit.models.solar import (
+    SolarProbabilities,
+    SolarProbability,
+    SolarRegion,
+    SolarRegions,
+)
 from swpc_kit.models.solar_wind import (
     RtswMag1m,
     RtswMagSample,
@@ -116,7 +123,11 @@ __all__ = [
     "RtswWindSample",
     "ScaleCategory",
     "SkippedRecord",
+    "SolarProbabilities",
+    "SolarProbability",
     "SolarRadiationScale",
+    "SolarRegion",
+    "SolarRegions",
     "ThreeDayForecast",
     "TwentySevenDayOutlook",
     "XrayBand",

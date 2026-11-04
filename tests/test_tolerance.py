@@ -28,6 +28,8 @@ from swpc_kit.parse import (
     parse_planetary_k_index_forecast,
     parse_rtsw_mag_1m,
     parse_rtsw_wind_1m,
+    parse_solar_probabilities,
+    parse_solar_regions,
     parse_three_day_forecast,
 )
 
@@ -66,6 +68,13 @@ PRODUCTS = [
         "x",
     ),
     (parse_goes_xray_flares, "goes-flares-7-day/2026-10-29.json", "max_class", "Q1"),
+    (
+        parse_solar_probabilities,
+        "solar-probabilities/2026-11-04.json",
+        "m_class_1_day",
+        "x",
+    ),
+    (parse_solar_regions, "solar-regions/2026-11-04.json", "spot_class", 3),
     (parse_alerts, "alerts/2026-10-15.json", "issue_datetime", "13 Oct 2026"),
 ]
 IDS = [name.split("/")[0] for _, name, _, _ in PRODUCTS]
@@ -164,6 +173,13 @@ def test_a_repeated_time_skips_the_second_record() -> None:
             "max_xrlong",
             1.0,
         ),
+        (
+            parse_solar_probabilities,
+            "solar-probabilities/2026-11-04.json",
+            "x_class_2_day",
+            101,
+        ),
+        (parse_solar_regions, "solar-regions/2026-11-04.json", "latitude", 91),
     ],
 )
 def test_implausible_values_are_skipped(

@@ -593,3 +593,25 @@ scelte già prese e sparse fra `SPEC.md`, `docs/FONTI.md` e il diario; la data
   sbagliato nei campi del picco di un flare in corso passa inosservato,
   perché non si legge; un campo del picco che manca è `UnexpectedContent`,
   come ogni campo che manca.
+
+## D-028 — Una regione senza macchie ha vuoti tutti e cinque i campi delle macchie
+
+- **Data e tappa**: 2026-11-04, T22 (scelta prudente della sessione, da
+  rivedere col maintainer nella PR). Applica D-025 alle regioni solari.
+- **Contesto**: in `solar_regions.json` una regione senza macchie ha vuoti
+  `spot_class`, `mag_class`, `area`, `extent` e `number_spots`. Nel file
+  registrato il 2026-11-04 (175 record) i cinque campi sono sempre tutti
+  pieni (114) o tutti vuoti (61): `null`, o `""` nelle due classi in un
+  record. Letti campo per campo, una forma mista mai vista passerebbe: una
+  regione con macchie e le classi a `None`.
+- **Decisione**: i cinque campi sono `None` solo se sono vuoti tutti
+  insieme, ciascuno in una forma vista (`null`; `""` per le due classi).
+  Con una parte sola vuota la regione si legge come una con macchie, e il
+  primo campo vuoto è l'errore: il record finisce in `skipped`.
+- **Alternative scartate**: campo per campo (forme miste mai viste lette
+  in silenzio); un modello annidato `spots: ... | None` (più netto, ma
+  cambia la forma piatta che l'utente legge già e che `to_records` dà).
+- **Conseguenze**: a differenza del flare in corso (D-026, D-027) un errore
+  qui scarta una sola regione di un giorno, visibile in `skipped`, non
+  tutto il file. Se SWPC scrivesse una forma mista, la si aggiunge quando
+  la si vede in un file vero, con la fixture.
