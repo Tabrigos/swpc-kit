@@ -49,7 +49,7 @@ the JSON, GeoJSON and GeoTIFF exports, which use only the standard library.
 | Solar wind speed and density | `rtsw_wind_1m` | `latest_active().proton_speed`, `.proton_density` |
 | X-ray flux, flare class now | `goes_xrays` | `latest()`, `peak()`, and `.flare_class` of a sample |
 | Flares of the last 7 days (ended ones) | `goes_xray_flares` | `values`, `latest()`, `strongest()`: `max_class`, `max_time` |
-| Flare in progress or last one | `goes_xray_flare_latest` | `ongoing`, `begin_time`, `current_class`; `flare.max_class` once ended |
+| Flare in progress or last one | `goes_xray_flare_latest` | `ongoing`, `begin_time`, `max_time` (once written), `current_class`; `flare.max_class` once ended |
 | Radiation storm, protons | `goes_integral_protons` | `latest(10).flux` (pfu at ≥10 MeV) |
 | Energetic electrons | `goes_integral_electrons` | `latest(2).flux` (pfu at ≥2 MeV) |
 | Chance of C, M, X flares, proton event | `solar_probabilities` | `latest()`: `m_class`, `x_class`, `proton_10mev` (percent for 3 days) |
@@ -205,10 +205,11 @@ read, and the client logs a warning on the `swpc_kit.client` logger. So
   percent, region latitude ±90° and longitude ±180°.
 - **Every field of the model** must be in every record, as JSON null when the
   model allows `None` (only the undocumented solar wind flags may be
-  absent). A flare in progress is read by its beginning only: the latest
+  absent). A flare in progress is read by its beginning: the latest
   flare has `flare` `None` (`ongoing`) when both its end fields are empty
-  as SWPC writes them, even if its peak is already written, and the 7-day
-  list holds ended flares only, so
+  as SWPC writes them, and `max_time` once SWPC has written the peak
+  (`None` before; the class of the peak comes only with the end), and the
+  7-day list holds ended flares only, so
   a flare there without a peak or an end is skipped (like any record, it is
   a `ParseError` when no flare of the list can be read). A region without
   spots has `spot_class`, `mag_class`, `area`, `extent` and `number_spots`

@@ -370,3 +370,9 @@ Una riga per sessione: data, tappa, cosa è entrato, cosa resta.
   SPEC). Difetti iniettati 33, sopravvissuti 0, dopo due test aggiunti e
   visti rossi (giorno `20261104`, che `date.fromisoformat` accetta; `area`
   `""` in una regione senza macchie). Resta: la 0.6.0.
+- 2026-11-04 — Riscontro di Sidereus sulla 0.5.0: non adotta la libreria
+  (decisione del maintainer), resta banco di prova a ogni versione. Dai
+  suoi attriti: D-029, `GoesLatestFlare.max_time` anche a flare in corso
+  (difetti iniettati 7, sopravvissuti 0);
+  `latest` vuoto lasciato `SourceNotReady` finché non lo si vede dal vivo;
+  nella skill da dove si importa `FlareClass`.

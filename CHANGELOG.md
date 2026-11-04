@@ -17,6 +17,9 @@ All notable changes to this project are listed here. The format follows
   `SolarRegions`, one `SolarRegion` per region and day, with `days()`,
   `on(day)` and `latest_day()`. A region without spots has its sunspot
   fields `None`.
+- `GoesLatestFlare.max_time`: the time of the peak of the latest flare,
+  also while it is in progress once SWPC has written it, `None` before.
+  It is the last field, with a default, so existing code keeps working.
 
 ## [0.5.0] - 2026-10-30
 

@@ -615,3 +615,26 @@ scelte già prese e sparse fra `SPEC.md`, `docs/FONTI.md` e il diario; la data
   qui scarta una sola regione di un giorno, visibile in `skipped`, non
   tutto il file. Se SWPC scrivesse una forma mista, la si aggiunge quando
   la si vede in un file vero, con la fixture.
+
+## D-029 — Di un flare in corso si legge anche l'ora del picco, quando è scritta
+
+- **Data e tappa**: 2026-11-04, con la T22 (scelta del maintainer, sul
+  riscontro di Sidereus alla 0.5.0). Sostituisce D-027 nella sola parte
+  «il picco non si legge».
+- **Contesto**: con D-027 un picco già scritto da SWPC arrivava all'utente
+  solo a flare finito; il pannello di Sidereus mostrava il picco durante il
+  flare, ed è un'informazione in meno proprio mentre serve. Dei tre campi
+  del picco, solo `max_time` è stato visto sia vuoto (`"Unk"`, 30/10) sia
+  pieno (12/09) a flare in corso; `max_class` e `max_xrlong` sono stati
+  visti solo vuoti.
+- **Decisione**: `GoesLatestFlare.max_time`, facoltativo: l'ora del picco
+  quando SWPC l'ha scritta, anche a flare in corso, `None` mentre vale
+  `"Unk"`; ogni altro valore dev'essere un tempo non prima di `begin_time`,
+  o è l'errore. A flare finito è `flare.max_time`. È l'ultimo campo, con un
+  valore predefinito, così chi costruisce il modello non si rompe.
+- **Alternative scartate**: aspettare un file vero che mostri anche la
+  classe del picco (l'ora resterebbe nascosta senza motivo); leggere subito
+  anche la classe e il flusso (forme mai viste piene a flare in corso).
+- **Conseguenze**: un `max_time` illeggibile a flare in corso ora è un
+  `ParseError` del file, come ogni campo letto; la classe del picco si
+  aggiungerà allo stesso modo quando un file vero la mostrerà piena.

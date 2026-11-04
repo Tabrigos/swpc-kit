@@ -239,10 +239,16 @@ texts end with `\n`. The server sends `Last-Modified`, `ETag` and
   (**hypothesis**: the page may have computed it from the flux).
 - The parser (D-027) reads the latest flare as in progress (`flare`
   `None`) when `end_time` is `"Unk"` and `end_class` `null`, the forms seen
-  in both records, and then does not read the peak, empty or written (its
-  three fields must be there). With only one of the two empty the record
-  is read as an ended flare, and the `ParseError` is on its first empty
-  field, peak before end.
+  in both records. Of the peak it then reads only `max_time` (D-029), the
+  one field seen both empty (`"Unk"`) and written: `"Unk"` is `None`, any
+  other value must be a time not before `begin_time`. `max_class` and
+  `max_xrlong` are not read, but must be there. With only one of the two
+  end fields empty the record is read as an ended flare, and the
+  `ParseError` is on its first empty field, peak before end.
+- The response `[]` (no latest flare at all) is read as `SourceNotReady`,
+  as any JSON product without records. That SWPC serves it is a
+  **hypothesis**, never seen; it will be read otherwise once a real file
+  shows it.
 - **Observed**, files not kept: the 2026-10-30 file read every 5 minutes
   after that. With `time_tag` 13:24 it still had the same empty form,
   although the peak later came out at 13:22, so the peak is not written as

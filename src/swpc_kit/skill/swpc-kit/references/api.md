@@ -649,7 +649,7 @@ The X-ray flares of the last days, such as `xray-flares-7-day.json`.
 
 ### `GoesLatestFlare`
 
-`GoesLatestFlare(time: datetime, satellite: int, current_class: FlareClass, begin_time: datetime, begin_class: FlareClass, flare: GoesFlare | None, source_url: str)`
+`GoesLatestFlare(time: datetime, satellite: int, current_class: FlareClass, begin_time: datetime, begin_class: FlareClass, flare: GoesFlare | None, source_url: str, max_time: datetime | None = None)`
 
 The latest flare and the class of the flux now (`xray-flares-latest.json`).
 
@@ -662,6 +662,7 @@ The latest flare and the class of the flux now (`xray-flares-latest.json`).
 | `begin_class` | `FlareClass` | The class of the flux when it began. |
 | `flare` | `GoesFlare \| None` | The latest flare once it has ended, or `None` while it is in progress. |
 | `source_url` | `str` | Where the content came from. |
+| `max_time` | `datetime \| None` | When the flux peaked, once SWPC has written it: also while the flare is in progress, `None` before. Once the flare has ended it is `flare.max_time`. |
 
 - `.ongoing` (property): Whether the latest flare is still in progress (no end yet).
 - `.data_time` (property): When the file was written (its `time_tag`).
