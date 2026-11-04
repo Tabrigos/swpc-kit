@@ -258,7 +258,8 @@ read, and the client logs a warning on the `swpc_kit.client` logger. So
   such as `"3M"`. Storm levels: Kp 5 is G1, up to Kp 9 for G5.
 - **Flare class** is computed only from the 0.1-0.8 nm band, truncated to one
   decimal: `FlareClass.from_flux(2.5e-5)` is `M2.5`. The flare lists give
-  the classes as SWPC writes them (`FlareClass.parse("M2.5")`).
+  the classes as SWPC writes them (`FlareClass.parse("M2.5")`). Import it
+  with the other models: `from swpc_kit.models import FlareClass`.
 - **Grid lookups.** `grid.value_near(latitude, longitude)` gives the cell
   that holds any point, or `None` outside the grid; `value_at` wants the
   exact centre of a cell and raises `KeyError` otherwise. Both accept
