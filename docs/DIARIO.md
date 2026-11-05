@@ -17,8 +17,9 @@ Riscritto da capo a ogni fine sessione, mai accodato.
   corso registrato dal vivo (PR #18), e D-027 ne corregge il criterio, sul
   picco già scritto (PR #19); poi la **0.5.0** (tag `v0.5.0`, su PyPI il
   2026-11-02) con la T21. Il 2026-11-04 la **T22**: probabilità e regioni
-  solari (modulo `solar`), in `[Unreleased]`.
-- **Prossimo passo**: la 0.6.0 con la T22. Poi nessuna tappa aperta. Quando esce la 0.2 di politefetch, la ricetta
+  solari (modulo `solar`), con D-028, e D-029 (ora del picco del flare in
+  corso) (PR #21); poi la **0.6.0** (tag `v0.6.0`) con la T22 e D-029.
+- **Prossimo passo**: nessuna tappa aperta. Quando esce la 0.2 di politefetch, la ricetta
   `fetch_politely` passa al suo modello nuovo (`response()` registra cosa
   ha risposto la fonte, il verdetto passa da `accept()` / `reject(motivo)`,
   issue #28 di quel repo).
