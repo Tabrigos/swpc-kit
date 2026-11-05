@@ -88,6 +88,10 @@ from swpc_kit.models.indices import (
     PlanetaryKIndex1m,
     PlanetaryKIndexForecast,
 )
+from swpc_kit.models.solar import (
+    SolarProbabilities,
+    SolarRegions,
+)
 from swpc_kit.models.solar_wind import (
     RtswMag1m,
     RtswWind1m,
@@ -282,6 +286,22 @@ class Client(BaseClient):
     ) -> GoesLatestFlare:
         """Fetch the latest GOES X-ray flare and the class of the flux now."""
         return self.fetch(p.GOES_XRAY_FLARE_LATEST, max_age=max_age)
+
+    def solar_probabilities(
+        self, *, max_age: timedelta | None = None
+    ) -> SolarProbabilities:
+        """Fetch the flare and proton probabilities of the last days of issue.
+
+        ``max_age`` here measures from the start of the latest day of issue.
+        """
+        return self.fetch(p.SOLAR_PROBABILITIES, max_age=max_age)
+
+    def solar_regions(self, *, max_age: timedelta | None = None) -> SolarRegions:
+        """Fetch the active regions of the last days of observation.
+
+        ``max_age`` here measures from the start of the latest day observed.
+        """
+        return self.fetch(p.SOLAR_REGIONS, max_age=max_age)
 
     def alerts(self, *, max_age: timedelta | None = None) -> Alerts:
         """Fetch the alerts, warnings, watches and summaries."""
@@ -489,6 +509,22 @@ class AsyncClient(BaseClient):
     ) -> GoesLatestFlare:
         """Fetch the latest GOES X-ray flare and the class of the flux now."""
         return await self.fetch(p.GOES_XRAY_FLARE_LATEST, max_age=max_age)
+
+    async def solar_probabilities(
+        self, *, max_age: timedelta | None = None
+    ) -> SolarProbabilities:
+        """Fetch the flare and proton probabilities of the last days of issue.
+
+        ``max_age`` here measures from the start of the latest day of issue.
+        """
+        return await self.fetch(p.SOLAR_PROBABILITIES, max_age=max_age)
+
+    async def solar_regions(self, *, max_age: timedelta | None = None) -> SolarRegions:
+        """Fetch the active regions of the last days of observation.
+
+        ``max_age`` here measures from the start of the latest day observed.
+        """
+        return await self.fetch(p.SOLAR_REGIONS, max_age=max_age)
 
     async def alerts(self, *, max_age: timedelta | None = None) -> Alerts:
         """Fetch the alerts, warnings, watches and summaries."""

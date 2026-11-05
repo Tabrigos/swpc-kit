@@ -51,6 +51,8 @@ from swpc_kit.parse import (
     parse_planetary_k_index_forecast,
     parse_rtsw_mag_1m,
     parse_rtsw_wind_1m,
+    parse_solar_probabilities,
+    parse_solar_regions,
     parse_three_day_forecast,
 )
 
@@ -202,6 +204,18 @@ PRODUCTS: list[tuple[str, str, Callable[[], bytes], Callable[..., Any] | None]] 
         f"{BASE}/json/goes/primary/xray-flares-latest.json",
         lambda: fixture("goes-flares-latest/2026-10-29.json"),
         parse_goes_xray_flare_latest,
+    ),
+    (
+        "solar_probabilities",
+        f"{BASE}/json/solar_probabilities.json",
+        lambda: fixture("solar-probabilities/2026-11-04.json"),
+        parse_solar_probabilities,
+    ),
+    (
+        "solar_regions",
+        f"{BASE}/json/solar_regions.json",
+        lambda: fixture("solar-regions/2026-11-04.json"),
+        parse_solar_regions,
     ),
     (
         "alerts",

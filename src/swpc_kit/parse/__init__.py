@@ -31,6 +31,10 @@ from swpc_kit.parse.indices import (
     parse_planetary_k_index_1m,
     parse_planetary_k_index_forecast,
 )
+from swpc_kit.parse.solar import (
+    parse_solar_probabilities,
+    parse_solar_regions,
+)
 from swpc_kit.parse.solar_wind import (
     parse_rtsw_mag_1m,
     parse_rtsw_wind_1m,
@@ -55,5 +59,7 @@ __all__ = [
     "parse_planetary_k_index_forecast",
     "parse_rtsw_mag_1m",
     "parse_rtsw_wind_1m",
+    "parse_solar_probabilities",
+    "parse_solar_regions",
     "parse_three_day_forecast",
 ]

@@ -188,6 +188,8 @@ def test_to_records_of_the_flares_splits_each_class(models: dict[str, Any]) -> N
     assert ongoing["begin_class_multiplier"] == 2.5
     assert ongoing["flare_max_class_multiplier"] is None
     assert ongoing["flare_end_time"] is None
+    assert latest["max_time"] == datetime(2026, 10, 28, 12, 52, tzinfo=UTC)
+    assert ongoing["max_time"] is None
 
 
 def test_to_records_flattens_an_absent_nested_model_to_none(

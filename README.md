@@ -38,6 +38,8 @@ The library uses only the standard library, GeoTIFF export included; the
 | GOES integral electrons | `parse_goes_integral_electrons` | `goes_integral_electrons` |
 | GOES X-ray flares, 7 days | `parse_goes_xray_flares` | `goes_xray_flares` |
 | GOES latest X-ray flare | `parse_goes_xray_flare_latest` | `goes_xray_flare_latest` |
+| Solar flare and proton probabilities | `parse_solar_probabilities` | `solar_probabilities` |
+| Solar active regions | `parse_solar_regions` | `solar_regions` |
 | Alerts, warnings, watches | `parse_alerts` | `alerts` |
 | 3-day forecast | `parse_three_day_forecast` | `three_day_forecast` |
 | Geomagnetic forecast | `parse_geomagnetic_forecast` | `geomagnetic_forecast` |
@@ -397,8 +399,8 @@ parsers. In async code, write `async with` and `await`.
 
 ### Records that could not be read
 
-The products made of records (indices, solar wind, GOES, alerts) are read
-record by record: one record with an impossible value, a repeated time or a
+The products made of records (indices, solar wind, GOES, solar probabilities
+and regions, alerts) are read record by record: one record with an impossible value, a repeated time or a
 missing field goes to the model's `skipped` (index, field, reason) and the
 others are read, so one bad record does not hide the whole file for the
 hours or days it stays there. The product fails only when no record can be

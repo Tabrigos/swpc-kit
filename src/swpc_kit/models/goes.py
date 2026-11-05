@@ -8,7 +8,8 @@ is computed from the flux of the 0.1-0.8 nm band.
 
 The flare lists hold one record per ended flare, with the classes as SWPC
 writes them. Only the latest flare can be in progress, and then it has no
-end yet; its peak, even when already written, is not read (D-027).
+end yet; of its peak only the time is read, once SWPC writes it (D-027,
+D-029).
 
 Times are UTC (the source writes them with ``Z``).
 """
@@ -408,8 +409,8 @@ class GoesLatestFlare:
     """The latest flare and the class of the flux now (``xray-flares-latest.json``).
 
     While a flare is in progress SWPC has not written its end yet, and its
-    peak can be empty or already written: only the beginning is read
-    (D-027).
+    peak can be empty or already written: only the beginning and the time
+    of the peak, once written, are read (D-027, D-029).
 
     Attributes:
         time: When the file was written, the time of ``current_class``.
@@ -420,6 +421,9 @@ class GoesLatestFlare:
         flare: The latest flare once it has ended, or ``None`` while it is
             in progress.
         source_url: Where the content came from.
+        max_time: When the flux peaked, once SWPC has written it: also
+            while the flare is in progress, ``None`` before. Once the flare
+            has ended it is ``flare.max_time``.
     """
 
     time: datetime
@@ -429,16 +433,20 @@ class GoesLatestFlare:
     begin_class: FlareClass
     flare: GoesFlare | None
     source_url: str
+    max_time: datetime | None = None
 
     def __post_init__(self) -> None:
         check_utc("time", self.time)
         check_utc("begin_time", self.begin_time)
+        check_utc("max_time", self.max_time)
         flare = self.flare
         if flare is not None and (flare.begin_time, flare.begin_class) != (
             self.begin_time,
             self.begin_class,
         ):
             raise ValueError("begin_time and begin_class must be those of flare")
+        if flare is not None and self.max_time != flare.max_time:
+            raise ValueError("max_time must be that of flare")
 
     @property
     def ongoing(self) -> bool:

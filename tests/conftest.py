@@ -55,6 +55,8 @@ FIXTURE_FOR = {
     "goes_integral_electrons": "goes-electrons-1-day/2026-10-29.json",
     "goes_xray_flares": "goes-flares-7-day/2026-10-29.json",
     "goes_xray_flare_latest": "goes-flares-latest/2026-10-29.json",
+    "solar_probabilities": "solar-probabilities/2026-11-04.json",
+    "solar_regions": "solar-regions/2026-11-04.json",
     "alerts": "alerts/2026-10-15.json",
     "three_day_forecast": "3-day-forecast/2026-10-15.txt",
     "geomagnetic_forecast": "geomag-forecast/2026-10-15.txt",

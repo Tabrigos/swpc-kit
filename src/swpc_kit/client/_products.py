@@ -47,6 +47,12 @@ from swpc_kit.parse.indices import (
     parse_planetary_k_index_1m,
     parse_planetary_k_index_forecast,
 )
+from swpc_kit.parse.solar import (
+    SOLAR_PROBABILITIES_URL,
+    SOLAR_REGIONS_URL,
+    parse_solar_probabilities,
+    parse_solar_regions,
+)
 from swpc_kit.parse.solar_wind import (
     RTSW_MAG_1M_URL,
     RTSW_WIND_1M_URL,
@@ -117,6 +123,16 @@ GOES_XRAY_FLARE_LATEST = Product(
     GOES_XRAY_FLARE_LATEST_URL,
     lambda raw, url: parse_goes_xray_flare_latest(raw, source_url=url),
 )
+SOLAR_PROBABILITIES = Product(
+    "solar_probabilities",
+    SOLAR_PROBABILITIES_URL,
+    lambda raw, url: parse_solar_probabilities(raw, source_url=url),
+)
+SOLAR_REGIONS = Product(
+    "solar_regions",
+    SOLAR_REGIONS_URL,
+    lambda raw, url: parse_solar_regions(raw, source_url=url),
+)
 ALERTS = Product(
     "alerts", ALERTS_URL, lambda raw, url: parse_alerts(raw, source_url=url)
 )
@@ -160,6 +176,8 @@ PRODUCTS: tuple[Product[Any], ...] = (
     GOES_INTEGRAL_ELECTRONS,
     GOES_XRAY_FLARES,
     GOES_XRAY_FLARE_LATEST,
+    SOLAR_PROBABILITIES,
+    SOLAR_REGIONS,
     ALERTS,
     THREE_DAY_FORECAST,
     GEOMAGNETIC_FORECAST,

@@ -593,3 +593,48 @@ scelte già prese e sparse fra `SPEC.md`, `docs/FONTI.md` e il diario; la data
   sbagliato nei campi del picco di un flare in corso passa inosservato,
   perché non si legge; un campo del picco che manca è `UnexpectedContent`,
   come ogni campo che manca.
+
+## D-028 — Una regione senza macchie ha vuoti tutti e cinque i campi delle macchie
+
+- **Data e tappa**: 2026-11-04, T22 (scelta prudente della sessione, da
+  rivedere col maintainer nella PR). Applica D-025 alle regioni solari.
+- **Contesto**: in `solar_regions.json` una regione senza macchie ha vuoti
+  `spot_class`, `mag_class`, `area`, `extent` e `number_spots`. Nel file
+  registrato il 2026-11-04 (175 record) i cinque campi sono sempre tutti
+  pieni (114) o tutti vuoti (61): `null`, o `""` nelle due classi in un
+  record. Letti campo per campo, una forma mista mai vista passerebbe: una
+  regione con macchie e le classi a `None`.
+- **Decisione**: i cinque campi sono `None` solo se sono vuoti tutti
+  insieme, ciascuno in una forma vista (`null`; `""` per le due classi).
+  Con una parte sola vuota la regione si legge come una con macchie, e il
+  primo campo vuoto è l'errore: il record finisce in `skipped`.
+- **Alternative scartate**: campo per campo (forme miste mai viste lette
+  in silenzio); un modello annidato `spots: ... | None` (più netto, ma
+  cambia la forma piatta che l'utente legge già e che `to_records` dà).
+- **Conseguenze**: a differenza del flare in corso (D-026, D-027) un errore
+  qui scarta una sola regione di un giorno, visibile in `skipped`, non
+  tutto il file. Se SWPC scrivesse una forma mista, la si aggiunge quando
+  la si vede in un file vero, con la fixture.
+
+## D-029 — Di un flare in corso si legge anche l'ora del picco, quando è scritta
+
+- **Data e tappa**: 2026-11-04, con la T22 (scelta del maintainer, sul
+  riscontro di Sidereus alla 0.5.0). Sostituisce D-027 nella sola parte
+  «il picco non si legge».
+- **Contesto**: con D-027 un picco già scritto da SWPC arrivava all'utente
+  solo a flare finito; il pannello di Sidereus mostrava il picco durante il
+  flare, ed è un'informazione in meno proprio mentre serve. Dei tre campi
+  del picco, solo `max_time` è stato visto sia vuoto (`"Unk"`, 30/10) sia
+  pieno (12/09) a flare in corso; `max_class` e `max_xrlong` sono stati
+  visti solo vuoti.
+- **Decisione**: `GoesLatestFlare.max_time`, facoltativo: l'ora del picco
+  quando SWPC l'ha scritta, anche a flare in corso, `None` mentre vale
+  `"Unk"`; ogni altro valore dev'essere un tempo non prima di `begin_time`,
+  o è l'errore. A flare finito è `flare.max_time`. È l'ultimo campo, con un
+  valore predefinito, così chi costruisce il modello non si rompe.
+- **Alternative scartate**: aspettare un file vero che mostri anche la
+  classe del picco (l'ora resterebbe nascosta senza motivo); leggere subito
+  anche la classe e il flusso (forme mai viste piene a flare in corso).
+- **Conseguenze**: un `max_time` illeggibile a flare in corso ora è un
+  `ParseError` del file, come ogni campo letto; la classe del picco si
+  aggiungerà allo stesso modo quando un file vero la mostrerà piena.

@@ -66,6 +66,8 @@ original, which is not kept.
 | `ovation-aurora/2026-10-15.json` | https://services.swpc.noaa.gov/json/ovation_aurora_latest.json | 2026-10-15 17:57 | 38253 | reduced from 924383 bytes: coordinates: first 2 and last 2 groups by item 0, plus every 30th |
 | `rtsw-mag-1m/2026-10-15.json` | https://services.swpc.noaa.gov/json/rtsw/rtsw_mag_1m.json | 2026-10-15 17:57 | 94537 | reduced from 1466951 bytes: first 30 and last 30 groups by time_tag, plus every 30th |
 | `rtsw-wind-1m/2026-10-15.json` | https://services.swpc.noaa.gov/json/rtsw/rtsw_wind_1m.json | 2026-10-15 17:57 | 162894 | reduced from 2441848 bytes: first 30 and last 30 groups by time_tag, plus every 30th |
+| `solar-probabilities/2026-11-04.json` | https://services.swpc.noaa.gov/json/solar_probabilities.json | 2026-11-04 21:48 | 9377 | |
+| `solar-regions/2026-11-04.json` | https://services.swpc.noaa.gov/json/solar_regions.json | 2026-11-04 21:48 | 100855 | |
 <!-- recorded:end -->
 
 ## Official samples
@@ -89,6 +91,7 @@ content shows it.
 | File | Source | Downloaded on | Size (bytes) | Notes |
 |---|---|---|---|---|
 | `goes-flares-7-day/2026-08-28-shared.json` | https://services.swpc.noaa.gov/json/goes/primary/xray-flares-7-day.json | 2026-08-28 | 15755 | 41 flares, up to M6.9; four without `max_ratio` |
+| `solar-probabilities/2026-08-28-shared.json` | https://services.swpc.noaa.gov/json/solar_probabilities.json | 2026-08-28 | 9398 | 31 days, 2026-07-29 to 08-28, newest first |
 
 ## Live
 

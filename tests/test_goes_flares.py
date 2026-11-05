@@ -202,6 +202,7 @@ def test_latest_fixture() -> None:
             satellite=18,
         ),
         source_url=GOES_XRAY_FLARE_LATEST_URL,
+        max_time=utc(2026, 10, 28, 12, 52),
     )
     assert latest.data_time == utc(2026, 10, 29, 14, 24)
     assert not latest.ongoing
@@ -218,6 +219,7 @@ def test_latest_flare_in_progress() -> None:
         begin_class=FlareClass("B", 2.5),
         flare=None,
         source_url=GOES_XRAY_FLARE_LATEST_URL,
+        max_time=None,
     )
     assert latest.ongoing
     assert latest.data_time == utc(2026, 10, 30, 13, 19)
@@ -234,15 +236,21 @@ def test_latest_flare_in_progress() -> None:
             "max_xrlong": 7.3e-07,
         },
         {"max_time": "2026-10-30T13:22:00Z"},
-        # The peak is not read while the flare is in progress (D-027).
-        {"max_time": None},
-        {"max_class": "Q1.0"},
+        # Only the time of the peak is read while in progress (D-029).
+        {"max_time": "2026-10-30T13:22:00Z", "max_class": "Q1.0", "max_xrlong": "x"},
     ],
 )
-def test_latest_flare_in_progress_whatever_its_peak(peak: dict[str, Any]) -> None:
-    raw = dump(latest_record(LATEST_IN_PROGRESS, **peak))
-    assert parse_goes_xray_flare_latest(raw) == parse_goes_xray_flare_latest(
-        fixture(LATEST_IN_PROGRESS)
+def test_latest_flare_in_progress_with_its_peak_time_written(
+    peak: dict[str, Any],
+) -> None:
+    latest = parse_goes_xray_flare_latest(
+        dump(latest_record(LATEST_IN_PROGRESS, **peak))
+    )
+    assert latest.ongoing
+    assert latest.max_time == utc(2026, 10, 30, 13, 22)
+    assert latest == replace(
+        parse_goes_xray_flare_latest(fixture(LATEST_IN_PROGRESS)),
+        max_time=utc(2026, 10, 30, 13, 22),
     )
 
 
@@ -283,6 +291,10 @@ def test_latest_ended_flare_with_its_end_emptied_is_in_progress() -> None:
         (LATEST_IN_PROGRESS, {"end_class": "B4.7"}, "max_time"),
         (LATEST_IN_PROGRESS, {"begin_class": None}, "begin_class"),
         (LATEST_IN_PROGRESS, {"begin_time": "Unk"}, "begin_time"),
+        # The time of the peak in progress: "Unk" or a time (D-029).
+        (LATEST_IN_PROGRESS, {"max_time": None}, "max_time"),
+        (LATEST_IN_PROGRESS, {"max_time": ""}, "max_time"),
+        (LATEST_IN_PROGRESS, {"max_time": "2026-10-30T13:00:00Z"}, "max_time"),
     ],
 )
 def test_latest_unreadable_values(
@@ -324,6 +336,8 @@ def test_naive_time_cannot_be_built() -> None:
     in_progress = parse_goes_xray_flare_latest(fixture(LATEST_IN_PROGRESS))
     with pytest.raises(ValueError, match="UTC"):
         replace(in_progress, begin_time=naive)
+    with pytest.raises(ValueError, match="UTC"):
+        replace(in_progress, max_time=naive)
 
 
 def test_latest_flare_begins_with_its_flare() -> None:
@@ -333,3 +347,11 @@ def test_latest_flare_begins_with_its_flare() -> None:
     with pytest.raises(ValueError, match="begin"):
         replace(latest, begin_class=FlareClass("B", 3.3))
     replace(latest, flare=None)  # in progress: no flare to agree with
+
+
+def test_latest_flare_peaks_with_its_flare() -> None:
+    latest = parse_goes_xray_flare_latest(fixture(LATEST))
+    with pytest.raises(ValueError, match="max_time"):
+        replace(latest, max_time=utc(2026, 10, 28, 12, 53))
+    with pytest.raises(ValueError, match="max_time"):
+        replace(latest, max_time=None)
