@@ -6,6 +6,8 @@ All notable changes to this project are listed here. The format follows
 
 ## [Unreleased]
 
+## [0.6.0] - 2026-11-05
+
 ### Added
 
 - Solar flare and proton probabilities: `parse_solar_probabilities`,
@@ -260,7 +262,8 @@ First version. Never published or tagged.
   declares.
 - Recorded fixtures and the tools that record them (`tools/`).
 
-[Unreleased]: https://github.com/Tabrigos/swpc-kit/compare/v0.5.0...HEAD
+[Unreleased]: https://github.com/Tabrigos/swpc-kit/compare/v0.6.0...HEAD
+[0.6.0]: https://github.com/Tabrigos/swpc-kit/releases/tag/v0.6.0
 [0.5.0]: https://github.com/Tabrigos/swpc-kit/releases/tag/v0.5.0
 [0.4.0]: https://github.com/Tabrigos/swpc-kit/releases/tag/v0.4.0
 [0.3.2]: https://github.com/Tabrigos/swpc-kit/releases/tag/v0.3.2
