@@ -80,7 +80,11 @@ KP_BODY = (ROOT / "tests" / "fixtures" / "kp-3h" / "2026-10-15.json").read_bytes
 
 @dataclass
 class FakeAttempt:
-    """Records what the recipe tells the gate, with politefetch's method names."""
+    """Records what the recipe tells the gate, with politefetch 0.2's names.
+
+    It keeps the gate's rules on the verdict: one only, and only after a
+    2xx or 304 recorded with ``response``.
+    """
 
     conditional_headers: dict[str, str]
     calls: list[tuple[str, object]] = field(default_factory=list)
@@ -96,6 +100,22 @@ class FakeAttempt:
 
     def failure(self, shape: str, *, status: int, headers: object) -> None:
         self.calls.append(("failure", shape))
+
+    def accept(self) -> None:
+        self._verdict()
+        self.calls.append(("accept", None))
+
+    def reject(self, reason: str) -> None:
+        assert reason in {"not_ready", "unusable", "not_sent"}, reason
+        self._verdict()
+        self.calls.append(("reject", reason))
+
+    def _verdict(self) -> None:
+        assert self.calls, "a verdict needs an answer recorded with response()"
+        kind, status = self.calls[-1]
+        assert kind == "response", self.calls
+        assert isinstance(status, int)
+        assert 200 <= status < 300 or status == 304, self.calls
 
 
 @dataclass
@@ -133,23 +153,32 @@ def _fetch_politely() -> Callable[..., Any]:
     return fetch
 
 
-def test_politely_a_good_body_is_a_good_answer() -> None:
+def test_politely_a_good_body_is_accepted() -> None:
     gate, http = FakeGate(), FakeHttp(FakeResponse(200, KP_BODY))
     kp = _fetch_politely()(gate, http, KP_URL, parse_planetary_k_index)
     assert kp.values
-    assert gate.attempt_made.calls == [("response", 200)]
+    assert gate.attempt_made.calls == [("response", 200), ("accept", None)]
     # Without a copy, no conditional headers: a 304 would be of no use.
     assert http.sent == [{}]
 
 
-def test_politely_a_truncated_body_is_a_failure_not_an_answer() -> None:
+def test_politely_a_truncated_body_is_rejected_as_not_ready() -> None:
     gate, http = FakeGate(), FakeHttp(FakeResponse(200, KP_BODY[:-40]))
     with pytest.raises(SourceNotReady):
         _fetch_politely()(gate, http, KP_URL, parse_planetary_k_index)
-    assert gate.attempt_made.calls == [("failure", "not_ready")]
+    assert gate.attempt_made.calls == [("response", 200), ("reject", "not_ready")]
+
+
+def test_politely_a_body_the_parser_refuses_is_rejected_as_unusable() -> None:
+    gate, http = FakeGate(), FakeHttp(FakeResponse(200, b"{}"))
+    with pytest.raises(UnexpectedContent):
+        _fetch_politely()(gate, http, KP_URL, parse_planetary_k_index)
+    assert gate.attempt_made.calls == [("response", 200), ("reject", "unusable")]
 
 
 def test_politely_an_html_page_is_a_failure() -> None:
+    # A page in place of the data is often a block: the gate must slow down,
+    # as politefetch's own fetchers do.
     page = FakeResponse(200, b"<html></html>", {"Content-Type": "text/html"})
     gate = FakeGate()
     with pytest.raises(UnexpectedContent):
@@ -158,8 +187,8 @@ def test_politely_an_html_page_is_a_failure() -> None:
 
 
 @pytest.mark.parametrize("status", [203, 204, 206])
-def test_politely_a_refused_2xx_is_a_failure(status: int) -> None:
-    # politefetch takes any 2xx as a good answer: the recipe must not tell it.
+def test_politely_a_2xx_other_than_200_is_a_failure(status: int) -> None:
+    # Refused for its status before the parser sees it, like the HTML page.
     gate, http = FakeGate(), FakeHttp(FakeResponse(status, KP_BODY))
     with pytest.raises(UnexpectedContent):
         _fetch_politely()(gate, http, KP_URL, parse_planetary_k_index)
@@ -174,9 +203,17 @@ def test_politely_a_429_reaches_the_gate_and_raises_rate_limited() -> None:
     assert gate.attempt_made.calls == [("response", 429)]
 
 
+def test_politely_a_5xx_reaches_the_gate_without_a_verdict() -> None:
+    gate, http = FakeGate(), FakeHttp(FakeResponse(503))
+    with pytest.raises(SourceNotReady):
+        _fetch_politely()(gate, http, KP_URL, parse_planetary_k_index)
+    assert gate.attempt_made.calls == [("response", 503)]
+
+
 def test_politely_a_304_returns_the_copy() -> None:
     gate, http = FakeGate(), FakeHttp(FakeResponse(304))
     copy = object()
     assert _fetch_politely()(gate, http, KP_URL, parse_planetary_k_index, copy) is copy
-    assert gate.attempt_made.calls == [("response", 304)]
+    # Accepted: the copy is still good, so the validators stay.
+    assert gate.attempt_made.calls == [("response", 304), ("accept", None)]
     assert http.sent == [{"If-None-Match": '"old"'}]

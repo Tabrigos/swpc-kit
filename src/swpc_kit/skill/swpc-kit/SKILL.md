@@ -162,10 +162,12 @@ dst = parse_kyoto_dst(body, source_url=url)
   the product moved or changed, or the URL is wrong.
 - 304: `ValueError`; reuse the copy your code holds.
 
-With a politefetch gate, tell the gate about a body the parser refused as
-a failure, never as an answer (its `ETag` would get a `304` for a broken
-file); the README has the recipe. Measure the age on `data_time`, not on
-HTTP headers.
+With a politefetch gate (0.2 or later), record every status on the
+attempt, except a `2xx` that is HTML or not `200`: that is a failure, so
+the gate slows down. Accept a body only after the parser read it, and
+reject it when the parser refused it (an accepted `ETag` would get a `304`
+for a broken file); the README has the recipe. Measure the age on `data_time`,
+not on HTTP headers.
 
 ## Errors
 
