@@ -17,12 +17,25 @@ Riscritto da capo a ogni fine sessione, mai accodato.
   corso registrato dal vivo (PR #18), e D-027 ne corregge il criterio, sul
   picco già scritto (PR #19); poi la **0.5.0** (tag `v0.5.0`, su PyPI il
   2026-11-02) con la T21. Il 2026-11-04 la **T22**: probabilità e regioni
-  solari (modulo `solar`), in `[Unreleased]`.
-- **Prossimo passo**: la 0.6.0 con la T22. Poi nessuna tappa aperta. Quando esce la 0.2 di politefetch, la ricetta
-  `fetch_politely` passa al suo modello nuovo (`response()` registra cosa
-  ha risposto la fonte, il verdetto passa da `accept()` / `reject(motivo)`,
-  issue #28 di quel repo).
-- **Decisioni in sospeso**: niente. Il maintainer ha scelto (2026-10-29)
+  solari (modulo `solar`), con D-028, e D-029 (ora del picco del flare in
+  corso) (PR #21). Il 2026-11-12 la ricetta `fetch_politely` del README
+  segue il verdetto di politefetch 0.2, uscita l'11/11 (PR #22); poi la
+  **0.6.0** (tag `v0.6.0`) con la T22, D-029 e la ricetta.
+- **Prossimo passo**: lo sviluppo è **in pausa** dal 2026-11-12, senza
+  tappe aperte. Alla ripresa, i candidati:
+  - il riscontro di Sidereus sulla 0.6.0 (la prova a ogni versione);
+  - i suoi attriti delle versioni prima, non lavorati: il Kp con
+    `a_running` null fa sparire lo slot; una probabilità vuota in
+    `noaa-scales.json` è `ParseError` per tutto il file; un messaggio con
+    la «NOAA Scale: G1» attaccata in fondo a un'altra riga (WARK05) non dà
+    `noaa_scale`;
+  - un `xray-flares-latest.json` vuoto resta `SourceNotReady` finché non
+    lo si vede servito dal vivo;
+  - la ricopia del modulo `skill` quando il modello comune corregge
+    `skill show` con l'uscita rediretta su Windows (cp1252), concordata
+    con politefetch.
+- **Decisioni in sospeso**: niente. Il 2026-11-04 D-029: di un flare in
+  corso si legge `max_time` quando SWPC lo scrive. Il maintainer ha scelto (2026-10-29)
   D-025: un campo vuoto per significato è `None`, nelle sole forme viste in
   un file vero; gli altri campi accessori restano obbligatori (D-015,
   D-017). Il 2026-10-30 D-026: un flare in corso ha solo l'inizio, e solo
@@ -376,3 +389,6 @@ Una riga per sessione: data, tappa, cosa è entrato, cosa resta.
   (difetti iniettati 7, sopravvissuti 0);
   `latest` vuoto lasciato `SourceNotReady` finché non lo si vede dal vivo;
   nella skill da dove si importa `FlareClass`.
+- 2026-11-12 — politefetch 0.2.0 su PyPI: ricetta col verdetto riportata
+  su `main` e provata col `Gate` vero della 0.2.0 (PR #22). 0.6.0 con T22,
+  D-029 e la ricetta. Sviluppo in pausa.
